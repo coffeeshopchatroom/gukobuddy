@@ -1,0 +1,23 @@
+
+{
+  "placeholderImages": [
+    {
+      "id": "hero-student",
+      "description": "A student studying with books and a laptop",
+      "imageUrl": "https://picsum.photos/seed/unimate-1/1200/800",
+      "imageHint": "student studying"
+    },
+    {
+      "id": "notebook-cover",
+      "description": "Abstract aesthetic pattern for notebook covers",
+      "imageUrl": "https://picsum.photos/seed/unimate-2/400/300",
+      "imageHint": "aesthetic pattern"
+    },
+    {
+      "id": "dashboard-welcome",
+      "description": "Calm workspace environment",
+      "imageUrl": "https://picsum.photos/seed/unimate-3/800/400",
+      "imageHint": "desk workspace"
+    }
+  ]
+}
