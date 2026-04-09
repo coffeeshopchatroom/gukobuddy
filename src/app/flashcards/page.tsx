@@ -12,7 +12,7 @@ import {
   useAuth, 
   useCollection, 
   useMemoFirebase,
-  addDocumentNonBlocking,
+  setDocumentNonBlocking,
   deleteDocumentNonBlocking,
   initiateAnonymousSignIn
 } from "@/firebase"
@@ -51,7 +51,6 @@ export default function FlashcardsPage() {
   const { data: courses, isLoading: isCoursesLoading } = useCollection(coursesQuery)
 
   // For simplicity in this view, we'll use the first course or a "Default" course
-  // In a real app, you'd select which course to view flashcards for
   const activeCourse = courses?.[0]
 
   const flashcardsQuery = useMemoFirebase(() => {
@@ -77,22 +76,23 @@ export default function FlashcardsPage() {
         description: "Default course for your flashcards",
       }
       
-      // We manually add the course first, then the deck
-      // In a production app, this would be a single atomic operation or handled by course management
-      addDocumentNonBlocking(collection(db, "users", user.uid, "courses"), courseData)
-        .then(() => {
-          const deckId = doc(collection(db, "temp")).id
-          const deckData = {
-            id: deckId,
-            name: newDeckName,
-            courseId: courseId,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          }
-          addDocumentNonBlocking(collection(db, "users", user.uid, "courses", courseId, "flashcardSets"), deckData)
-        })
+      // Use setDocumentNonBlocking to ensure the ID in path matches data.id
+      setDocumentNonBlocking(courseRef, courseData, { merge: true })
+      
+      // We manually add the deck under the new course
+      const deckId = doc(collection(db, "temp")).id
+      const deckRef = doc(db, "users", user.uid, "courses", courseId, "flashcardSets", deckId)
+      const deckData = {
+        id: deckId,
+        name: newDeckName,
+        courseId: courseId,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }
+      setDocumentNonBlocking(deckRef, deckData, { merge: true })
     } else {
       const deckId = doc(collection(db, "temp")).id
+      const deckRef = doc(db, "users", user.uid, "courses", activeCourse.id, "flashcardSets", deckId)
       const deckData = {
         id: deckId,
         name: newDeckName,
@@ -100,7 +100,7 @@ export default function FlashcardsPage() {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       }
-      addDocumentNonBlocking(collection(db, "users", user.uid, "courses", activeCourse.id, "flashcardSets"), deckData)
+      setDocumentNonBlocking(deckRef, deckData, { merge: true })
     }
 
     setNewDeckName("")
@@ -226,9 +226,8 @@ export default function FlashcardsPage() {
 }
 
 function DeckCard({ deck, onDelete }: { deck: any, onDelete: () => void }) {
-  // We'd ideally fetch the card count here using another hook or denormalization
-  const cardsCount = 0; // Placeholder for now
-  const mastery = 0; // Placeholder for now
+  const cardsCount = 0; 
+  const mastery = 0; 
   
   return (
     <Card className="group border-none shadow-sm hover:shadow-xl transition-all duration-500 rounded-3xl overflow-hidden bg-white">
