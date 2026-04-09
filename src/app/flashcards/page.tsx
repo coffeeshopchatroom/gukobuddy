@@ -284,12 +284,19 @@ export default function FlashcardsPage() {
                   </DialogDescription>
                 </DialogHeader>
                 
-                {/* Scrollable middle section */}
                 <div className="flex-1 overflow-y-auto px-8 py-4 custom-scrollbar">
                   <div className="space-y-8 pb-4">
                     {/* Question Section */}
                     <div className="space-y-3">
                       <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Question / Front</Label>
+                      {cardImageUrl && (
+                        <div className="relative w-full rounded-2xl overflow-hidden border mb-3">
+                          <img src={cardImageUrl} alt="Front Visual" className="w-full h-auto max-h-[250px] object-contain block mx-auto" />
+                          <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-8 w-8 rounded-full shadow-lg" onClick={() => setCardImageUrl("")}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
                       <div className="border rounded-2xl bg-white p-6 shadow-sm transition-all">
                         <EditorContent editor={questionEditor} className="tiptap-editor min-h-[100px]" />
                         <RichFormattingToolbar 
@@ -299,19 +306,19 @@ export default function FlashcardsPage() {
                           label="Front Image" 
                         />
                       </div>
-                      {cardImageUrl && (
-                        <div className="relative h-48 w-full rounded-2xl overflow-hidden border bg-muted/20">
-                          <Image src={cardImageUrl} alt="Front Visual" fill unoptimized className="object-contain" />
-                          <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-8 w-8 rounded-full" onClick={() => setCardImageUrl("")}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      )}
                     </div>
 
                     {/* Answer Section */}
                     <div className="space-y-3">
                       <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Answer / Back</Label>
+                      {cardAnswerImageUrl && (
+                        <div className="relative w-full rounded-2xl overflow-hidden border mb-3">
+                          <img src={cardAnswerImageUrl} alt="Back Visual" className="w-full h-auto max-h-[250px] object-contain block mx-auto" />
+                          <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-8 w-8 rounded-full shadow-lg" onClick={() => setCardAnswerImageUrl("")}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
                       <div className="border rounded-2xl bg-white p-6 shadow-sm transition-all">
                         <EditorContent editor={answerEditor} className="tiptap-editor min-h-[100px]" />
                         <RichFormattingToolbar 
@@ -321,14 +328,6 @@ export default function FlashcardsPage() {
                           label="Back Image" 
                         />
                       </div>
-                      {cardAnswerImageUrl && (
-                        <div className="relative h-48 w-full rounded-2xl overflow-hidden border bg-muted/20">
-                          <Image src={cardAnswerImageUrl} alt="Back Visual" fill unoptimized className="object-contain" />
-                          <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-8 w-8 rounded-full" onClick={() => setCardAnswerImageUrl("")}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>
@@ -670,30 +669,30 @@ function StudyView({ deckName, cards, isLoading, onExit }: { deckName: string, c
       <div className="flex-1 flex flex-col items-center justify-center gap-12">
         <div 
           onClick={() => setIsFlipped(!isFlipped)}
-          className="relative w-full aspect-[4/3] max-h-[500px] cursor-pointer perspective-1000 group"
+          className="relative w-full min-h-[400px] cursor-pointer perspective-1000 group"
         >
           <div className={`relative w-full h-full transition-all duration-500 transform-style-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
             {/* Front Side */}
-            <Card className={`absolute inset-0 backface-hidden border-none shadow-2xl rounded-[32px] flex flex-col items-center justify-center p-12 bg-white ${isFlipped ? 'pointer-events-none' : ''}`}>
+            <Card className={`relative inset-0 backface-hidden border-none shadow-2xl rounded-[32px] flex flex-col items-center justify-center p-12 bg-white ${isFlipped ? 'pointer-events-none opacity-0' : 'opacity-100'}`}>
               {currentCard.imageUrl && (
-                <div className="relative w-full h-48 mb-8 rounded-2xl overflow-hidden border border-border bg-muted/5">
-                  <Image src={currentCard.imageUrl} alt="Card visual" fill unoptimized className="object-contain" />
+                <div className="w-full mb-8 rounded-2xl overflow-hidden border border-border">
+                  <img src={currentCard.imageUrl} alt="Card visual" className="w-full h-auto max-h-[300px] object-contain block mx-auto" />
                 </div>
               )}
-              <div className="text-3xl font-bold text-center leading-tight font-headline w-full overflow-y-auto">
+              <div className="text-3xl font-bold text-center leading-tight font-headline w-full">
                 <HtmlContent html={currentCard.question} />
               </div>
-              <p className="absolute bottom-8 text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-primary transition-colors">
+              <p className="mt-8 text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-primary transition-colors">
                 Click to reveal answer
               </p>
             </Card>
 
             {/* Back Side */}
-            <Card className={`absolute inset-0 backface-hidden border-none shadow-2xl rounded-[32px] flex flex-col items-center justify-center p-12 bg-primary/10 rotate-y-180 ${!isFlipped ? 'pointer-events-none' : ''}`}>
-              <div className="max-w-md w-full flex flex-col items-center overflow-y-auto">
+            <Card className={`absolute inset-0 backface-hidden border-none shadow-2xl rounded-[32px] flex flex-col items-center justify-center p-12 bg-primary/10 rotate-y-180 ${!isFlipped ? 'pointer-events-none opacity-0' : 'opacity-100'}`}>
+              <div className="max-w-md w-full flex flex-col items-center">
                 {currentCard.answerImageUrl && (
-                  <div className="relative w-full h-48 mb-6 rounded-2xl overflow-hidden border border-primary/20 bg-primary/5">
-                    <Image src={currentCard.answerImageUrl} alt="Answer visual" fill unoptimized className="object-contain" />
+                  <div className="w-full mb-6 rounded-2xl overflow-hidden border border-primary/20">
+                    <img src={currentCard.answerImageUrl} alt="Answer visual" className="w-full h-auto max-h-[300px] object-contain block mx-auto" />
                   </div>
                 )}
                 <span className="text-[10px] font-bold uppercase tracking-widest text-primary block text-center mb-4">Answer</span>
@@ -701,7 +700,7 @@ function StudyView({ deckName, cards, isLoading, onExit }: { deckName: string, c
                   <HtmlContent html={currentCard.answer} />
                 </div>
               </div>
-              <p className="absolute bottom-8 text-[10px] font-bold uppercase tracking-widest text-primary">
+              <p className="mt-8 text-[10px] font-bold uppercase tracking-widest text-primary">
                 Click to flip back
               </p>
             </Card>
