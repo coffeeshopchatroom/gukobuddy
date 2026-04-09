@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -654,7 +655,7 @@ function StudyView({ deckName, cards, isLoading, onExit }: { deckName: string, c
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-8 animate-smooth-slow h-full flex flex-col">
+    <div className="max-w-3xl mx-auto space-y-8 animate-smooth-slow h-full flex flex-col justify-center min-h-[80vh]">
       <div className="flex items-center justify-between">
         <Button variant="ghost" size="sm" onClick={onExit} className="rounded-xl gap-2 font-bold text-muted-foreground hover:text-foreground">
           <ChevronLeft className="h-4 w-4" /> Exit Study Mode
@@ -666,41 +667,43 @@ function StudyView({ deckName, cards, isLoading, onExit }: { deckName: string, c
         <div className="w-20" /> 
       </div>
 
-      <div className="flex-1 flex flex-col items-center justify-center gap-12">
+      <div className="flex flex-col items-center justify-center gap-12">
         <div 
           onClick={() => setIsFlipped(!isFlipped)}
-          className="relative w-full min-h-[400px] cursor-pointer perspective-1000 group"
+          className="relative w-full aspect-[3/2] max-h-[500px] cursor-pointer perspective-1000 group"
         >
           <div className={`relative w-full h-full transition-all duration-500 transform-style-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
             {/* Front Side */}
-            <Card className={`relative inset-0 backface-hidden border-none shadow-2xl rounded-[32px] flex flex-col items-center justify-center p-12 bg-white ${isFlipped ? 'pointer-events-none opacity-0' : 'opacity-100'}`}>
-              {currentCard.imageUrl && (
-                <div className="w-full mb-8 rounded-2xl overflow-hidden border border-border">
-                  <img src={currentCard.imageUrl} alt="Card visual" className="w-full h-auto max-h-[300px] object-contain block mx-auto" />
+            <Card className={`absolute inset-0 backface-hidden border-none shadow-2xl rounded-[32px] flex flex-col items-center justify-center p-12 bg-white ${isFlipped ? 'pointer-events-none opacity-0' : 'opacity-100'}`}>
+              <div className="w-full h-full flex flex-col items-center justify-center gap-6 overflow-hidden">
+                {currentCard.imageUrl && (
+                  <div className="w-full flex-1 min-h-0 relative">
+                    <img src={currentCard.imageUrl} alt="Card visual" className="w-full h-full object-contain block mx-auto" />
+                  </div>
+                )}
+                <div className={cn("font-headline font-bold text-center leading-tight w-full", currentCard.imageUrl ? "text-2xl" : "text-4xl")}>
+                  <HtmlContent html={currentCard.question} />
                 </div>
-              )}
-              <div className="text-3xl font-bold text-center leading-tight font-headline w-full">
-                <HtmlContent html={currentCard.question} />
               </div>
-              <p className="mt-8 text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-primary transition-colors">
+              <p className="absolute bottom-6 text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-primary transition-colors">
                 Click to reveal answer
               </p>
             </Card>
 
             {/* Back Side */}
             <Card className={`absolute inset-0 backface-hidden border-none shadow-2xl rounded-[32px] flex flex-col items-center justify-center p-12 bg-primary/10 rotate-y-180 ${!isFlipped ? 'pointer-events-none opacity-0' : 'opacity-100'}`}>
-              <div className="max-w-md w-full flex flex-col items-center">
+              <div className="w-full h-full flex flex-col items-center justify-center gap-6 overflow-hidden">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-primary block text-center">Answer</span>
                 {currentCard.answerImageUrl && (
-                  <div className="w-full mb-6 rounded-2xl overflow-hidden border border-primary/20">
-                    <img src={currentCard.answerImageUrl} alt="Answer visual" className="w-full h-auto max-h-[300px] object-contain block mx-auto" />
+                  <div className="w-full flex-1 min-h-0 relative">
+                    <img src={currentCard.answerImageUrl} alt="Answer visual" className="w-full h-full object-contain block mx-auto" />
                   </div>
                 )}
-                <span className="text-[10px] font-bold uppercase tracking-widest text-primary block text-center mb-4">Answer</span>
-                <div className="text-2xl font-medium text-center leading-relaxed w-full">
+                <div className={cn("font-medium text-center leading-relaxed w-full", currentCard.answerImageUrl ? "text-xl" : "text-3xl")}>
                   <HtmlContent html={currentCard.answer} />
                 </div>
               </div>
-              <p className="mt-8 text-[10px] font-bold uppercase tracking-widest text-primary">
+              <p className="absolute bottom-6 text-[10px] font-bold uppercase tracking-widest text-primary">
                 Click to flip back
               </p>
             </Card>
