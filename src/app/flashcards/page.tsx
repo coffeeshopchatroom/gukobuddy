@@ -276,20 +276,21 @@ export default function FlashcardsPage() {
                   <Plus className="h-5 w-5 mr-2" /> Add Card
                 </Button>
               </DialogTrigger>
-              <DialogContent className="rounded-[32px] sm:max-w-2xl p-8 max-h-[90vh] overflow-hidden flex flex-col gap-0 border-none">
-                <DialogHeader className="mb-6 text-left shrink-0">
+              <DialogContent className="rounded-[32px] sm:max-w-2xl p-0 max-h-[90vh] overflow-hidden flex flex-col border-none bg-background shadow-2xl">
+                <DialogHeader className="p-8 pb-0 text-left shrink-0">
                   <DialogTitle className="font-headline text-2xl font-bold">Create Flashcard</DialogTitle>
                   <DialogDescription className="text-base">
                     Type and format your card directly.
                   </DialogDescription>
                 </DialogHeader>
                 
-                <ScrollArea className="flex-1 -mx-2 px-2 min-h-0">
-                  <div className="space-y-8 py-2">
+                {/* Scrollable middle section */}
+                <div className="flex-1 overflow-y-auto px-8 py-4 custom-scrollbar">
+                  <div className="space-y-8 pb-4">
                     {/* Question Section */}
                     <div className="space-y-3">
                       <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Question / Front</Label>
-                      <div className="border rounded-2xl bg-white p-6 shadow-sm transition-all focus-within:ring-0 focus-within:border-primary/50">
+                      <div className="border rounded-2xl bg-white p-6 shadow-sm transition-all">
                         <EditorContent editor={questionEditor} className="tiptap-editor min-h-[100px]" />
                         <RichFormattingToolbar 
                           editor={questionEditor} 
@@ -311,7 +312,7 @@ export default function FlashcardsPage() {
                     {/* Answer Section */}
                     <div className="space-y-3">
                       <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Answer / Back</Label>
-                      <div className="border rounded-2xl bg-white p-6 shadow-sm transition-all focus-within:ring-0 focus-within:border-primary/50">
+                      <div className="border rounded-2xl bg-white p-6 shadow-sm transition-all">
                         <EditorContent editor={answerEditor} className="tiptap-editor min-h-[100px]" />
                         <RichFormattingToolbar 
                           editor={answerEditor} 
@@ -330,9 +331,9 @@ export default function FlashcardsPage() {
                       )}
                     </div>
                   </div>
-                </ScrollArea>
+                </div>
 
-                <DialogFooter className="mt-8 pt-6 border-t shrink-0 gap-3 sm:justify-end">
+                <DialogFooter className="p-8 pt-6 border-t shrink-0 gap-3 sm:justify-end bg-muted/5">
                   <Button variant="ghost" onClick={() => setIsCreateCardOpen(false)} className="rounded-xl font-bold">Cancel</Button>
                   <Button onClick={handleAddCard} disabled={questionEditor?.isEmpty || answerEditor?.isEmpty} className="rounded-xl bg-primary px-8 font-bold text-primary-foreground shadow-lg shadow-primary/20">Create Card</Button>
                 </DialogFooter>
@@ -413,7 +414,7 @@ export default function FlashcardsPage() {
                 <Plus className="h-5 w-5 mr-2" /> New Deck
               </Button>
             </DialogTrigger>
-            <DialogContent className="rounded-3xl">
+            <DialogContent className="rounded-3xl border-none shadow-2xl">
               <DialogHeader>
                 <DialogTitle className="font-headline text-2xl">Create New Deck</DialogTitle>
                 <DialogDescription>
@@ -428,7 +429,7 @@ export default function FlashcardsPage() {
                     placeholder="e.g. History: The Industrial Revolution" 
                     value={newDeckName}
                     onChange={(e) => setNewDeckName(e.target.value)}
-                    className="rounded-xl"
+                    className="rounded-xl no-focus-ring"
                   />
                 </div>
               </div>
