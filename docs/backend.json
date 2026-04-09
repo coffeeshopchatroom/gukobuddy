@@ -90,7 +90,11 @@
         },
         "imageUrl": {
           "type": "string",
-          "description": "An optional URL to an image associated with this flashcard."
+          "description": "Optional URL to an image associated with the front of the flashcard."
+        },
+        "answerImageUrl": {
+          "type": "string",
+          "description": "Optional URL to an image associated with the back of the flashcard."
         },
         "lastReviewedAt": {
           "type": "string",
@@ -103,7 +107,7 @@
         },
         "easeFactor": {
           "type": "number",
-          "description": "A factor indicating the perceived difficulty or ease of remembering the card, used for spaced repetition algorithms. Higher values mean easier."
+          "description": "A factor indicating the perceived difficulty or ease of remembering the card."
         },
         "nextReviewAt": {
           "type": "string",
@@ -126,10 +130,6 @@
         "flashcardSetId",
         "question",
         "answer",
-        "lastReviewedAt",
-        "reviewCount",
-        "easeFactor",
-        "nextReviewAt",
         "createdAt",
         "updatedAt"
       ]

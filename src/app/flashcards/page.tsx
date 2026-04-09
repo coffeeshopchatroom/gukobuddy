@@ -19,7 +19,13 @@ import {
   GraduationCap,
   Image as ImageIcon,
   BookOpen,
-  RotateCcw
+  RotateCcw,
+  Bold,
+  Italic,
+  Type,
+  Link as LinkIcon,
+  Smile,
+  AlignCenter
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { 
@@ -51,7 +57,14 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import Image from "next/image"
+import { cn } from "@/lib/utils"
 
 export default function FlashcardsPage() {
   const { user, isUserLoading } = useUser()
@@ -68,6 +81,7 @@ export default function FlashcardsPage() {
   const [cardQuestion, setCardQuestion] = React.useState("")
   const [cardAnswer, setCardAnswer] = React.useState("")
   const [cardImageUrl, setCardImageUrl] = React.useState("")
+  const [cardAnswerImageUrl, setCardAnswerImageUrl] = React.useState("")
 
   // Fetch courses first
   const coursesQuery = useMemoFirebase(() => {
@@ -152,6 +166,7 @@ export default function FlashcardsPage() {
       question: cardQuestion,
       answer: cardAnswer,
       imageUrl: cardImageUrl.trim() || null,
+      answerImageUrl: cardAnswerImageUrl.trim() || null,
       lastReviewedAt: new Date().toISOString(),
       reviewCount: 0,
       easeFactor: 2.5,
@@ -163,6 +178,7 @@ export default function FlashcardsPage() {
     setCardQuestion("")
     setCardAnswer("")
     setCardImageUrl("")
+    setCardAnswerImageUrl("")
     setIsCreateCardOpen(false)
   }
 
@@ -236,48 +252,57 @@ export default function FlashcardsPage() {
                   <Plus className="h-5 w-5 mr-2" /> Add Card
                 </Button>
               </DialogTrigger>
-              <DialogContent className="rounded-3xl sm:max-w-md">
-                <DialogHeader>
-                  <DialogTitle className="font-headline text-2xl">Add New Card</DialogTitle>
-                  <DialogDescription>
-                    Create a question and answer pair. You can also add an image URL.
+              <DialogContent className="rounded-[32px] sm:max-w-xl p-8 overflow-hidden">
+                <DialogHeader className="mb-6 text-left">
+                  <DialogTitle className="font-headline text-2xl font-bold">Add New Card</DialogTitle>
+                  <DialogDescription className="text-base">
+                    Create a question and answer pair. You can format your text and add photos to both sides.
                   </DialogDescription>
                 </DialogHeader>
-                <div className="grid gap-6 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="question">Question / Front</Label>
-                    <Textarea 
-                      id="question" 
-                      placeholder="e.g. What is the powerhouse of the cell?" 
-                      value={cardQuestion}
-                      onChange={(e) => setCardQuestion(e.target.value)}
-                      className="rounded-xl min-h-[80px]"
-                    />
+                
+                <div className="space-y-8 py-2">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Question / Front</Label>
+                    </div>
+                    <div className="relative border rounded-[20px] bg-muted/20 focus-within:bg-white focus-within:ring-2 focus-within:ring-primary/20 transition-all p-4">
+                      <Textarea 
+                        placeholder="e.g. What is the powerhouse of the cell?" 
+                        value={cardQuestion}
+                        onChange={(e) => setCardQuestion(e.target.value)}
+                        className="border-none bg-transparent focus-visible:ring-0 min-h-[100px] p-0 text-lg resize-none"
+                      />
+                      <FormattingToolbar 
+                        onApplyTag={(tag) => setCardQuestion(prev => `${prev} ${tag}`)} 
+                        imageUrl={cardImageUrl}
+                        onSetImageUrl={setCardImageUrl}
+                        label="Front Image"
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="answer">Answer / Back</Label>
-                    <Textarea 
-                      id="answer" 
-                      placeholder="e.g. Mitochondria" 
-                      value={cardAnswer}
-                      onChange={(e) => setCardAnswer(e.target.value)}
-                      className="rounded-xl min-h-[80px]"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="imageUrl">Image URL (Optional)</Label>
-                    <Input 
-                      id="imageUrl" 
-                      placeholder="https://example.com/image.png" 
-                      value={cardImageUrl}
-                      onChange={(e) => setCardImageUrl(e.target.value)}
-                      className="rounded-xl"
-                    />
+
+                  <div className="space-y-3">
+                    <Label className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Answer / Back</Label>
+                    <div className="relative border rounded-[20px] bg-muted/20 focus-within:bg-white focus-within:ring-2 focus-within:ring-primary/20 transition-all p-4">
+                      <Textarea 
+                        placeholder="e.g. Mitochondria" 
+                        value={cardAnswer}
+                        onChange={(e) => setCardAnswer(e.target.value)}
+                        className="border-none bg-transparent focus-visible:ring-0 min-h-[100px] p-0 text-lg resize-none"
+                      />
+                      <FormattingToolbar 
+                        onApplyTag={(tag) => setCardAnswer(prev => `${prev} ${tag}`)} 
+                        imageUrl={cardAnswerImageUrl}
+                        onSetImageUrl={setCardAnswerImageUrl}
+                        label="Back Image"
+                      />
+                    </div>
                   </div>
                 </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsCreateCardOpen(false)} className="rounded-xl">Cancel</Button>
-                  <Button onClick={handleAddCard} className="rounded-xl">Add Card</Button>
+
+                <DialogFooter className="mt-8 gap-3 sm:justify-end">
+                  <Button variant="ghost" onClick={() => setIsCreateCardOpen(false)} className="rounded-xl font-bold">Cancel</Button>
+                  <Button onClick={handleAddCard} className="rounded-xl bg-primary px-8 font-bold text-primary-foreground shadow-lg shadow-primary/20">Add Card</Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
@@ -291,7 +316,7 @@ export default function FlashcardsPage() {
         ) : cards && cards.length > 0 ? (
           <div className="grid gap-4">
             {cards.map((card) => (
-              <Card key={card.id} className="border-none shadow-sm hover:shadow-md transition-all rounded-2xl overflow-hidden group">
+              <Card key={card.id} className="border-none shadow-sm hover:shadow-md transition-all rounded-2xl overflow-hidden group bg-white">
                 <CardContent className="p-6 flex items-center justify-between gap-6">
                   <div className="flex-1 grid md:grid-cols-2 gap-6 items-center">
                     <div className="border-r border-border/50 pr-6 flex gap-4 items-start">
@@ -305,9 +330,16 @@ export default function FlashcardsPage() {
                         <p className="font-medium text-lg leading-tight">{card.question}</p>
                       </div>
                     </div>
-                    <div>
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1 block">Answer</span>
-                      <p className="text-muted-foreground leading-snug">{card.answer}</p>
+                    <div className="flex gap-4 items-start">
+                      {card.answerImageUrl && (
+                        <div className="relative w-16 h-16 rounded-lg overflow-hidden shrink-0 border border-border">
+                          <Image src={card.answerImageUrl} alt="Answer visual" fill className="object-cover" />
+                        </div>
+                      )}
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1 block">Answer</span>
+                        <p className="text-muted-foreground leading-snug">{card.answer}</p>
+                      </div>
                     </div>
                   </div>
                   <Button variant="ghost" size="icon" onClick={() => handleDeleteCard(card.id)} className="text-destructive hover:text-destructive hover:bg-destructive/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity">
@@ -424,6 +456,95 @@ export default function FlashcardsPage() {
   )
 }
 
+function FormattingToolbar({ 
+  onApplyTag, 
+  imageUrl, 
+  onSetImageUrl, 
+  label 
+}: { 
+  onApplyTag: (tag: string) => void, 
+  imageUrl: string, 
+  onSetImageUrl: (url: string) => void,
+  label: string
+}) {
+  const [showImageUrl, setShowImageUrl] = React.useState(false)
+
+  return (
+    <div className="mt-4 flex flex-col gap-3">
+      <div className="flex items-center gap-1.5 p-1 bg-white border rounded-full w-fit shadow-sm">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => onApplyTag('**')}>
+                <Bold className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Bold</TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => onApplyTag('_')}>
+                <Italic className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Italic</TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => onApplyTag('###')}>
+                <Type className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Heading</TooltipContent>
+          </Tooltip>
+
+          <div className="w-px h-4 bg-border mx-1" />
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setShowImageUrl(!showImageUrl)}>
+                <ImageIcon className={cn("h-4 w-4", imageUrl && "text-primary")} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{label}</TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => onApplyTag(':)')}>
+                <Smile className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Emoji</TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => onApplyTag('[Link Text](url)')}>
+                <LinkIcon className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Link</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
+
+      {showImageUrl && (
+        <div className="animate-in slide-in-from-top-1 fade-in duration-200">
+          <Input 
+            placeholder={`Enter ${label.toLowerCase()} URL...`}
+            value={imageUrl}
+            onChange={(e) => onSetImageUrl(e.target.value)}
+            className="rounded-xl h-10 border-primary/20 focus:border-primary"
+          />
+        </div>
+      )}
+    </div>
+  )
+}
+
 function StudyView({ deckName, cards, isLoading, onExit }: { deckName: string, cards: any[], isLoading: boolean, onExit: () => void }) {
   const [currentIndex, setCurrentIndex] = React.useState(0)
   const [isFlipped, setIsFlipped] = React.useState(false)
@@ -498,8 +619,13 @@ function StudyView({ deckName, cards, isLoading, onExit }: { deckName: string, c
 
             {/* Back Side */}
             <Card className={`absolute inset-0 backface-hidden border-none shadow-2xl rounded-[32px] flex flex-col items-center justify-center p-12 bg-primary/10 rotate-y-180 ${!isFlipped ? 'pointer-events-none' : ''}`}>
-              <div className="max-w-md w-full">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-primary block text-center mb-6">Answer</span>
+              <div className="max-w-md w-full flex flex-col items-center">
+                {currentCard.answerImageUrl && (
+                  <div className="relative w-full h-40 mb-6 rounded-2xl overflow-hidden border border-primary/20">
+                    <Image src={currentCard.answerImageUrl} alt="Answer visual" fill className="object-cover" />
+                  </div>
+                )}
+                <span className="text-[10px] font-bold uppercase tracking-widest text-primary block text-center mb-4">Answer</span>
                 <p className="text-2xl font-medium text-center leading-relaxed">
                   {currentCard.answer}
                 </p>
