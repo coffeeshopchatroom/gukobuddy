@@ -26,7 +26,8 @@ import {
   Link as LinkIcon,
   Smile,
   AlignCenter,
-  Eye
+  Eye,
+  Settings2
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { 
@@ -65,6 +66,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
 import ReactMarkdown from 'react-markdown'
@@ -86,6 +88,9 @@ export default function FlashcardsPage() {
   const [cardAnswer, setCardAnswer] = React.useState("")
   const [cardImageUrl, setCardImageUrl] = React.useState("")
   const [cardAnswerImageUrl, setCardAnswerImageUrl] = React.useState("")
+
+  const questionTextareaRef = React.useRef<HTMLTextAreaElement>(null)
+  const answerTextareaRef = React.useRef<HTMLTextAreaElement>(null)
 
   // Fetch courses first
   const coursesQuery = useMemoFirebase(() => {
@@ -192,6 +197,27 @@ export default function FlashcardsPage() {
     deleteDocumentNonBlocking(cardRef)
   }
 
+  const applyFormatting = (ref: React.RefObject<HTMLTextAreaElement>, prefix: string, suffix: string, setter: React.Dispatch<React.SetStateAction<string>>) => {
+    const textarea = ref.current
+    if (!textarea) return
+
+    const start = textarea.selectionStart
+    const end = textarea.selectionEnd
+    const text = textarea.value
+    const before = text.substring(0, start)
+    const selection = text.substring(start, end)
+    const after = text.substring(end)
+
+    const newValue = `${before}${prefix}${selection}${suffix}${after}`
+    setter(newValue)
+    
+    // Reset focus and selection
+    setTimeout(() => {
+      textarea.focus()
+      textarea.setSelectionRange(start + prefix.length, end + prefix.length)
+    }, 0)
+  }
+
   if (isUserLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -256,93 +282,91 @@ export default function FlashcardsPage() {
                   <Plus className="h-5 w-5 mr-2" /> Add Card
                 </Button>
               </DialogTrigger>
-              <DialogContent className="rounded-[32px] sm:max-w-2xl p-8 overflow-hidden">
+              <DialogContent className="rounded-[32px] sm:max-w-4xl p-8 max-h-[90vh] overflow-hidden flex flex-col">
                 <DialogHeader className="mb-6 text-left">
-                  <DialogTitle className="font-headline text-2xl font-bold">Add New Card</DialogTitle>
+                  <DialogTitle className="font-headline text-2xl font-bold">Create Flashcard</DialogTitle>
                   <DialogDescription className="text-base">
-                    Use markdown for formatting. Your content will be rendered correctly in study mode.
+                    Use the toolbar to format. Preview updates live on the right.
                   </DialogDescription>
                 </DialogHeader>
                 
-                <div className="space-y-8 py-2 overflow-y-auto max-h-[60vh] pr-2">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Question / Front</Label>
+                <ScrollArea className="flex-1 pr-4">
+                  <div className="space-y-12 py-2">
+                    {/* Question Section */}
+                    <div className="space-y-4">
+                      <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Question / Front</Label>
+                      <div className="grid md:grid-cols-2 gap-6">
+                        <div className="space-y-4">
+                          <div className="relative border rounded-[20px] bg-muted/20 focus-within:bg-white focus-within:ring-2 focus-within:ring-primary/20 transition-all p-4">
+                            <Textarea 
+                              ref={questionTextareaRef}
+                              placeholder="Type your question here..." 
+                              value={cardQuestion}
+                              onChange={(e) => setCardQuestion(e.target.value)}
+                              className="border-none bg-transparent focus-visible:ring-0 min-h-[120px] p-0 text-lg resize-none"
+                            />
+                            <FormattingToolbar 
+                              onApply={(p, s) => applyFormatting(questionTextareaRef, p, s, setCardQuestion)}
+                              imageUrl={cardImageUrl}
+                              onSetImageUrl={setCardImageUrl}
+                              label="Front Image"
+                            />
+                          </div>
+                        </div>
+                        <div className="border border-dashed rounded-[20px] bg-white p-6 min-h-[180px] flex flex-col">
+                          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tighter mb-4 block opacity-50">Live Preview</span>
+                          <div className="flex-1">
+                            <MarkdownContent content={cardQuestion || "*Question preview...*"} />
+                            {cardImageUrl && (
+                              <div className="mt-4 relative h-32 w-full rounded-xl overflow-hidden border border-border">
+                                <Image src={cardImageUrl} alt="Preview" fill className="object-cover" />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <Tabs defaultValue="edit" className="w-full">
-                      <TabsList className="bg-muted/50 rounded-lg p-0.5 h-auto mb-2">
-                        <TabsTrigger value="edit" className="text-xs py-1.5 px-4"><Edit2 className="h-3 w-3 mr-1.5" /> Edit</TabsTrigger>
-                        <TabsTrigger value="preview" className="text-xs py-1.5 px-4"><Eye className="h-3 w-3 mr-1.5" /> Preview</TabsTrigger>
-                      </TabsList>
-                      <TabsContent value="edit" className="mt-0">
-                        <div className="relative border rounded-[20px] bg-muted/20 focus-within:bg-white focus-within:ring-2 focus-within:ring-primary/20 transition-all p-4">
-                          <Textarea 
-                            placeholder="e.g. **Powerhouse** of the cell?" 
-                            value={cardQuestion}
-                            onChange={(e) => setCardQuestion(e.target.value)}
-                            className="border-none bg-transparent focus-visible:ring-0 min-h-[100px] p-0 text-lg resize-none"
-                          />
-                          <FormattingToolbar 
-                            onApplyTag={(tag) => setCardQuestion(prev => `${prev}${tag}`)} 
-                            imageUrl={cardImageUrl}
-                            onSetImageUrl={setCardImageUrl}
-                            label="Front Image"
-                          />
-                        </div>
-                      </TabsContent>
-                      <TabsContent value="preview" className="mt-0">
-                        <div className="border rounded-[20px] bg-white p-6 min-h-[148px]">
-                          <MarkdownContent content={cardQuestion || "*Nothing to preview*"} />
-                          {cardImageUrl && (
-                            <div className="mt-4 relative h-32 w-full rounded-xl overflow-hidden border border-border">
-                              <Image src={cardImageUrl} alt="Preview" fill className="object-cover" />
-                            </div>
-                          )}
-                        </div>
-                      </TabsContent>
-                    </Tabs>
-                  </div>
 
-                  <div className="space-y-3">
-                    <Label className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Answer / Back</Label>
-                    <Tabs defaultValue="edit" className="w-full">
-                      <TabsList className="bg-muted/50 rounded-lg p-0.5 h-auto mb-2">
-                        <TabsTrigger value="edit" className="text-xs py-1.5 px-4"><Edit2 className="h-3 w-3 mr-1.5" /> Edit</TabsTrigger>
-                        <TabsTrigger value="preview" className="text-xs py-1.5 px-4"><Eye className="h-3 w-3 mr-1.5" /> Preview</TabsTrigger>
-                      </TabsList>
-                      <TabsContent value="edit" className="mt-0">
-                        <div className="relative border rounded-[20px] bg-muted/20 focus-within:bg-white focus-within:ring-2 focus-within:ring-primary/20 transition-all p-4">
-                          <Textarea 
-                            placeholder="e.g. Mitochondria" 
-                            value={cardAnswer}
-                            onChange={(e) => setCardAnswer(e.target.value)}
-                            className="border-none bg-transparent focus-visible:ring-0 min-h-[100px] p-0 text-lg resize-none"
-                          />
-                          <FormattingToolbar 
-                            onApplyTag={(tag) => setCardAnswer(prev => `${prev}${tag}`)} 
-                            imageUrl={cardAnswerImageUrl}
-                            onSetImageUrl={setCardAnswerImageUrl}
-                            label="Back Image"
-                          />
+                    {/* Answer Section */}
+                    <div className="space-y-4">
+                      <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Answer / Back</Label>
+                      <div className="grid md:grid-cols-2 gap-6">
+                        <div className="space-y-4">
+                          <div className="relative border rounded-[20px] bg-muted/20 focus-within:bg-white focus-within:ring-2 focus-within:ring-primary/20 transition-all p-4">
+                            <Textarea 
+                              ref={answerTextareaRef}
+                              placeholder="Type the answer here..." 
+                              value={cardAnswer}
+                              onChange={(e) => setCardAnswer(e.target.value)}
+                              className="border-none bg-transparent focus-visible:ring-0 min-h-[120px] p-0 text-lg resize-none"
+                            />
+                            <FormattingToolbar 
+                              onApply={(p, s) => applyFormatting(answerTextareaRef, p, s, setCardAnswer)}
+                              imageUrl={cardAnswerImageUrl}
+                              onSetImageUrl={setCardAnswerImageUrl}
+                              label="Back Image"
+                            />
+                          </div>
                         </div>
-                      </TabsContent>
-                      <TabsContent value="preview" className="mt-0">
-                        <div className="border rounded-[20px] bg-white p-6 min-h-[148px]">
-                          <MarkdownContent content={cardAnswer || "*Nothing to preview*"} />
-                          {cardAnswerImageUrl && (
-                            <div className="mt-4 relative h-32 w-full rounded-xl overflow-hidden border border-border">
-                              <Image src={cardAnswerImageUrl} alt="Preview" fill className="object-cover" />
-                            </div>
-                          )}
+                        <div className="border border-dashed rounded-[20px] bg-white p-6 min-h-[180px] flex flex-col">
+                          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tighter mb-4 block opacity-50">Live Preview</span>
+                          <div className="flex-1">
+                            <MarkdownContent content={cardAnswer || "*Answer preview...*"} />
+                            {cardAnswerImageUrl && (
+                              <div className="mt-4 relative h-32 w-full rounded-xl overflow-hidden border border-border">
+                                <Image src={cardAnswerImageUrl} alt="Preview" fill className="object-cover" />
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </TabsContent>
-                    </Tabs>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                </ScrollArea>
 
-                <DialogFooter className="mt-8 gap-3 sm:justify-end">
+                <DialogFooter className="mt-8 pt-6 border-t gap-3 sm:justify-end">
                   <Button variant="ghost" onClick={() => setIsCreateCardOpen(false)} className="rounded-xl font-bold">Cancel</Button>
-                  <Button onClick={handleAddCard} className="rounded-xl bg-primary px-8 font-bold text-primary-foreground shadow-lg shadow-primary/20">Add Card</Button>
+                  <Button onClick={handleAddCard} disabled={!cardQuestion.trim() || !cardAnswer.trim()} className="rounded-xl bg-primary px-8 font-bold text-primary-foreground shadow-lg shadow-primary/20">Add Card</Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
@@ -365,7 +389,7 @@ export default function FlashcardsPage() {
                           <Image src={card.imageUrl} alt="Flashcard visual" fill className="object-cover" />
                         </div>
                       )}
-                      <div>
+                      <div className="flex-1 min-w-0">
                         <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1 block">Question</span>
                         <div className="font-medium text-lg leading-tight line-clamp-2">
                           <MarkdownContent content={card.question} />
@@ -378,7 +402,7 @@ export default function FlashcardsPage() {
                           <Image src={card.answerImageUrl} alt="Answer visual" fill className="object-cover" />
                         </div>
                       )}
-                      <div>
+                      <div className="flex-1 min-w-0">
                         <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1 block">Answer</span>
                         <div className="text-muted-foreground leading-snug line-clamp-2">
                           <MarkdownContent content={card.answer} />
@@ -504,12 +528,12 @@ function MarkdownContent({ content, className }: { content: string, className?: 
   return (
     <ReactMarkdown 
       remarkPlugins={[remarkGfm]}
-      className={cn("markdown-content", className)}
+      className={cn("markdown-content prose prose-sm max-w-none", className)}
       components={{
-        h1: ({node, ...props}) => <h1 className="text-2xl font-bold my-2" {...props} />,
-        h2: ({node, ...props}) => <h2 className="text-xl font-bold my-2" {...props} />,
-        h3: ({node, ...props}) => <h3 className="text-lg font-bold my-1" {...props} />,
-        p: ({node, ...props}) => <p className="mb-1 last:mb-0" {...props} />,
+        h1: ({node, ...props}) => <h1 className="text-2xl font-bold my-2 text-foreground" {...props} />,
+        h2: ({node, ...props}) => <h2 className="text-xl font-bold my-2 text-foreground" {...props} />,
+        h3: ({node, ...props}) => <h3 className="text-lg font-bold my-1 text-foreground" {...props} />,
+        p: ({node, ...props}) => <p className="mb-1 last:mb-0 leading-relaxed" {...props} />,
         strong: ({node, ...props}) => <strong className="font-bold text-primary" {...props} />,
         em: ({node, ...props}) => <em className="italic" {...props} />,
         a: ({node, ...props}) => <a className="text-primary underline hover:opacity-80" target="_blank" {...props} />,
@@ -521,12 +545,12 @@ function MarkdownContent({ content, className }: { content: string, className?: 
 }
 
 function FormattingToolbar({ 
-  onApplyTag, 
+  onApply, 
   imageUrl, 
   onSetImageUrl, 
   label 
 }: { 
-  onApplyTag: (tag: string) => void, 
+  onApply: (prefix: string, suffix: string) => void, 
   imageUrl: string, 
   onSetImageUrl: (url: string) => void,
   label: string
@@ -539,7 +563,7 @@ function FormattingToolbar({
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => onApplyTag('**Bold Text**')}>
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => onApply('**', '**')}>
                 <Bold className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
@@ -548,7 +572,7 @@ function FormattingToolbar({
 
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => onApplyTag('_Italic Text_')}>
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => onApply('_', '_')}>
                 <Italic className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
@@ -557,7 +581,7 @@ function FormattingToolbar({
 
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => onApplyTag('\n### Heading\n')}>
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => onApply('\n### ', '\n')}>
                 <Type className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
@@ -577,7 +601,7 @@ function FormattingToolbar({
 
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => onApplyTag(' :) ')}>
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => onApply('', ' :) ')}>
                 <Smile className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
@@ -586,7 +610,7 @@ function FormattingToolbar({
 
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => onApplyTag(' [Link Text](https://) ')}>
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => onApply('[', '](https://)')}>
                 <LinkIcon className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
@@ -673,7 +697,7 @@ function StudyView({ deckName, cards, isLoading, onExit }: { deckName: string, c
                   <Image src={currentCard.imageUrl} alt="Card visual" fill className="object-cover" />
                 </div>
               )}
-              <div className="text-3xl font-bold text-center leading-tight font-headline">
+              <div className="text-3xl font-bold text-center leading-tight font-headline w-full overflow-y-auto">
                 <MarkdownContent content={currentCard.question} />
               </div>
               <p className="absolute bottom-8 text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-primary transition-colors">
@@ -683,14 +707,14 @@ function StudyView({ deckName, cards, isLoading, onExit }: { deckName: string, c
 
             {/* Back Side */}
             <Card className={`absolute inset-0 backface-hidden border-none shadow-2xl rounded-[32px] flex flex-col items-center justify-center p-12 bg-primary/10 rotate-y-180 ${!isFlipped ? 'pointer-events-none' : ''}`}>
-              <div className="max-w-md w-full flex flex-col items-center">
+              <div className="max-w-md w-full flex flex-col items-center overflow-y-auto">
                 {currentCard.answerImageUrl && (
                   <div className="relative w-full h-40 mb-6 rounded-2xl overflow-hidden border border-primary/20">
                     <Image src={currentCard.answerImageUrl} alt="Answer visual" fill className="object-cover" />
                   </div>
                 )}
                 <span className="text-[10px] font-bold uppercase tracking-widest text-primary block text-center mb-4">Answer</span>
-                <div className="text-2xl font-medium text-center leading-relaxed">
+                <div className="text-2xl font-medium text-center leading-relaxed w-full">
                   <MarkdownContent content={currentCard.answer} />
                 </div>
               </div>
@@ -747,7 +771,7 @@ function DeckCard({ deck, onDelete, onEdit, onStudy }: { deck: any, onDelete: ()
   const mastery = 0; 
   
   return (
-    <Card className="group border-none shadow-sm hover:shadow-xl transition-all duration-500 rounded-3xl overflow-hidden bg-white">
+    <Card className="group border-none shadow-sm hover:shadow-xl transition-all duration-500 rounded-[32px] overflow-hidden bg-white flex flex-col">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
           <div className="p-3 rounded-2xl bg-primary/10">
@@ -761,7 +785,7 @@ function DeckCard({ deck, onDelete, onEdit, onStudy }: { deck: any, onDelete: ()
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="rounded-xl">
               <DropdownMenuItem className="gap-2 cursor-pointer" onClick={onEdit}>
-                <Edit2 className="h-4 w-4" /> Manage Cards
+                <Settings2 className="h-4 w-4" /> Manage Cards
               </DropdownMenuItem>
               <DropdownMenuItem 
                 className="gap-2 cursor-pointer text-destructive focus:text-destructive" 
@@ -776,35 +800,37 @@ function DeckCard({ deck, onDelete, onEdit, onStudy }: { deck: any, onDelete: ()
           {deck.name}
         </CardTitle>
       </CardHeader>
-      <CardContent className="mt-4 space-y-6">
-        <div className="flex justify-between text-sm items-center">
-          <div className="flex flex-col">
-            <span className="text-muted-foreground uppercase text-[10px] font-bold tracking-widest">Created</span>
-            <span className="text-muted-foreground font-medium">
-              {new Date(deck.createdAt).toLocaleDateString()}
-            </span>
+      <CardContent className="mt-4 flex-1 flex flex-col justify-between space-y-6">
+        <div className="space-y-4">
+          <div className="flex justify-between text-sm items-center">
+            <div className="flex flex-col">
+              <span className="text-muted-foreground uppercase text-[10px] font-bold tracking-widest">Created</span>
+              <span className="text-muted-foreground font-medium">
+                {new Date(deck.createdAt).toLocaleDateString()}
+              </span>
+            </div>
           </div>
-        </div>
-        
-        <div className="space-y-2">
-          <div className="flex justify-between text-xs font-bold uppercase tracking-tighter">
-            <span>Mastery</span>
-            <span className="text-primary">{mastery}%</span>
-          </div>
-          <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-primary transition-all duration-1000 ease-out" 
-              style={{ width: `${mastery}%` }}
-            />
+          
+          <div className="space-y-2">
+            <div className="flex justify-between text-xs font-bold uppercase tracking-tighter">
+              <span>Mastery</span>
+              <span className="text-primary">{mastery}%</span>
+            </div>
+            <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-primary transition-all duration-1000 ease-out" 
+                style={{ width: `${mastery}%` }}
+              />
+            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 pt-2">
-          <Button onClick={onStudy} className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-2xl py-6 flex items-center justify-center gap-2">
-            <Play className="h-4 w-4 fill-current" /> Study
+        <div className="flex flex-col gap-3 pt-2">
+          <Button onClick={onStudy} className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-2xl py-7 w-full shadow-lg shadow-primary/10 flex items-center justify-center gap-2 group/btn">
+            <Play className="h-5 w-5 fill-current transition-transform group-hover/btn:scale-110" /> Study Deck
           </Button>
-          <Button variant="outline" onClick={onEdit} className="border-border hover:bg-muted font-bold rounded-2xl py-6 flex items-center justify-center gap-2">
-            <Edit2 className="h-4 w-4" /> Edit
+          <Button variant="outline" onClick={onEdit} className="border-border hover:bg-muted font-bold rounded-2xl py-7 w-full flex items-center justify-center gap-2">
+            <Edit2 className="h-4 w-4" /> Edit Cards
           </Button>
         </div>
       </CardContent>
