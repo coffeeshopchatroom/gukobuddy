@@ -27,7 +27,9 @@ import {
   Smile,
   AlignCenter,
   Eye,
-  Settings2
+  Settings2,
+  Heading1,
+  Heading2
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { 
@@ -69,8 +71,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
+
+// Tiptap imports
+import { useEditor, EditorContent } from '@tiptap/react'
+import StarterKit from '@tiptap/starter-kit'
+import Placeholder from '@tiptap/extension-placeholder'
 
 export default function FlashcardsPage() {
   const { user, isUserLoading } = useUser()
@@ -83,14 +88,26 @@ export default function FlashcardsPage() {
   const [isCreateCardOpen, setIsCreateCardOpen] = React.useState(false)
   const [newDeckName, setNewDeckName] = React.useState("")
   
-  // Card form state
-  const [cardQuestion, setCardQuestion] = React.useState("")
-  const [cardAnswer, setCardAnswer] = React.useState("")
+  // Card form image state
   const [cardImageUrl, setCardImageUrl] = React.useState("")
   const [cardAnswerImageUrl, setCardAnswerImageUrl] = React.useState("")
 
-  const questionTextareaRef = React.useRef<HTMLTextAreaElement>(null)
-  const answerTextareaRef = React.useRef<HTMLTextAreaElement>(null)
+  // Tiptap editors
+  const questionEditor = useEditor({
+    extensions: [
+      StarterKit,
+      Placeholder.configure({ placeholder: 'Type your question here...' }),
+    ],
+    content: '',
+  })
+
+  const answerEditor = useEditor({
+    extensions: [
+      StarterKit,
+      Placeholder.configure({ placeholder: 'Type the answer here...' }),
+    ],
+    content: '',
+  })
 
   // Fetch courses first
   const coursesQuery = useMemoFirebase(() => {
@@ -164,7 +181,12 @@ export default function FlashcardsPage() {
   }
 
   const handleAddCard = () => {
-    if (!user || !db || !activeCourse || !selectedDeckId || !cardQuestion.trim() || !cardAnswer.trim()) return
+    if (!user || !db || !activeCourse || !selectedDeckId || !questionEditor || !answerEditor) return
+    
+    const questionHtml = questionEditor.getHTML()
+    const answerHtml = answerEditor.getHTML()
+
+    if (questionEditor.isEmpty || answerEditor.isEmpty) return
 
     const cardId = doc(collection(db, "temp")).id
     const cardRef = doc(db, "users", user.uid, "courses", activeCourse.id, "flashcardSets", selectedDeckId, "flashcards", cardId)
@@ -172,8 +194,8 @@ export default function FlashcardsPage() {
     setDocumentNonBlocking(cardRef, {
       id: cardId,
       flashcardSetId: selectedDeckId,
-      question: cardQuestion,
-      answer: cardAnswer,
+      question: questionHtml,
+      answer: answerHtml,
       imageUrl: cardImageUrl.trim() || null,
       answerImageUrl: cardAnswerImageUrl.trim() || null,
       lastReviewedAt: new Date().toISOString(),
@@ -184,8 +206,8 @@ export default function FlashcardsPage() {
       updatedAt: new Date().toISOString(),
     }, { merge: true })
 
-    setCardQuestion("")
-    setCardAnswer("")
+    questionEditor.commands.clearContent()
+    answerEditor.commands.clearContent()
     setCardImageUrl("")
     setCardAnswerImageUrl("")
     setIsCreateCardOpen(false)
@@ -195,27 +217,6 @@ export default function FlashcardsPage() {
     if (!user || !db || !activeCourse || !selectedDeckId) return
     const cardRef = doc(db, "users", user.uid, "courses", activeCourse.id, "flashcardSets", selectedDeckId, "flashcards", cardId)
     deleteDocumentNonBlocking(cardRef)
-  }
-
-  const applyFormatting = (ref: React.RefObject<HTMLTextAreaElement>, prefix: string, suffix: string, setter: React.Dispatch<React.SetStateAction<string>>) => {
-    const textarea = ref.current
-    if (!textarea) return
-
-    const start = textarea.selectionStart
-    const end = textarea.selectionEnd
-    const text = textarea.value
-    const before = text.substring(0, start)
-    const selection = text.substring(start, end)
-    const after = text.substring(end)
-
-    const newValue = `${before}${prefix}${selection}${suffix}${after}`
-    setter(newValue)
-    
-    // Reset focus and selection
-    setTimeout(() => {
-      textarea.focus()
-      textarea.setSelectionRange(start + prefix.length, end + prefix.length)
-    }, 0)
   }
 
   if (isUserLoading) {
@@ -282,91 +283,65 @@ export default function FlashcardsPage() {
                   <Plus className="h-5 w-5 mr-2" /> Add Card
                 </Button>
               </DialogTrigger>
-              <DialogContent className="rounded-[32px] sm:max-w-4xl p-8 max-h-[90vh] overflow-hidden flex flex-col">
+              <DialogContent className="rounded-[32px] sm:max-w-2xl p-8 max-h-[90vh] overflow-hidden flex flex-col">
                 <DialogHeader className="mb-6 text-left">
                   <DialogTitle className="font-headline text-2xl font-bold">Create Flashcard</DialogTitle>
                   <DialogDescription className="text-base">
-                    Use the toolbar to format. Preview updates live on the right.
+                    Type and format your card directly.
                   </DialogDescription>
                 </DialogHeader>
                 
                 <ScrollArea className="flex-1 pr-4">
-                  <div className="space-y-12 py-2">
+                  <div className="space-y-8 py-2">
                     {/* Question Section */}
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                       <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Question / Front</Label>
-                      <div className="grid md:grid-cols-2 gap-6">
-                        <div className="space-y-4">
-                          <div className="relative border rounded-[20px] bg-muted/20 focus-within:bg-white focus-within:ring-2 focus-within:ring-primary/20 transition-all p-4">
-                            <Textarea 
-                              ref={questionTextareaRef}
-                              placeholder="Type your question here..." 
-                              value={cardQuestion}
-                              onChange={(e) => setCardQuestion(e.target.value)}
-                              className="border-none bg-transparent focus-visible:ring-0 min-h-[120px] p-0 text-lg resize-none"
-                            />
-                            <FormattingToolbar 
-                              onApply={(p, s) => applyFormatting(questionTextareaRef, p, s, setCardQuestion)}
-                              imageUrl={cardImageUrl}
-                              onSetImageUrl={setCardImageUrl}
-                              label="Front Image"
-                            />
-                          </div>
-                        </div>
-                        <div className="border border-dashed rounded-[20px] bg-white p-6 min-h-[180px] flex flex-col">
-                          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tighter mb-4 block opacity-50">Live Preview</span>
-                          <div className="flex-1">
-                            <MarkdownContent content={cardQuestion || "*Question preview...*"} />
-                            {cardImageUrl && (
-                              <div className="mt-4 relative h-32 w-full rounded-xl overflow-hidden border border-border">
-                                <Image src={cardImageUrl} alt="Preview" fill className="object-cover" />
-                              </div>
-                            )}
-                          </div>
-                        </div>
+                      <div className="border rounded-2xl bg-white p-6 shadow-sm focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+                        <EditorContent editor={questionEditor} className="tiptap-editor min-h-[100px] prose prose-sm max-w-none" />
+                        <RichFormattingToolbar 
+                          editor={questionEditor} 
+                          imageUrl={cardImageUrl} 
+                          onSetImageUrl={setCardImageUrl} 
+                          label="Front Image" 
+                        />
                       </div>
+                      {cardImageUrl && (
+                        <div className="relative h-40 w-full rounded-2xl overflow-hidden border">
+                          <Image src={cardImageUrl} alt="Front Visual" fill className="object-cover" />
+                          <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-8 w-8 rounded-full" onClick={() => setCardImageUrl("")}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
                     </div>
 
                     {/* Answer Section */}
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                       <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Answer / Back</Label>
-                      <div className="grid md:grid-cols-2 gap-6">
-                        <div className="space-y-4">
-                          <div className="relative border rounded-[20px] bg-muted/20 focus-within:bg-white focus-within:ring-2 focus-within:ring-primary/20 transition-all p-4">
-                            <Textarea 
-                              ref={answerTextareaRef}
-                              placeholder="Type the answer here..." 
-                              value={cardAnswer}
-                              onChange={(e) => setCardAnswer(e.target.value)}
-                              className="border-none bg-transparent focus-visible:ring-0 min-h-[120px] p-0 text-lg resize-none"
-                            />
-                            <FormattingToolbar 
-                              onApply={(p, s) => applyFormatting(answerTextareaRef, p, s, setCardAnswer)}
-                              imageUrl={cardAnswerImageUrl}
-                              onSetImageUrl={setCardAnswerImageUrl}
-                              label="Back Image"
-                            />
-                          </div>
-                        </div>
-                        <div className="border border-dashed rounded-[20px] bg-white p-6 min-h-[180px] flex flex-col">
-                          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tighter mb-4 block opacity-50">Live Preview</span>
-                          <div className="flex-1">
-                            <MarkdownContent content={cardAnswer || "*Answer preview...*"} />
-                            {cardAnswerImageUrl && (
-                              <div className="mt-4 relative h-32 w-full rounded-xl overflow-hidden border border-border">
-                                <Image src={cardAnswerImageUrl} alt="Preview" fill className="object-cover" />
-                              </div>
-                            )}
-                          </div>
-                        </div>
+                      <div className="border rounded-2xl bg-white p-6 shadow-sm focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+                        <EditorContent editor={answerEditor} className="tiptap-editor min-h-[100px] prose prose-sm max-w-none" />
+                        <RichFormattingToolbar 
+                          editor={answerEditor} 
+                          imageUrl={cardAnswerImageUrl} 
+                          onSetImageUrl={setCardAnswerImageUrl} 
+                          label="Back Image" 
+                        />
                       </div>
+                      {cardAnswerImageUrl && (
+                        <div className="relative h-40 w-full rounded-2xl overflow-hidden border">
+                          <Image src={cardAnswerImageUrl} alt="Back Visual" fill className="object-cover" />
+                          <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-8 w-8 rounded-full" onClick={() => setCardAnswerImageUrl("")}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </ScrollArea>
 
                 <DialogFooter className="mt-8 pt-6 border-t gap-3 sm:justify-end">
                   <Button variant="ghost" onClick={() => setIsCreateCardOpen(false)} className="rounded-xl font-bold">Cancel</Button>
-                  <Button onClick={handleAddCard} disabled={!cardQuestion.trim() || !cardAnswer.trim()} className="rounded-xl bg-primary px-8 font-bold text-primary-foreground shadow-lg shadow-primary/20">Add Card</Button>
+                  <Button onClick={handleAddCard} disabled={questionEditor?.isEmpty || answerEditor?.isEmpty} className="rounded-xl bg-primary px-8 font-bold text-primary-foreground shadow-lg shadow-primary/20">Create Card</Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
@@ -392,7 +367,7 @@ export default function FlashcardsPage() {
                       <div className="flex-1 min-w-0">
                         <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1 block">Question</span>
                         <div className="font-medium text-lg leading-tight line-clamp-2">
-                          <MarkdownContent content={card.question} />
+                          <HtmlContent html={card.question} />
                         </div>
                       </div>
                     </div>
@@ -405,7 +380,7 @@ export default function FlashcardsPage() {
                       <div className="flex-1 min-w-0">
                         <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1 block">Answer</span>
                         <div className="text-muted-foreground leading-snug line-clamp-2">
-                          <MarkdownContent content={card.answer} />
+                          <HtmlContent html={card.answer} />
                         </div>
                       </div>
                     </div>
@@ -524,46 +499,42 @@ export default function FlashcardsPage() {
   )
 }
 
-function MarkdownContent({ content, className }: { content: string, className?: string }) {
+function HtmlContent({ html, className }: { html: string, className?: string }) {
   return (
-    <ReactMarkdown 
-      remarkPlugins={[remarkGfm]}
-      className={cn("markdown-content prose prose-sm max-w-none", className)}
-      components={{
-        h1: ({node, ...props}) => <h1 className="text-2xl font-bold my-2 text-foreground" {...props} />,
-        h2: ({node, ...props}) => <h2 className="text-xl font-bold my-2 text-foreground" {...props} />,
-        h3: ({node, ...props}) => <h3 className="text-lg font-bold my-1 text-foreground" {...props} />,
-        p: ({node, ...props}) => <p className="mb-1 last:mb-0 leading-relaxed" {...props} />,
-        strong: ({node, ...props}) => <strong className="font-bold text-primary" {...props} />,
-        em: ({node, ...props}) => <em className="italic" {...props} />,
-        a: ({node, ...props}) => <a className="text-primary underline hover:opacity-80" target="_blank" {...props} />,
-      }}
-    >
-      {content}
-    </ReactMarkdown>
+    <div 
+      className={cn("tiptap-content prose prose-sm max-w-none prose-p:my-0 prose-headings:my-2", className)}
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
   )
 }
 
-function FormattingToolbar({ 
-  onApply, 
+function RichFormattingToolbar({ 
+  editor, 
   imageUrl, 
   onSetImageUrl, 
   label 
 }: { 
-  onApply: (prefix: string, suffix: string) => void, 
+  editor: any, 
   imageUrl: string, 
   onSetImageUrl: (url: string) => void,
   label: string
 }) {
   const [showImageUrl, setShowImageUrl] = React.useState(false)
 
+  if (!editor) return null
+
   return (
     <div className="mt-4 flex flex-col gap-3">
-      <div className="flex items-center gap-1.5 p-1 bg-white border rounded-full w-fit shadow-sm">
+      <div className="flex items-center gap-1.5 p-1 bg-muted/30 border rounded-full w-fit shadow-sm">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => onApply('**', '**')}>
+              <Button 
+                variant={editor.isActive('bold') ? 'secondary' : 'ghost'} 
+                size="icon" 
+                className="h-8 w-8 rounded-full" 
+                onClick={() => editor.chain().focus().toggleBold().run()}
+              >
                 <Bold className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
@@ -572,7 +543,12 @@ function FormattingToolbar({
 
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => onApply('_', '_')}>
+              <Button 
+                variant={editor.isActive('italic') ? 'secondary' : 'ghost'} 
+                size="icon" 
+                className="h-8 w-8 rounded-full" 
+                onClick={() => editor.chain().focus().toggleItalic().run()}
+              >
                 <Italic className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
@@ -581,8 +557,13 @@ function FormattingToolbar({
 
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => onApply('\n### ', '\n')}>
-                <Type className="h-4 w-4" />
+              <Button 
+                variant={editor.isActive('heading', { level: 2 }) ? 'secondary' : 'ghost'} 
+                size="icon" 
+                className="h-8 w-8 rounded-full" 
+                onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+              >
+                <Heading1 className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>Heading</TooltipContent>
@@ -601,32 +582,26 @@ function FormattingToolbar({
 
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => onApply('', ' :) ')}>
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => editor.chain().focus().insertContent('😊').run()}>
                 <Smile className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>Emoji</TooltipContent>
           </Tooltip>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => onApply('[', '](https://)')}>
-                <LinkIcon className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Link</TooltipContent>
-          </Tooltip>
         </TooltipProvider>
       </div>
 
       {showImageUrl && (
-        <div className="animate-in slide-in-from-top-1 fade-in duration-200">
+        <div className="animate-in slide-in-from-top-1 fade-in duration-200 flex gap-2">
           <Input 
             placeholder={`Enter ${label.toLowerCase()} URL...`}
             value={imageUrl}
             onChange={(e) => onSetImageUrl(e.target.value)}
-            className="rounded-xl h-10 border-primary/20 focus:border-primary"
+            className="rounded-xl h-10 border-primary/20 focus:border-primary flex-1"
           />
+          <Button size="icon" variant="ghost" className="rounded-xl" onClick={() => setShowImageUrl(false)}>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
         </div>
       )}
     </div>
@@ -698,7 +673,7 @@ function StudyView({ deckName, cards, isLoading, onExit }: { deckName: string, c
                 </div>
               )}
               <div className="text-3xl font-bold text-center leading-tight font-headline w-full overflow-y-auto">
-                <MarkdownContent content={currentCard.question} />
+                <HtmlContent html={currentCard.question} />
               </div>
               <p className="absolute bottom-8 text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-primary transition-colors">
                 Click to reveal answer
@@ -715,7 +690,7 @@ function StudyView({ deckName, cards, isLoading, onExit }: { deckName: string, c
                 )}
                 <span className="text-[10px] font-bold uppercase tracking-widest text-primary block text-center mb-4">Answer</span>
                 <div className="text-2xl font-medium text-center leading-relaxed w-full">
-                  <MarkdownContent content={currentCard.answer} />
+                  <HtmlContent html={currentCard.answer} />
                 </div>
               </div>
               <p className="absolute bottom-8 text-[10px] font-bold uppercase tracking-widest text-primary">

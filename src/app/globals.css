@@ -66,3 +66,20 @@
 .rotate-y-180 {
   transform: rotateY(180deg);
 }
+
+/* Tiptap Custom Styles */
+.tiptap-editor:focus {
+  outline: none;
+}
+
+.tiptap-editor .is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #adb5bd;
+  pointer-events: none;
+  height: 0;
+}
+
+.tiptap-content p {
+  @apply mb-0;
+}
