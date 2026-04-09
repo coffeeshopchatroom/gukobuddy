@@ -289,7 +289,7 @@ export default function FlashcardsPage() {
                     {/* Question Section */}
                     <div className="space-y-3">
                       <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Question / Front</Label>
-                      <div className="border rounded-2xl bg-white p-6 shadow-sm transition-all">
+                      <div className="border rounded-2xl bg-white p-6 shadow-sm transition-all focus-within:ring-0 focus-within:border-primary/50">
                         <EditorContent editor={questionEditor} className="tiptap-editor min-h-[100px]" />
                         <RichFormattingToolbar 
                           editor={questionEditor} 
@@ -300,7 +300,7 @@ export default function FlashcardsPage() {
                       </div>
                       {cardImageUrl && (
                         <div className="relative h-40 w-full rounded-2xl overflow-hidden border">
-                          <Image src={cardImageUrl} alt="Front Visual" fill className="object-cover" />
+                          <Image src={cardImageUrl} alt="Front Visual" fill unoptimized className="object-cover" />
                           <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-8 w-8 rounded-full" onClick={() => setCardImageUrl("")}>
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -311,7 +311,7 @@ export default function FlashcardsPage() {
                     {/* Answer Section */}
                     <div className="space-y-3">
                       <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Answer / Back</Label>
-                      <div className="border rounded-2xl bg-white p-6 shadow-sm transition-all">
+                      <div className="border rounded-2xl bg-white p-6 shadow-sm transition-all focus-within:ring-0 focus-within:border-primary/50">
                         <EditorContent editor={answerEditor} className="tiptap-editor min-h-[100px]" />
                         <RichFormattingToolbar 
                           editor={answerEditor} 
@@ -322,7 +322,7 @@ export default function FlashcardsPage() {
                       </div>
                       {cardAnswerImageUrl && (
                         <div className="relative h-40 w-full rounded-2xl overflow-hidden border">
-                          <Image src={cardAnswerImageUrl} alt="Back Visual" fill className="object-cover" />
+                          <Image src={cardAnswerImageUrl} alt="Back Visual" fill unoptimized className="object-cover" />
                           <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-8 w-8 rounded-full" onClick={() => setCardAnswerImageUrl("")}>
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -354,7 +354,7 @@ export default function FlashcardsPage() {
                     <div className="border-r border-border/50 pr-6 flex gap-4 items-start">
                       {card.imageUrl && (
                         <div className="relative w-16 h-16 rounded-lg overflow-hidden shrink-0 border border-border">
-                          <Image src={card.imageUrl} alt="Flashcard visual" fill className="object-cover" />
+                          <Image src={card.imageUrl} alt="Flashcard visual" fill unoptimized className="object-cover" />
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
@@ -367,7 +367,7 @@ export default function FlashcardsPage() {
                     <div className="flex gap-4 items-start">
                       {card.answerImageUrl && (
                         <div className="relative w-16 h-16 rounded-lg overflow-hidden shrink-0 border border-border">
-                          <Image src={card.answerImageUrl} alt="Answer visual" fill className="object-cover" />
+                          <Image src={card.answerImageUrl} alt="Answer visual" fill unoptimized className="object-cover" />
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
@@ -604,7 +604,7 @@ function RichFormattingToolbar({
             placeholder={`Enter ${label.toLowerCase()} URL...`}
             value={imageUrl}
             onChange={(e) => onSetImageUrl(e.target.value)}
-            className="rounded-xl h-10 border-primary/20 focus:border-primary flex-1"
+            className="rounded-xl h-10 border-primary/20 focus:border-primary flex-1 no-focus-ring"
           />
           <Button size="icon" variant="ghost" className="rounded-xl" onClick={() => setShowImageUrl(false)}>
             <ChevronRight className="h-4 w-4" />
@@ -676,7 +676,7 @@ function StudyView({ deckName, cards, isLoading, onExit }: { deckName: string, c
             <Card className={`absolute inset-0 backface-hidden border-none shadow-2xl rounded-[32px] flex flex-col items-center justify-center p-12 bg-white ${isFlipped ? 'pointer-events-none' : ''}`}>
               {currentCard.imageUrl && (
                 <div className="relative w-full h-40 mb-8 rounded-2xl overflow-hidden border border-border">
-                  <Image src={currentCard.imageUrl} alt="Card visual" fill className="object-cover" />
+                  <Image src={currentCard.imageUrl} alt="Card visual" fill unoptimized className="object-cover" />
                 </div>
               )}
               <div className="text-3xl font-bold text-center leading-tight font-headline w-full overflow-y-auto">
@@ -692,7 +692,7 @@ function StudyView({ deckName, cards, isLoading, onExit }: { deckName: string, c
               <div className="max-w-md w-full flex flex-col items-center overflow-y-auto">
                 {currentCard.answerImageUrl && (
                   <div className="relative w-full h-40 mb-6 rounded-2xl overflow-hidden border border-primary/20">
-                    <Image src={currentCard.answerImageUrl} alt="Answer visual" fill className="object-cover" />
+                    <Image src={currentCard.answerImageUrl} alt="Answer visual" fill unoptimized className="object-cover" />
                   </div>
                 )}
                 <span className="text-[10px] font-bold uppercase tracking-widest text-primary block text-center mb-4">Answer</span>
