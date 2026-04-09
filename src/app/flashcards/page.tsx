@@ -296,7 +296,7 @@ export default function FlashcardsPage() {
                     {/* Question Section */}
                     <div className="space-y-3">
                       <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Question / Front</Label>
-                      <div className="border rounded-2xl bg-white p-6 shadow-sm focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+                      <div className="border rounded-2xl bg-white p-6 shadow-sm transition-all">
                         <EditorContent editor={questionEditor} className="tiptap-editor min-h-[100px] prose prose-sm max-w-none" />
                         <RichFormattingToolbar 
                           editor={questionEditor} 
@@ -318,7 +318,7 @@ export default function FlashcardsPage() {
                     {/* Answer Section */}
                     <div className="space-y-3">
                       <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Answer / Back</Label>
-                      <div className="border rounded-2xl bg-white p-6 shadow-sm focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+                      <div className="border rounded-2xl bg-white p-6 shadow-sm transition-all">
                         <EditorContent editor={answerEditor} className="tiptap-editor min-h-[100px] prose prose-sm max-w-none" />
                         <RichFormattingToolbar 
                           editor={answerEditor} 
@@ -558,15 +558,29 @@ function RichFormattingToolbar({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button 
+                variant={editor.isActive('heading', { level: 1 }) ? 'secondary' : 'ghost'} 
+                size="icon" 
+                className="h-8 w-8 rounded-full" 
+                onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+              >
+                <Heading1 className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Heading 1</TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
                 variant={editor.isActive('heading', { level: 2 }) ? 'secondary' : 'ghost'} 
                 size="icon" 
                 className="h-8 w-8 rounded-full" 
                 onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
               >
-                <Heading1 className="h-4 w-4" />
+                <Heading2 className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Heading</TooltipContent>
+            <TooltipContent>Heading 2</TooltipContent>
           </Tooltip>
 
           <div className="w-px h-4 bg-border mx-1" />
