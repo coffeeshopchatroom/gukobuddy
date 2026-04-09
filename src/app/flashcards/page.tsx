@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -22,14 +21,10 @@ import {
   RotateCcw,
   Bold,
   Italic,
-  Type,
-  Link as LinkIcon,
-  Smile,
-  AlignCenter,
-  Eye,
-  Settings2,
   Heading1,
-  Heading2
+  Heading2,
+  Smile,
+  Settings2
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { 
@@ -42,7 +37,7 @@ import {
   deleteDocumentNonBlocking,
   initiateAnonymousSignIn
 } from "@/firebase"
-import { collection, doc, query, where, orderBy, Timestamp } from "firebase/firestore"
+import { collection, doc, query, orderBy } from "firebase/firestore"
 import {
   Dialog,
   DialogContent,
@@ -54,7 +49,6 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -67,7 +61,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
@@ -297,7 +290,7 @@ export default function FlashcardsPage() {
                     <div className="space-y-3">
                       <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Question / Front</Label>
                       <div className="border rounded-2xl bg-white p-6 shadow-sm transition-all">
-                        <EditorContent editor={questionEditor} className="tiptap-editor min-h-[100px] prose prose-sm max-w-none" />
+                        <EditorContent editor={questionEditor} className="tiptap-editor min-h-[100px]" />
                         <RichFormattingToolbar 
                           editor={questionEditor} 
                           imageUrl={cardImageUrl} 
@@ -319,7 +312,7 @@ export default function FlashcardsPage() {
                     <div className="space-y-3">
                       <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Answer / Back</Label>
                       <div className="border rounded-2xl bg-white p-6 shadow-sm transition-all">
-                        <EditorContent editor={answerEditor} className="tiptap-editor min-h-[100px] prose prose-sm max-w-none" />
+                        <EditorContent editor={answerEditor} className="tiptap-editor min-h-[100px]" />
                         <RichFormattingToolbar 
                           editor={answerEditor} 
                           imageUrl={cardAnswerImageUrl} 
@@ -502,7 +495,7 @@ export default function FlashcardsPage() {
 function HtmlContent({ html, className }: { html: string, className?: string }) {
   return (
     <div 
-      className={cn("tiptap-content prose prose-sm max-w-none prose-p:my-0 prose-headings:my-2", className)}
+      className={cn("tiptap-content", className)}
       dangerouslySetInnerHTML={{ __html: html }}
     />
   )

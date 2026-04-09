@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -68,8 +67,12 @@
 }
 
 /* Tiptap Custom Styles */
-.tiptap-editor:focus {
-  outline: none;
+.tiptap-editor .ProseMirror {
+  outline: none !important;
+}
+
+.tiptap-editor .ProseMirror:focus {
+  outline: none !important;
 }
 
 .tiptap-editor .is-editor-empty:first-child::before {
@@ -80,6 +83,23 @@
   height: 0;
 }
 
-.tiptap-content p {
-  @apply mb-0;
+/* Explicit heading sizes for the editor and study view */
+.tiptap-editor h1, .tiptap-content h1 {
+  @apply text-3xl font-bold my-4 leading-tight;
+}
+
+.tiptap-editor h2, .tiptap-content h2 {
+  @apply text-2xl font-bold my-3 leading-snug;
+}
+
+.tiptap-editor p, .tiptap-content p {
+  @apply mb-2 leading-relaxed;
+}
+
+.tiptap-editor strong, .tiptap-content strong {
+  @apply font-bold;
+}
+
+.tiptap-editor em, .tiptap-content em {
+  @apply italic;
 }
