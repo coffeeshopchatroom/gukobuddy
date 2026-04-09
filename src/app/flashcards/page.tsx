@@ -25,7 +25,8 @@ import {
   Type,
   Link as LinkIcon,
   Smile,
-  AlignCenter
+  AlignCenter,
+  Eye
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { 
@@ -63,8 +64,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 export default function FlashcardsPage() {
   const { user, isUserLoading } = useUser()
@@ -252,51 +256,87 @@ export default function FlashcardsPage() {
                   <Plus className="h-5 w-5 mr-2" /> Add Card
                 </Button>
               </DialogTrigger>
-              <DialogContent className="rounded-[32px] sm:max-w-xl p-8 overflow-hidden">
+              <DialogContent className="rounded-[32px] sm:max-w-2xl p-8 overflow-hidden">
                 <DialogHeader className="mb-6 text-left">
                   <DialogTitle className="font-headline text-2xl font-bold">Add New Card</DialogTitle>
                   <DialogDescription className="text-base">
-                    Create a question and answer pair. You can format your text and add photos to both sides.
+                    Use markdown for formatting. Your content will be rendered correctly in study mode.
                   </DialogDescription>
                 </DialogHeader>
                 
-                <div className="space-y-8 py-2">
+                <div className="space-y-8 py-2 overflow-y-auto max-h-[60vh] pr-2">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <Label className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Question / Front</Label>
                     </div>
-                    <div className="relative border rounded-[20px] bg-muted/20 focus-within:bg-white focus-within:ring-2 focus-within:ring-primary/20 transition-all p-4">
-                      <Textarea 
-                        placeholder="e.g. What is the powerhouse of the cell?" 
-                        value={cardQuestion}
-                        onChange={(e) => setCardQuestion(e.target.value)}
-                        className="border-none bg-transparent focus-visible:ring-0 min-h-[100px] p-0 text-lg resize-none"
-                      />
-                      <FormattingToolbar 
-                        onApplyTag={(tag) => setCardQuestion(prev => `${prev} ${tag}`)} 
-                        imageUrl={cardImageUrl}
-                        onSetImageUrl={setCardImageUrl}
-                        label="Front Image"
-                      />
-                    </div>
+                    <Tabs defaultValue="edit" className="w-full">
+                      <TabsList className="bg-muted/50 rounded-lg p-0.5 h-auto mb-2">
+                        <TabsTrigger value="edit" className="text-xs py-1.5 px-4"><Edit2 className="h-3 w-3 mr-1.5" /> Edit</TabsTrigger>
+                        <TabsTrigger value="preview" className="text-xs py-1.5 px-4"><Eye className="h-3 w-3 mr-1.5" /> Preview</TabsTrigger>
+                      </TabsList>
+                      <TabsContent value="edit" className="mt-0">
+                        <div className="relative border rounded-[20px] bg-muted/20 focus-within:bg-white focus-within:ring-2 focus-within:ring-primary/20 transition-all p-4">
+                          <Textarea 
+                            placeholder="e.g. **Powerhouse** of the cell?" 
+                            value={cardQuestion}
+                            onChange={(e) => setCardQuestion(e.target.value)}
+                            className="border-none bg-transparent focus-visible:ring-0 min-h-[100px] p-0 text-lg resize-none"
+                          />
+                          <FormattingToolbar 
+                            onApplyTag={(tag) => setCardQuestion(prev => `${prev}${tag}`)} 
+                            imageUrl={cardImageUrl}
+                            onSetImageUrl={setCardImageUrl}
+                            label="Front Image"
+                          />
+                        </div>
+                      </TabsContent>
+                      <TabsContent value="preview" className="mt-0">
+                        <div className="border rounded-[20px] bg-white p-6 min-h-[148px]">
+                          <MarkdownContent content={cardQuestion || "*Nothing to preview*"} />
+                          {cardImageUrl && (
+                            <div className="mt-4 relative h-32 w-full rounded-xl overflow-hidden border border-border">
+                              <Image src={cardImageUrl} alt="Preview" fill className="object-cover" />
+                            </div>
+                          )}
+                        </div>
+                      </TabsContent>
+                    </Tabs>
                   </div>
 
                   <div className="space-y-3">
                     <Label className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Answer / Back</Label>
-                    <div className="relative border rounded-[20px] bg-muted/20 focus-within:bg-white focus-within:ring-2 focus-within:ring-primary/20 transition-all p-4">
-                      <Textarea 
-                        placeholder="e.g. Mitochondria" 
-                        value={cardAnswer}
-                        onChange={(e) => setCardAnswer(e.target.value)}
-                        className="border-none bg-transparent focus-visible:ring-0 min-h-[100px] p-0 text-lg resize-none"
-                      />
-                      <FormattingToolbar 
-                        onApplyTag={(tag) => setCardAnswer(prev => `${prev} ${tag}`)} 
-                        imageUrl={cardAnswerImageUrl}
-                        onSetImageUrl={setCardAnswerImageUrl}
-                        label="Back Image"
-                      />
-                    </div>
+                    <Tabs defaultValue="edit" className="w-full">
+                      <TabsList className="bg-muted/50 rounded-lg p-0.5 h-auto mb-2">
+                        <TabsTrigger value="edit" className="text-xs py-1.5 px-4"><Edit2 className="h-3 w-3 mr-1.5" /> Edit</TabsTrigger>
+                        <TabsTrigger value="preview" className="text-xs py-1.5 px-4"><Eye className="h-3 w-3 mr-1.5" /> Preview</TabsTrigger>
+                      </TabsList>
+                      <TabsContent value="edit" className="mt-0">
+                        <div className="relative border rounded-[20px] bg-muted/20 focus-within:bg-white focus-within:ring-2 focus-within:ring-primary/20 transition-all p-4">
+                          <Textarea 
+                            placeholder="e.g. Mitochondria" 
+                            value={cardAnswer}
+                            onChange={(e) => setCardAnswer(e.target.value)}
+                            className="border-none bg-transparent focus-visible:ring-0 min-h-[100px] p-0 text-lg resize-none"
+                          />
+                          <FormattingToolbar 
+                            onApplyTag={(tag) => setCardAnswer(prev => `${prev}${tag}`)} 
+                            imageUrl={cardAnswerImageUrl}
+                            onSetImageUrl={setCardAnswerImageUrl}
+                            label="Back Image"
+                          />
+                        </div>
+                      </TabsContent>
+                      <TabsContent value="preview" className="mt-0">
+                        <div className="border rounded-[20px] bg-white p-6 min-h-[148px]">
+                          <MarkdownContent content={cardAnswer || "*Nothing to preview*"} />
+                          {cardAnswerImageUrl && (
+                            <div className="mt-4 relative h-32 w-full rounded-xl overflow-hidden border border-border">
+                              <Image src={cardAnswerImageUrl} alt="Preview" fill className="object-cover" />
+                            </div>
+                          )}
+                        </div>
+                      </TabsContent>
+                    </Tabs>
                   </div>
                 </div>
 
@@ -327,7 +367,9 @@ export default function FlashcardsPage() {
                       )}
                       <div>
                         <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1 block">Question</span>
-                        <p className="font-medium text-lg leading-tight">{card.question}</p>
+                        <div className="font-medium text-lg leading-tight line-clamp-2">
+                          <MarkdownContent content={card.question} />
+                        </div>
                       </div>
                     </div>
                     <div className="flex gap-4 items-start">
@@ -338,7 +380,9 @@ export default function FlashcardsPage() {
                       )}
                       <div>
                         <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1 block">Answer</span>
-                        <p className="text-muted-foreground leading-snug">{card.answer}</p>
+                        <div className="text-muted-foreground leading-snug line-clamp-2">
+                          <MarkdownContent content={card.answer} />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -456,6 +500,26 @@ export default function FlashcardsPage() {
   )
 }
 
+function MarkdownContent({ content, className }: { content: string, className?: string }) {
+  return (
+    <ReactMarkdown 
+      remarkPlugins={[remarkGfm]}
+      className={cn("markdown-content", className)}
+      components={{
+        h1: ({node, ...props}) => <h1 className="text-2xl font-bold my-2" {...props} />,
+        h2: ({node, ...props}) => <h2 className="text-xl font-bold my-2" {...props} />,
+        h3: ({node, ...props}) => <h3 className="text-lg font-bold my-1" {...props} />,
+        p: ({node, ...props}) => <p className="mb-1 last:mb-0" {...props} />,
+        strong: ({node, ...props}) => <strong className="font-bold text-primary" {...props} />,
+        em: ({node, ...props}) => <em className="italic" {...props} />,
+        a: ({node, ...props}) => <a className="text-primary underline hover:opacity-80" target="_blank" {...props} />,
+      }}
+    >
+      {content}
+    </ReactMarkdown>
+  )
+}
+
 function FormattingToolbar({ 
   onApplyTag, 
   imageUrl, 
@@ -475,7 +539,7 @@ function FormattingToolbar({
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => onApplyTag('**')}>
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => onApplyTag('**Bold Text**')}>
                 <Bold className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
@@ -484,7 +548,7 @@ function FormattingToolbar({
 
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => onApplyTag('_')}>
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => onApplyTag('_Italic Text_')}>
                 <Italic className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
@@ -493,7 +557,7 @@ function FormattingToolbar({
 
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => onApplyTag('###')}>
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => onApplyTag('\n### Heading\n')}>
                 <Type className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
@@ -513,7 +577,7 @@ function FormattingToolbar({
 
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => onApplyTag(':)')}>
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => onApplyTag(' :) ')}>
                 <Smile className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
@@ -522,7 +586,7 @@ function FormattingToolbar({
 
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => onApplyTag('[Link Text](url)')}>
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => onApplyTag(' [Link Text](https://) ')}>
                 <LinkIcon className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
@@ -609,9 +673,9 @@ function StudyView({ deckName, cards, isLoading, onExit }: { deckName: string, c
                   <Image src={currentCard.imageUrl} alt="Card visual" fill className="object-cover" />
                 </div>
               )}
-              <h3 className="text-3xl font-bold text-center leading-tight font-headline">
-                {currentCard.question}
-              </h3>
+              <div className="text-3xl font-bold text-center leading-tight font-headline">
+                <MarkdownContent content={currentCard.question} />
+              </div>
               <p className="absolute bottom-8 text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-primary transition-colors">
                 Click to reveal answer
               </p>
@@ -626,9 +690,9 @@ function StudyView({ deckName, cards, isLoading, onExit }: { deckName: string, c
                   </div>
                 )}
                 <span className="text-[10px] font-bold uppercase tracking-widest text-primary block text-center mb-4">Answer</span>
-                <p className="text-2xl font-medium text-center leading-relaxed">
-                  {currentCard.answer}
-                </p>
+                <div className="text-2xl font-medium text-center leading-relaxed">
+                  <MarkdownContent content={currentCard.answer} />
+                </div>
               </div>
               <p className="absolute bottom-8 text-[10px] font-bold uppercase tracking-widest text-primary">
                 Click to flip back
