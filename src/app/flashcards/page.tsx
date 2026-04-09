@@ -276,15 +276,15 @@ export default function FlashcardsPage() {
                   <Plus className="h-5 w-5 mr-2" /> Add Card
                 </Button>
               </DialogTrigger>
-              <DialogContent className="rounded-[32px] sm:max-w-2xl p-8 max-h-[90vh] overflow-hidden flex flex-col">
-                <DialogHeader className="mb-6 text-left">
+              <DialogContent className="rounded-[32px] sm:max-w-2xl p-8 max-h-[90vh] overflow-hidden flex flex-col gap-0 border-none">
+                <DialogHeader className="mb-6 text-left shrink-0">
                   <DialogTitle className="font-headline text-2xl font-bold">Create Flashcard</DialogTitle>
                   <DialogDescription className="text-base">
                     Type and format your card directly.
                   </DialogDescription>
                 </DialogHeader>
                 
-                <ScrollArea className="flex-1 pr-4">
+                <ScrollArea className="flex-1 -mx-2 px-2 min-h-0">
                   <div className="space-y-8 py-2">
                     {/* Question Section */}
                     <div className="space-y-3">
@@ -332,7 +332,7 @@ export default function FlashcardsPage() {
                   </div>
                 </ScrollArea>
 
-                <DialogFooter className="mt-8 pt-6 border-t gap-3 sm:justify-end">
+                <DialogFooter className="mt-8 pt-6 border-t shrink-0 gap-3 sm:justify-end">
                   <Button variant="ghost" onClick={() => setIsCreateCardOpen(false)} className="rounded-xl font-bold">Cancel</Button>
                   <Button onClick={handleAddCard} disabled={questionEditor?.isEmpty || answerEditor?.isEmpty} className="rounded-xl bg-primary px-8 font-bold text-primary-foreground shadow-lg shadow-primary/20">Create Card</Button>
                 </DialogFooter>
