@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "Course": {
@@ -87,6 +88,10 @@
           "type": "string",
           "description": "The answer or response to the flashcard's question."
         },
+        "imageUrl": {
+          "type": "string",
+          "description": "An optional URL to an image associated with this flashcard."
+        },
         "lastReviewedAt": {
           "type": "string",
           "description": "Timestamp of the last time this flashcard was reviewed.",
@@ -98,11 +103,11 @@
         },
         "easeFactor": {
           "type": "number",
-          "description": "A factor indicating the perceived difficulty or ease of remembering the card, used for spaced repetition algorithms (e.g., SM-2 algorithm's E-Factor). Higher values mean easier."
+          "description": "A factor indicating the perceived difficulty or ease of remembering the card, used for spaced repetition algorithms. Higher values mean easier."
         },
         "nextReviewAt": {
           "type": "string",
-          "description": "The calculated timestamp when this flashcard is scheduled for its next review session, based on a spaced repetition algorithm.",
+          "description": "The calculated timestamp when this flashcard is scheduled for its next review session.",
           "format": "date-time"
         },
         "createdAt": {
@@ -145,7 +150,7 @@
           "schema": {
             "$ref": "#/backend/entities/Course"
           },
-          "description": "User-specific collection of academic courses. Each course document is directly owned by the user specified in the path. Includes denormalized 'userId' in path for authorization independence.",
+          "description": "User-specific collection of academic courses.",
           "params": [
             {
               "name": "userId",
@@ -165,7 +170,7 @@
           "schema": {
             "$ref": "#/backend/entities/FlashcardSet"
           },
-          "description": "Collection of flashcard sets, nested under a specific user's course. Ownership is derived from the parent user and course in the path. Security rules will verify that `resource.data.courseId` matches the `{courseId}` in the path for authorization independence.",
+          "description": "Collection of flashcard sets.",
           "params": [
             {
               "name": "userId",
@@ -189,7 +194,7 @@
           "schema": {
             "$ref": "#/backend/entities/Flashcard"
           },
-          "description": "Collection of individual flashcards, nested under a specific user's flashcard set. Ownership is derived from the parent user and flashcard set in the path. Security rules will verify that `resource.data.flashcardSetId` matches the `{flashcardSetId}` in the path for authorization independence.",
+          "description": "Collection of individual flashcards.",
           "params": [
             {
               "name": "userId",
@@ -211,6 +216,6 @@
         }
       }
     ],
-    "reasoning": "The recommended Firestore structure for UniMate's flashcard feature prioritizes user data isolation, authorization independence, and debuggability. All user-specific data is nested under a top-level `/users/{userId}` collection. This immediately establishes path-based ownership, making security rules simple and efficient by directly comparing `request.auth.uid` with the `{userId}` wildcard in the path.\n\nSpecifically, courses are stored under `/users/{userId}/courses/{courseId}`. Flashcard sets, which belong to a course, are further nested under `/users/{userId}/courses/{courseId}/flashcardSets/{flashcardSetId}`. Individual flashcards, belonging to a set, are then nested under `/users/{userId}/courses/{courseId}/flashcardSets/{flashcardSetId}/flashcards/{flashcardId}`.\n\nThis structure achieves **Authorization Independence** by denormalizing the `userId` into the path itself. For any document (Course, FlashcardSet, Flashcard), its ownership by `request.auth.uid` is determined purely by the top-level path segment, eliminating the need for expensive and fragile `get()` calls in security rules to check parent ownership. Furthermore, for subcollections like `flashcardSets` and `flashcards`, their immediate parent's ID (`courseId` for `flashcardSets`, `flashcardSetId` for `flashcards`) is included both in the document's field (as per schema) AND in its path. Security rules will enforce that the document's internal `courseId` (or `flashcardSetId`) matches the `{courseId}` (or `{flashcardSetId}`) wildcard in the path. This ensures data integrity and prevents miscategorization without needing `get()` operations for authorization.\n\n**QAPs (Queries are not Filters)** are inherently supported due to the structural segregation. Each collection in this hierarchy (e.g., `/users/{userId}/courses`, `/users/{userId}/courses/{courseId}/flashcardSets`) represents a homogeneous security posture: all documents within it are owned by the `userId` specified in the path. A user can only `list` or `get` documents from paths where `{userId}` matches `request.auth.uid`. Any query attempting to access another user's data will be blocked by rules without requiring complex filtering logic. This ensures that `list` operations are implicitly secured and only return data the requesting user is authorized to see, adhering to the QAP principle."
+    "reasoning": "Standard hierarchical structure for user isolation and easy security rules."
   }
 }

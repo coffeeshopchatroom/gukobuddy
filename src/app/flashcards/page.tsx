@@ -4,7 +4,23 @@
 import * as React from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Plus, Layers, Play, MoreVertical, Edit2, Trash2, Loader2, LogIn, ChevronLeft, Search, GraduationCap } from "lucide-react"
+import { 
+  Plus, 
+  Layers, 
+  Play, 
+  MoreVertical, 
+  Edit2, 
+  Trash2, 
+  Loader2, 
+  LogIn, 
+  ChevronLeft, 
+  ChevronRight,
+  Search, 
+  GraduationCap,
+  Image as ImageIcon,
+  BookOpen,
+  RotateCcw
+} from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { 
   useUser, 
@@ -35,6 +51,7 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu"
+import Image from "next/image"
 
 export default function FlashcardsPage() {
   const { user, isUserLoading } = useUser()
@@ -42,6 +59,7 @@ export default function FlashcardsPage() {
   const auth = useAuth()
   
   const [selectedDeckId, setSelectedDeckId] = React.useState<string | null>(null)
+  const [isStudyMode, setIsStudyMode] = React.useState(false)
   const [isCreateDeckOpen, setIsCreateDeckOpen] = React.useState(false)
   const [isCreateCardOpen, setIsCreateCardOpen] = React.useState(false)
   const [newDeckName, setNewDeckName] = React.useState("")
@@ -49,6 +67,7 @@ export default function FlashcardsPage() {
   // Card form state
   const [cardQuestion, setCardQuestion] = React.useState("")
   const [cardAnswer, setCardAnswer] = React.useState("")
+  const [cardImageUrl, setCardImageUrl] = React.useState("")
 
   // Fetch courses first
   const coursesQuery = useMemoFirebase(() => {
@@ -115,7 +134,10 @@ export default function FlashcardsPage() {
     if (!user || !db || !activeCourse) return
     const deckRef = doc(db, "users", user.uid, "courses", activeCourse.id, "flashcardSets", deckId)
     deleteDocumentNonBlocking(deckRef)
-    if (selectedDeckId === deckId) setSelectedDeckId(null)
+    if (selectedDeckId === deckId) {
+      setSelectedDeckId(null)
+      setIsStudyMode(false)
+    }
   }
 
   const handleAddCard = () => {
@@ -129,6 +151,7 @@ export default function FlashcardsPage() {
       flashcardSetId: selectedDeckId,
       question: cardQuestion,
       answer: cardAnswer,
+      imageUrl: cardImageUrl.trim() || null,
       lastReviewedAt: new Date().toISOString(),
       reviewCount: 0,
       easeFactor: 2.5,
@@ -139,6 +162,7 @@ export default function FlashcardsPage() {
 
     setCardQuestion("")
     setCardAnswer("")
+    setCardImageUrl("")
     setIsCreateCardOpen(false)
   }
 
@@ -173,7 +197,18 @@ export default function FlashcardsPage() {
     )
   }
 
-  if (selectedDeckId && selectedDeck) {
+  if (selectedDeckId && selectedDeck && isStudyMode) {
+    return (
+      <StudyView 
+        deckName={selectedDeck.name} 
+        cards={cards || []} 
+        isLoading={isCardsLoading}
+        onExit={() => setIsStudyMode(false)}
+      />
+    )
+  }
+
+  if (selectedDeckId && selectedDeck && !isStudyMode) {
     return (
       <div className="space-y-8 animate-smooth-slow">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -184,14 +219,20 @@ export default function FlashcardsPage() {
             <div>
               <h1 className="font-headline text-3xl font-bold tracking-tight text-foreground">{selectedDeck.name}</h1>
               <p className="text-muted-foreground mt-1">
-                {cards?.length || 0} cards in this deck
+                Editing {cards?.length || 0} cards in this deck
               </p>
             </div>
           </div>
           <div className="flex gap-4">
+            <Button 
+              onClick={() => setIsStudyMode(true)}
+              className="bg-primary text-primary-foreground font-bold py-6 px-8 rounded-2xl shadow-lg transition-all hover:scale-105"
+            >
+              <Play className="h-5 w-5 mr-2" /> Study Now
+            </Button>
             <Dialog open={isCreateCardOpen} onOpenChange={setIsCreateCardOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-primary text-primary-foreground font-bold py-6 px-8 rounded-2xl shadow-lg transition-all hover:scale-105">
+                <Button variant="outline" className="font-bold py-6 px-8 rounded-2xl shadow-sm transition-all hover:bg-muted">
                   <Plus className="h-5 w-5 mr-2" /> Add Card
                 </Button>
               </DialogTrigger>
@@ -199,7 +240,7 @@ export default function FlashcardsPage() {
                 <DialogHeader>
                   <DialogTitle className="font-headline text-2xl">Add New Card</DialogTitle>
                   <DialogDescription>
-                    Create a question and answer pair for active recall.
+                    Create a question and answer pair. You can also add an image URL.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-6 py-4">
@@ -210,7 +251,7 @@ export default function FlashcardsPage() {
                       placeholder="e.g. What is the powerhouse of the cell?" 
                       value={cardQuestion}
                       onChange={(e) => setCardQuestion(e.target.value)}
-                      className="rounded-xl min-h-[100px]"
+                      className="rounded-xl min-h-[80px]"
                     />
                   </div>
                   <div className="space-y-2">
@@ -220,7 +261,17 @@ export default function FlashcardsPage() {
                       placeholder="e.g. Mitochondria" 
                       value={cardAnswer}
                       onChange={(e) => setCardAnswer(e.target.value)}
-                      className="rounded-xl min-h-[100px]"
+                      className="rounded-xl min-h-[80px]"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="imageUrl">Image URL (Optional)</Label>
+                    <Input 
+                      id="imageUrl" 
+                      placeholder="https://example.com/image.png" 
+                      value={cardImageUrl}
+                      onChange={(e) => setCardImageUrl(e.target.value)}
+                      className="rounded-xl"
                     />
                   </div>
                 </div>
@@ -243,13 +294,20 @@ export default function FlashcardsPage() {
               <Card key={card.id} className="border-none shadow-sm hover:shadow-md transition-all rounded-2xl overflow-hidden group">
                 <CardContent className="p-6 flex items-center justify-between gap-6">
                   <div className="flex-1 grid md:grid-cols-2 gap-6 items-center">
-                    <div className="border-r border-border/50 pr-6">
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1 block">Question</span>
-                      <p className="font-medium text-lg">{card.question}</p>
+                    <div className="border-r border-border/50 pr-6 flex gap-4 items-start">
+                      {card.imageUrl && (
+                        <div className="relative w-16 h-16 rounded-lg overflow-hidden shrink-0 border border-border">
+                          <Image src={card.imageUrl} alt="Flashcard visual" fill className="object-cover" />
+                        </div>
+                      )}
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1 block">Question</span>
+                        <p className="font-medium text-lg leading-tight">{card.question}</p>
+                      </div>
                     </div>
                     <div>
                       <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1 block">Answer</span>
-                      <p className="text-muted-foreground">{card.answer}</p>
+                      <p className="text-muted-foreground leading-snug">{card.answer}</p>
                     </div>
                   </div>
                   <Button variant="ghost" size="icon" onClick={() => handleDeleteCard(card.id)} className="text-destructive hover:text-destructive hover:bg-destructive/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity">
@@ -328,7 +386,14 @@ export default function FlashcardsPage() {
               key={deck.id}
               deck={deck}
               onDelete={() => handleDeleteDeck(deck.id)}
-              onOpen={() => setSelectedDeckId(deck.id)}
+              onEdit={() => {
+                setSelectedDeckId(deck.id)
+                setIsStudyMode(false)
+              }}
+              onStudy={() => {
+                setSelectedDeckId(deck.id)
+                setIsStudyMode(true)
+              }}
             />
           ))}
           <Card 
@@ -359,7 +424,136 @@ export default function FlashcardsPage() {
   )
 }
 
-function DeckCard({ deck, onDelete, onOpen }: { deck: any, onDelete: () => void, onOpen: () => void }) {
+function StudyView({ deckName, cards, isLoading, onExit }: { deckName: string, cards: any[], isLoading: boolean, onExit: () => void }) {
+  const [currentIndex, setCurrentIndex] = React.useState(0)
+  const [isFlipped, setIsFlipped] = React.useState(false)
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-muted-foreground font-medium">Loading cards...</p>
+      </div>
+    )
+  }
+
+  if (cards.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 text-center">
+        <BookOpen className="h-16 w-16 text-muted-foreground opacity-20" />
+        <div>
+          <h2 className="text-2xl font-bold font-headline">No cards to study</h2>
+          <p className="text-muted-foreground mt-2">Add some cards to this deck first.</p>
+        </div>
+        <Button onClick={onExit} variant="outline" className="rounded-xl">Go Back</Button>
+      </div>
+    )
+  }
+
+  const currentCard = cards[currentIndex]
+
+  const handleNext = () => {
+    setIsFlipped(false)
+    setCurrentIndex((prev) => (prev + 1) % cards.length)
+  }
+
+  const handlePrev = () => {
+    setIsFlipped(false)
+    setCurrentIndex((prev) => (prev - 1 + cards.length) % cards.length)
+  }
+
+  return (
+    <div className="max-w-3xl mx-auto space-y-8 animate-smooth-slow h-full flex flex-col">
+      <div className="flex items-center justify-between">
+        <Button variant="ghost" size="sm" onClick={onExit} className="rounded-xl gap-2 font-bold text-muted-foreground hover:text-foreground">
+          <ChevronLeft className="h-4 w-4" /> Exit Study Mode
+        </Button>
+        <div className="text-center">
+          <h2 className="font-headline text-xl font-bold">{deckName}</h2>
+          <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{currentIndex + 1} of {cards.length}</p>
+        </div>
+        <div className="w-20" /> 
+      </div>
+
+      <div className="flex-1 flex flex-col items-center justify-center gap-12">
+        <div 
+          onClick={() => setIsFlipped(!isFlipped)}
+          className="relative w-full aspect-[4/3] max-h-[500px] cursor-pointer perspective-1000 group"
+        >
+          <div className={`relative w-full h-full transition-all duration-500 transform-style-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
+            {/* Front Side */}
+            <Card className={`absolute inset-0 backface-hidden border-none shadow-2xl rounded-[32px] flex flex-col items-center justify-center p-12 bg-white ${isFlipped ? 'pointer-events-none' : ''}`}>
+              {currentCard.imageUrl && (
+                <div className="relative w-full h-40 mb-8 rounded-2xl overflow-hidden border border-border">
+                  <Image src={currentCard.imageUrl} alt="Card visual" fill className="object-cover" />
+                </div>
+              )}
+              <h3 className="text-3xl font-bold text-center leading-tight font-headline">
+                {currentCard.question}
+              </h3>
+              <p className="absolute bottom-8 text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-primary transition-colors">
+                Click to reveal answer
+              </p>
+            </Card>
+
+            {/* Back Side */}
+            <Card className={`absolute inset-0 backface-hidden border-none shadow-2xl rounded-[32px] flex flex-col items-center justify-center p-12 bg-primary/10 rotate-y-180 ${!isFlipped ? 'pointer-events-none' : ''}`}>
+              <div className="max-w-md w-full">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-primary block text-center mb-6">Answer</span>
+                <p className="text-2xl font-medium text-center leading-relaxed">
+                  {currentCard.answer}
+                </p>
+              </div>
+              <p className="absolute bottom-8 text-[10px] font-bold uppercase tracking-widest text-primary">
+                Click to flip back
+              </p>
+            </Card>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-6">
+          <Button 
+            variant="outline" 
+            size="icon" 
+            onClick={handlePrev}
+            className="h-14 w-14 rounded-full border-none shadow-md hover:scale-110 transition-transform bg-white"
+          >
+            <ChevronLeft className="h-6 w-6" />
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            size="icon" 
+            onClick={() => setIsFlipped(!isFlipped)}
+            className="h-16 w-16 rounded-full border-none shadow-lg hover:scale-110 transition-transform bg-accent text-accent-foreground"
+          >
+            <RotateCcw className="h-6 w-6" />
+          </Button>
+
+          <Button 
+            variant="outline" 
+            size="icon" 
+            onClick={handleNext}
+            className="h-14 w-14 rounded-full border-none shadow-md hover:scale-110 transition-transform bg-white"
+          >
+            <ChevronRight className="h-6 w-6" />
+          </Button>
+        </div>
+      </div>
+      
+      <div className="pt-8">
+        <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+          <div 
+            className="h-full bg-primary transition-all duration-500" 
+            style={{ width: `${((currentIndex + 1) / cards.length) * 100}%` }}
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function DeckCard({ deck, onDelete, onEdit, onStudy }: { deck: any, onDelete: () => void, onEdit: () => void, onStudy: () => void }) {
   const mastery = 0; 
   
   return (
@@ -376,7 +570,7 @@ function DeckCard({ deck, onDelete, onOpen }: { deck: any, onDelete: () => void,
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="rounded-xl">
-              <DropdownMenuItem className="gap-2 cursor-pointer" onClick={onOpen}>
+              <DropdownMenuItem className="gap-2 cursor-pointer" onClick={onEdit}>
                 <Edit2 className="h-4 w-4" /> Manage Cards
               </DropdownMenuItem>
               <DropdownMenuItem 
@@ -388,14 +582,14 @@ function DeckCard({ deck, onDelete, onOpen }: { deck: any, onDelete: () => void,
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        <CardTitle className="font-headline text-2xl mt-4 leading-tight truncate cursor-pointer hover:text-primary transition-colors" onClick={onOpen}>
+        <CardTitle className="font-headline text-2xl mt-4 leading-tight truncate cursor-pointer hover:text-primary transition-colors" onClick={onStudy}>
           {deck.name}
         </CardTitle>
       </CardHeader>
       <CardContent className="mt-4 space-y-6">
         <div className="flex justify-between text-sm items-center">
           <div className="flex flex-col">
-            <span className="text-muted-foreground uppercase text-[10px] font-bold tracking-widest">Added</span>
+            <span className="text-muted-foreground uppercase text-[10px] font-bold tracking-widest">Created</span>
             <span className="text-muted-foreground font-medium">
               {new Date(deck.createdAt).toLocaleDateString()}
             </span>
@@ -415,9 +609,12 @@ function DeckCard({ deck, onDelete, onOpen }: { deck: any, onDelete: () => void,
           </div>
         </div>
 
-        <div className="flex gap-2 pt-2">
-          <Button onClick={onOpen} className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-2xl py-6 flex items-center justify-center gap-2">
-            <Play className="h-4 w-4 fill-current" /> Study & Edit
+        <div className="grid grid-cols-2 gap-3 pt-2">
+          <Button onClick={onStudy} className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-2xl py-6 flex items-center justify-center gap-2">
+            <Play className="h-4 w-4 fill-current" /> Study
+          </Button>
+          <Button variant="outline" onClick={onEdit} className="border-border hover:bg-muted font-bold rounded-2xl py-6 flex items-center justify-center gap-2">
+            <Edit2 className="h-4 w-4" /> Edit
           </Button>
         </div>
       </CardContent>
