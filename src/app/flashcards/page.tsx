@@ -300,8 +300,8 @@ export default function FlashcardsPage() {
                         />
                       </div>
                       {cardImageUrl && (
-                        <div className="relative h-40 w-full rounded-2xl overflow-hidden border">
-                          <Image src={cardImageUrl} alt="Front Visual" fill unoptimized className="object-cover" />
+                        <div className="relative h-48 w-full rounded-2xl overflow-hidden border bg-muted/20">
+                          <Image src={cardImageUrl} alt="Front Visual" fill unoptimized className="object-contain" />
                           <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-8 w-8 rounded-full" onClick={() => setCardImageUrl("")}>
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -322,8 +322,8 @@ export default function FlashcardsPage() {
                         />
                       </div>
                       {cardAnswerImageUrl && (
-                        <div className="relative h-40 w-full rounded-2xl overflow-hidden border">
-                          <Image src={cardAnswerImageUrl} alt="Back Visual" fill unoptimized className="object-cover" />
+                        <div className="relative h-48 w-full rounded-2xl overflow-hidden border bg-muted/20">
+                          <Image src={cardAnswerImageUrl} alt="Back Visual" fill unoptimized className="object-contain" />
                           <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-8 w-8 rounded-full" onClick={() => setCardAnswerImageUrl("")}>
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -354,8 +354,8 @@ export default function FlashcardsPage() {
                   <div className="flex-1 grid md:grid-cols-2 gap-6 items-center">
                     <div className="border-r border-border/50 pr-6 flex gap-4 items-start">
                       {card.imageUrl && (
-                        <div className="relative w-16 h-16 rounded-lg overflow-hidden shrink-0 border border-border">
-                          <Image src={card.imageUrl} alt="Flashcard visual" fill unoptimized className="object-cover" />
+                        <div className="relative w-16 h-16 rounded-lg overflow-hidden shrink-0 border border-border bg-muted/10">
+                          <Image src={card.imageUrl} alt="Flashcard visual" fill unoptimized className="object-contain" />
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
@@ -367,8 +367,8 @@ export default function FlashcardsPage() {
                     </div>
                     <div className="flex gap-4 items-start">
                       {card.answerImageUrl && (
-                        <div className="relative w-16 h-16 rounded-lg overflow-hidden shrink-0 border border-border">
-                          <Image src={card.answerImageUrl} alt="Answer visual" fill unoptimized className="object-cover" />
+                        <div className="relative w-16 h-16 rounded-lg overflow-hidden shrink-0 border border-border bg-muted/10">
+                          <Image src={card.answerImageUrl} alt="Answer visual" fill unoptimized className="object-contain" />
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
@@ -676,8 +676,8 @@ function StudyView({ deckName, cards, isLoading, onExit }: { deckName: string, c
             {/* Front Side */}
             <Card className={`absolute inset-0 backface-hidden border-none shadow-2xl rounded-[32px] flex flex-col items-center justify-center p-12 bg-white ${isFlipped ? 'pointer-events-none' : ''}`}>
               {currentCard.imageUrl && (
-                <div className="relative w-full h-40 mb-8 rounded-2xl overflow-hidden border border-border">
-                  <Image src={currentCard.imageUrl} alt="Card visual" fill unoptimized className="object-cover" />
+                <div className="relative w-full h-48 mb-8 rounded-2xl overflow-hidden border border-border bg-muted/5">
+                  <Image src={currentCard.imageUrl} alt="Card visual" fill unoptimized className="object-contain" />
                 </div>
               )}
               <div className="text-3xl font-bold text-center leading-tight font-headline w-full overflow-y-auto">
@@ -692,8 +692,8 @@ function StudyView({ deckName, cards, isLoading, onExit }: { deckName: string, c
             <Card className={`absolute inset-0 backface-hidden border-none shadow-2xl rounded-[32px] flex flex-col items-center justify-center p-12 bg-primary/10 rotate-y-180 ${!isFlipped ? 'pointer-events-none' : ''}`}>
               <div className="max-w-md w-full flex flex-col items-center overflow-y-auto">
                 {currentCard.answerImageUrl && (
-                  <div className="relative w-full h-40 mb-6 rounded-2xl overflow-hidden border border-primary/20">
-                    <Image src={currentCard.answerImageUrl} alt="Answer visual" fill unoptimized className="object-cover" />
+                  <div className="relative w-full h-48 mb-6 rounded-2xl overflow-hidden border border-primary/20 bg-primary/5">
+                    <Image src={currentCard.answerImageUrl} alt="Answer visual" fill unoptimized className="object-contain" />
                   </div>
                 )}
                 <span className="text-[10px] font-bold uppercase tracking-widest text-primary block text-center mb-4">Answer</span>
