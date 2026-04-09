@@ -1,0 +1,119 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * CORE PHILOSOPHY:
+     * This ruleset enforces a strict user-ownership model using hierarchical data isolation.
+     * All application data is nested under the path /users/{userId}/, ensuring that a user's 
+     * identity (UID) is intrinsically linked to the data they can access.
+     *
+     * DATA STRUCTURE:
+     * - /users/{userId}/courses/{courseId}: User-owned academic subjects.
+     * - /users/{userId}/courses/{courseId}/flashcardSets/{flashcardSetId}: Sets of cards grouped by course.
+     * - .../flashcardSets/{flashcardSetId}/flashcards/{flashcardId}: Individual study cards.
+     *
+     * KEY SECURITY DECISIONS:
+     * 1. Path-Based Authorization: We rely on the userId present in the document path to determine 
+     *    ownership. This avoids expensive cross-collection get() lookups.
+     * 2. Relational Integrity: On creation, rules enforce that internal foreign keys (like courseId 
+     *    or flashcardSetId) match the specific path they are being created in.
+     * 3. Prototyping Flexibility: While ownership is strictly enforced, the specific data types 
+     *    of content fields (like question or name) are not validated to allow for rapid frontend iteration.
+     * 4. Secure Deletion: Only the owner can delete their own documents, and the rules verify 
+     *    the document exists before attempting modification or removal.
+     */
+
+    // --- Global Helper Functions ---
+
+    /**
+     * @description Checks if the request is from an authenticated user.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * @description Checks if the authenticated user's UID matches the provided ownerId.
+     */
+    function isOwner(ownerId) {
+      return isSignedIn() && request.auth.uid == ownerId;
+    }
+
+    /**
+     * @description Checks if the user is the owner and the document exists. 
+     * Used for update and delete operations.
+     */
+    function isExistingOwner(ownerId) {
+      return resource != null && isOwner(ownerId);
+    }
+
+    // --- Collection Rules ---
+
+    /**
+     * @description Rules for the Course entity. Enforces that only the user specified in the path can access or modify their courses.
+     * @path /users/{userId}/courses/{courseId}
+     * @allow (create) request with UID 'user_123' to path /users/user_123/courses/calc_101 where data.id == 'calc_101'
+     * @deny (list) request with UID 'user_123' to path /users/user_456/courses
+     * @principle Restricts access to a user's own data tree and validates path/document ID consistency.
+     */
+    match /users/{userId}/courses/{courseId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      
+      allow create: if isOwner(userId) 
+                    && request.resource.data.id == courseId;
+      
+      allow update: if isExistingOwner(userId) 
+                    && request.resource.data.id == resource.data.id;
+      
+      allow delete: if isExistingOwner(userId);
+
+      /**
+       * @description Rules for FlashcardSets. Ownership is derived from the parent userId. 
+       * Enforces that the flashcard set's internal courseId matches the parent course in the path.
+       * @path /users/{userId}/courses/{courseId}/flashcardSets/{flashcardSetId}
+       * @allow (create) request with UID 'user_1' to path .../courses/math/flashcardSets/set_1 where data.courseId == 'math'
+       * @deny (update) request that attempts to change the internal courseId of an existing set.
+       * @principle Ensures relational integrity between the subcollection and its parent course.
+       */
+      match /flashcardSets/{flashcardSetId} {
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId);
+        
+        allow create: if isOwner(userId) 
+                      && request.resource.data.id == flashcardSetId
+                      && request.resource.data.courseId == courseId;
+        
+        allow update: if isExistingOwner(userId) 
+                      && request.resource.data.id == resource.data.id
+                      && request.resource.data.courseId == resource.data.courseId;
+        
+        allow delete: if isExistingOwner(userId);
+
+        /**
+         * @description Rules for individual Flashcards. Inherits ownership from the userId in the root of the path.
+         * Enforces that the card's internal flashcardSetId matches the parent set in the path.
+         * @path /users/{userId}/courses/{courseId}/flashcardSets/{flashcardSetId}/flashcards/{flashcardId}
+         * @allow (get) request from owner to fetch a specific card.
+         * @deny (create) request where data.flashcardSetId does not match the path wildcard.
+         * @principle Ownership-based access with strict path-to-data mapping for relational consistency.
+         */
+        match /flashcards/{flashcardId} {
+          allow get: if isOwner(userId);
+          allow list: if isOwner(userId);
+          
+          allow create: if isOwner(userId) 
+                        && request.resource.data.id == flashcardId
+                        && request.resource.data.flashcardSetId == flashcardSetId;
+          
+          allow update: if isExistingOwner(userId) 
+                        && request.resource.data.id == resource.data.id
+                        && request.resource.data.flashcardSetId == resource.data.flashcardSetId;
+          
+          allow delete: if isExistingOwner(userId);
+        }
+      }
+    }
+  }
+}

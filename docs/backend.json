@@ -1,0 +1,216 @@
+{
+  "entities": {
+    "Course": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Course",
+      "type": "object",
+      "description": "Represents an academic course or subject, used to categorize flashcard sets, tasks, and notes.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Course entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the course or subject (e.g., 'Calculus I', 'World History')."
+        },
+        "description": {
+          "type": "string",
+          "description": "An optional detailed description of the course or subject."
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ]
+    },
+    "FlashcardSet": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "FlashcardSet",
+      "type": "object",
+      "description": "A collection of related flashcards, often grouped by topic or course.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the FlashcardSet entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The title or name of the flashcard set (e.g., 'Chapter 5 Vocabulary', 'Midterm Review')."
+        },
+        "description": {
+          "type": "string",
+          "description": "An optional detailed description of the flashcard set."
+        },
+        "courseId": {
+          "type": "string",
+          "description": "Reference to the Course this flashcard set belongs to. (Relationship: Course 1:N FlashcardSet)"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the flashcard set was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the flashcard set was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "courseId",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Flashcard": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Flashcard",
+      "type": "object",
+      "description": "An individual flashcard containing a question and an answer, part of a flashcard set.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Flashcard entity."
+        },
+        "flashcardSetId": {
+          "type": "string",
+          "description": "Reference to the FlashcardSet this flashcard belongs to. (Relationship: FlashcardSet 1:N Flashcard)"
+        },
+        "question": {
+          "type": "string",
+          "description": "The question or prompt displayed on the flashcard."
+        },
+        "answer": {
+          "type": "string",
+          "description": "The answer or response to the flashcard's question."
+        },
+        "lastReviewedAt": {
+          "type": "string",
+          "description": "Timestamp of the last time this flashcard was reviewed.",
+          "format": "date-time"
+        },
+        "reviewCount": {
+          "type": "number",
+          "description": "The total number of times this flashcard has been reviewed."
+        },
+        "easeFactor": {
+          "type": "number",
+          "description": "A factor indicating the perceived difficulty or ease of remembering the card, used for spaced repetition algorithms (e.g., SM-2 algorithm's E-Factor). Higher values mean easier."
+        },
+        "nextReviewAt": {
+          "type": "string",
+          "description": "The calculated timestamp when this flashcard is scheduled for its next review session, based on a spaced repetition algorithm.",
+          "format": "date-time"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the flashcard was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the flashcard was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "flashcardSetId",
+        "question",
+        "answer",
+        "lastReviewedAt",
+        "reviewCount",
+        "easeFactor",
+        "nextReviewAt",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}/courses/{courseId}",
+        "definition": {
+          "entityName": "Course",
+          "schema": {
+            "$ref": "#/backend/entities/Course"
+          },
+          "description": "User-specific collection of academic courses. Each course document is directly owned by the user specified in the path. Includes denormalized 'userId' in path for authorization independence.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user who owns this course."
+            },
+            {
+              "name": "courseId",
+              "description": "The unique identifier for the specific course."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/courses/{courseId}/flashcardSets/{flashcardSetId}",
+        "definition": {
+          "entityName": "FlashcardSet",
+          "schema": {
+            "$ref": "#/backend/entities/FlashcardSet"
+          },
+          "description": "Collection of flashcard sets, nested under a specific user's course. Ownership is derived from the parent user and course in the path. Security rules will verify that `resource.data.courseId` matches the `{courseId}` in the path for authorization independence.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user who owns this flashcard set."
+            },
+            {
+              "name": "courseId",
+              "description": "The unique identifier of the course this flashcard set belongs to."
+            },
+            {
+              "name": "flashcardSetId",
+              "description": "The unique identifier for the specific flashcard set."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/courses/{courseId}/flashcardSets/{flashcardSetId}/flashcards/{flashcardId}",
+        "definition": {
+          "entityName": "Flashcard",
+          "schema": {
+            "$ref": "#/backend/entities/Flashcard"
+          },
+          "description": "Collection of individual flashcards, nested under a specific user's flashcard set. Ownership is derived from the parent user and flashcard set in the path. Security rules will verify that `resource.data.flashcardSetId` matches the `{flashcardSetId}` in the path for authorization independence.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user who owns this flashcard."
+            },
+            {
+              "name": "courseId",
+              "description": "The unique identifier of the course the parent flashcard set belongs to."
+            },
+            {
+              "name": "flashcardSetId",
+              "description": "The unique identifier of the flashcard set this flashcard belongs to."
+            },
+            {
+              "name": "flashcardId",
+              "description": "The unique identifier for the specific flashcard."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The recommended Firestore structure for UniMate's flashcard feature prioritizes user data isolation, authorization independence, and debuggability. All user-specific data is nested under a top-level `/users/{userId}` collection. This immediately establishes path-based ownership, making security rules simple and efficient by directly comparing `request.auth.uid` with the `{userId}` wildcard in the path.\n\nSpecifically, courses are stored under `/users/{userId}/courses/{courseId}`. Flashcard sets, which belong to a course, are further nested under `/users/{userId}/courses/{courseId}/flashcardSets/{flashcardSetId}`. Individual flashcards, belonging to a set, are then nested under `/users/{userId}/courses/{courseId}/flashcardSets/{flashcardSetId}/flashcards/{flashcardId}`.\n\nThis structure achieves **Authorization Independence** by denormalizing the `userId` into the path itself. For any document (Course, FlashcardSet, Flashcard), its ownership by `request.auth.uid` is determined purely by the top-level path segment, eliminating the need for expensive and fragile `get()` calls in security rules to check parent ownership. Furthermore, for subcollections like `flashcardSets` and `flashcards`, their immediate parent's ID (`courseId` for `flashcardSets`, `flashcardSetId` for `flashcards`) is included both in the document's field (as per schema) AND in its path. Security rules will enforce that the document's internal `courseId` (or `flashcardSetId`) matches the `{courseId}` (or `{flashcardSetId}`) wildcard in the path. This ensures data integrity and prevents miscategorization without needing `get()` operations for authorization.\n\n**QAPs (Queries are not Filters)** are inherently supported due to the structural segregation. Each collection in this hierarchy (e.g., `/users/{userId}/courses`, `/users/{userId}/courses/{courseId}/flashcardSets`) represents a homogeneous security posture: all documents within it are owned by the `userId` specified in the path. A user can only `list` or `get` documents from paths where `{userId}` matches `request.auth.uid`. Any query attempting to access another user's data will be blocked by rules without requiring complex filtering logic. This ensures that `list` operations are implicitly secured and only return data the requesting user is authorized to see, adhering to the QAP principle."
+  }
+}
