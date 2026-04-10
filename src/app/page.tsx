@@ -38,7 +38,7 @@ function LandingPage() {
 
   return (
     <div className="space-y-24 animate-smooth-slow py-12">
-      <section className="relative flex flex-col items-center text-center space-y-8 max-w-5xl mx-auto p-12 rounded-[48px] overflow-hidden min-h-[500px] justify-center">
+      <section className="relative flex flex-col items-center text-center space-y-8 max-w-5xl mx-auto p-12 rounded-[48px] overflow-hidden min-h-[500px] justify-center bg-muted/20">
         {/* video background */}
         <div className="absolute inset-0 z-0">
           <video 
@@ -46,11 +46,11 @@ function LandingPage() {
             muted 
             loop 
             playsInline 
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover opacity-60"
           >
             <source src="https://assets.mixkit.co/videos/preview/mixkit-software-developer-working-on-code-screen-close-up-1728-large.mp4" type="video/mp4" />
           </video>
-          <div className="absolute inset-0 bg-white/70 backdrop-blur-[2px]" />
+          <div className="absolute inset-0 bg-background/30 backdrop-blur-[1px]" />
         </div>
 
         <div className="relative z-10 space-y-8 flex flex-col items-center">
