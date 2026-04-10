@@ -762,7 +762,7 @@ function QuizView({
         feedback = evalResult.feedback
       } else {
         isCorrect = userAnswer.toLowerCase() === current.correctAnswer.toLowerCase()
-        feedback = isCorrect ? "Great job! That's correct." : `Incorrect. The correct answer was: ${current.correctAnswer}`
+        feedback = isCorrect ? "Correct!" : `Incorrect. The correct answer was: ${current.correctAnswer}`
       }
 
       setResults(prev => [...prev, { cardId: current.cardId, isCorrect, feedback }])

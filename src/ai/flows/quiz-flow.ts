@@ -2,8 +2,8 @@
 /**
  * @fileOverview AI flows for the Flashcard Quiz Mode.
  * 
- * - generateQuiz: Creates a balanced quiz from a set of flashcards.
- * - evaluateAnswer: Semantically evaluates an open-ended answer.
+ * - generateQuiz: Creates a balanced quiz using original flashcard questions.
+ * - evaluateAnswer: Semantically evaluates open-ended answers.
  */
 
 import { ai } from '@/ai/genkit';
@@ -19,8 +19,8 @@ const FlashcardSchema = z.object({
 const QuizQuestionSchema = z.object({
   cardId: z.string(),
   type: z.enum(['multiple-choice', 'open-ended', 'image-selection']),
-  prompt: z.string(),
-  options: z.array(z.string()).optional().describe('4-5 options for multiple-choice or image-selection'),
+  prompt: z.string().describe('The original flashcard question text.'),
+  options: z.array(z.string()).optional().describe('4-5 options including the correct answer and distractors'),
   correctAnswer: z.string(),
   explanation: z.string().optional(),
 });
@@ -39,6 +39,7 @@ export type GenerateQuizOutput = z.infer<typeof GenerateQuizOutputSchema>;
 
 /**
  * Generates a full quiz based on the provided flashcards.
+ * Uses the user's original questions and generates plausible distractors.
  */
 export async function generateQuiz(input: z.infer<typeof GenerateQuizInputSchema>): Promise<GenerateQuizOutput> {
   const prompt = ai.definePrompt({
@@ -47,15 +48,13 @@ export async function generateQuiz(input: z.infer<typeof GenerateQuizInputSchema
     output: { schema: GenerateQuizOutputSchema },
     prompt: `You are an expert educator. Your task is to generate a comprehensive quiz for the flashcard deck: "{{deckName}}".
     
-    For each card provided in the input, create exactly ONE question. 
-    Vary the question types between 'multiple-choice', 'open-ended', and 'image-selection'.
+    For each card provided in the input, create exactly ONE question.
     
-    Rules:
-    1. For 'multiple-choice': Generate 4 plausible but incorrect distractor options that match the tone and complexity of the correct answer.
-    2. For 'image-selection': ONLY use this type if the card has an 'imageUrl'. The question should ask to identify the concept represented by the image.
-    3. For 'open-ended': The prompt should be the flashcard's question.
-    4. Maintain the original tone and terminology used in the flashcards.
-    5. Ensure the quiz is challenging but fair.
+    CRITICAL RULES:
+    1. PROMPT CONSISTENCY: For EVERY question, the "prompt" field MUST be the exact original flashcard question provided in the input. Do not rewrite it.
+    2. DISTRACTORS: For 'multiple-choice' and 'image-selection', generate 4 plausible but incorrect distractors. These should be related to the same topic and match the tone of the correct answer. The "options" list MUST include the correct answer.
+    3. IMAGE SELECTION: Only use 'image-selection' if the card has an 'imageUrl'.
+    4. VARIETY: Try to provide a mix of 'multiple-choice' and 'open-ended' types across the deck.
     
     Cards:
     {{#each cards}}
@@ -76,7 +75,7 @@ const EvaluateAnswerInputSchema = z.object({
 
 const EvaluateAnswerOutputSchema = z.object({
   isCorrect: z.boolean(),
-  feedback: z.string().describe('A short, helpful explanation of why it was correct or incorrect.'),
+  feedback: z.string().describe('A short explanation if incorrect. If correct, keep it very brief like "Correct!"'),
   confidence: z.number().min(0).max(1),
 });
 
@@ -88,7 +87,7 @@ export async function evaluateAnswer(input: z.infer<typeof EvaluateAnswerInputSc
     name: 'evaluateAnswerPrompt',
     input: { schema: EvaluateAnswerInputSchema },
     output: { schema: EvaluateAnswerOutputSchema },
-    prompt: `You are an AI tutor. A student has provided an answer to an open-ended question.
+    prompt: `You are a helpful tutor evaluating a student's answer.
     
     Question: "{{contextQuestion}}"
     Correct Answer Reference: "{{correctAnswer}}"
@@ -97,8 +96,10 @@ export async function evaluateAnswer(input: z.infer<typeof EvaluateAnswerInputSc
     Determine if the student's answer is semantically correct. 
     - Be lenient with minor typos or grammatical errors.
     - If the student describes the core concept accurately even with different wording, mark it as correct.
-    - If they are completely off or missing the key point, mark it as incorrect.
-    - Provide a short, encouraging feedback message.`,
+    
+    FEEDBACK RULES:
+    - If correct, set feedback to "Correct!".
+    - If incorrect, provide a very short, helpful explanation of what was missing.`,
   });
 
   const { output } = await prompt(input);
