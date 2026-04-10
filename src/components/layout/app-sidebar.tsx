@@ -10,8 +10,8 @@ import {
   StickyNote,
   Layers,
   GraduationCap,
-  Settings,
-  Plus
+  Plus,
+  LogOut
 } from "lucide-react"
 
 import {
@@ -26,6 +26,8 @@ import {
   SidebarGroupLabel,
   SidebarGroupContent,
 } from "@/components/ui/sidebar"
+import { useFirebase } from "@/firebase"
+import { signOut } from "firebase/auth"
 
 const navItems = [
   {
@@ -57,6 +59,13 @@ const navItems = [
 
 export function AppSidebar() {
   const pathname = usePathname()
+  const { auth } = useFirebase();
+
+  const handleSignOut = () => {
+    if(auth) {
+        signOut(auth);
+    }
+  }
 
   return (
     <Sidebar className="border-r border-sidebar-border">
@@ -65,7 +74,7 @@ export function AppSidebar() {
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <GraduationCap className="h-5 w-5" />
           </div>
-          <span className="font-headline text-xl font-bold tracking-tight text-foreground">UniMate</span>
+          <span className="font-headline text-xl font-bold tracking-tight text-foreground">guko buddy</span>
         </Link>
       </SidebarHeader>
       <SidebarContent>
@@ -105,6 +114,17 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter className="p-4">
+        <SidebarMenu className="px-0 py-2">
+            <SidebarMenuItem>
+                <SidebarMenuButton
+                    onClick={handleSignOut}
+                    className="flex items-center gap-3 px-4 py-6 rounded-xl transition-all duration-300 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                >
+                    <LogOut className="h-5 w-5" />
+                    <span className="font-medium">Sign Out</span>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+        </SidebarMenu>
         <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-secondary/50">
           <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center font-bold text-primary">JD</div>
           <div className="flex flex-col">

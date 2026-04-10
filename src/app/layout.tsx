@@ -6,8 +6,8 @@ import { AppSidebar } from '@/components/layout/app-sidebar';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 
 export const metadata: Metadata = {
-  title: 'UniMate - Your Academic Student Hub',
-  description: 'Manage tasks, flashcards, notebooks, and grades in one place.',
+  title: 'guko buddy',
+  description: 'study better. study your way.',
 };
 
 export default function RootLayout({
