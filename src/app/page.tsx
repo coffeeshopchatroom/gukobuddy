@@ -50,6 +50,9 @@ function LandingPage() {
             preload="auto"
             className="w-full h-full object-cover"
           >
+            {/* primary local source */}
+            <source src="/hero-video.mp4" type="video/mp4" />
+            {/* secondary fallback source */}
             <source src="https://cdn.pixabay.com/video/2020/09/10/49416-457333068_large.mp4" type="video/mp4" />
           </video>
           {/* overlay to ensure readability and "cool" look */}

@@ -41,8 +41,12 @@
   body {
     @apply bg-background text-foreground;
     transition: background-color 0.5s ease, color 0.5s ease;
-    text-transform: lowercase;
   }
+}
+
+/* Force all text elements to lowercase globally */
+*, button, input, textarea, label, span, p, h1, h2, h3, h4, h5, h6, div, li, a, strong, em, b, i, u, small {
+  text-transform: lowercase !important;
 }
 
 .animate-smooth-slow {
@@ -71,13 +75,6 @@
   outline: none !important;
   border: none !important;
   box-shadow: none !important;
-  text-transform: lowercase;
-}
-
-.tiptap-editor .ProseMirror:focus {
-  outline: none !important;
-  border: none !important;
-  box-shadow: none !important;
 }
 
 .tiptap-editor .is-editor-empty:first-child::before {
@@ -96,7 +93,6 @@
   margin-top: 1.5rem !important;
   margin-bottom: 1rem !important;
   color: hsl(var(--foreground));
-  text-transform: lowercase;
 }
 
 .tiptap-editor h2, .tiptap-content h2 {
@@ -106,22 +102,13 @@
   margin-top: 1.25rem !important;
   margin-bottom: 0.75rem !important;
   color: hsl(var(--foreground));
-  text-transform: lowercase;
 }
 
 .tiptap-editor p, .tiptap-content p {
   @apply mb-2 leading-relaxed;
 }
 
-.tiptap-editor strong, .tiptap-content strong {
-  @apply font-bold;
-}
-
-.tiptap-editor em, .tiptap-content em {
-  @apply italic;
-}
-
-/* Custom scrollbar for the dialog */
+/* Custom scrollbar */
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
 }
@@ -135,18 +122,9 @@
   border-radius: 10px;
 }
 
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground) / 0.4);
-}
-
 /* Remove default focus rings from inputs in certain contexts */
 .no-focus-ring:focus, .no-focus-ring:focus-visible {
   outline: none !important;
   ring: 0 !important;
   box-shadow: none !important;
-}
-
-/* Force all text elements to lowercase globally */
-button, input, textarea, label, span, p, h1, h2, h3, h4, h5, h6, div, li, a {
-  text-transform: lowercase !important;
 }
