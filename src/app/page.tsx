@@ -1,3 +1,4 @@
+
 'use client'
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,31 +39,33 @@ function LandingPage() {
 
   return (
     <div className="space-y-24 animate-smooth-slow py-12">
-      <section className="relative flex flex-col items-center text-center space-y-8 max-w-5xl mx-auto p-12 rounded-[48px] overflow-hidden min-h-[500px] justify-center bg-muted/20">
-        {/* video background */}
+      <section className="relative flex flex-col items-center text-center space-y-8 max-w-5xl mx-auto p-12 rounded-[48px] overflow-hidden min-h-[600px] justify-center bg-muted/20">
+        {/* background video container */}
         <div className="absolute inset-0 z-0">
           <video 
             autoPlay 
             muted 
             loop 
             playsInline 
-            className="w-full h-full object-cover opacity-60"
+            className="w-full h-full object-cover"
+            poster="https://picsum.photos/seed/study-hero/1200/800"
           >
-            <source src="https://assets.mixkit.co/videos/preview/mixkit-software-developer-working-on-code-screen-close-up-1728-large.mp4" type="video/mp4" />
+            <source src="https://assets.mixkit.co/videos/preview/mixkit-girl-in-white-t-shirt-studying-with-her-laptop-4050-large.mp4" type="video/mp4" />
           </video>
-          <div className="absolute inset-0 bg-background/30 backdrop-blur-[1px]" />
+          {/* overlay to ensure text readability */}
+          <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px]" />
         </div>
 
         <div className="relative z-10 space-y-8 flex flex-col items-center">
-          <Badge variant="secondary" className="px-4 py-1.5 rounded-full text-sm font-bold bg-primary/20 text-primary border-none">
+          <Badge variant="secondary" className="px-4 py-1.5 rounded-full text-sm font-bold bg-primary/30 text-primary-foreground border-none">
             <Sparkles className="h-3.5 w-3.5 mr-2" />
             study buddy is here
           </Badge>
-          <h1 className="font-headline text-6xl md:text-8xl font-bold tracking-tight text-foreground leading-[1] lowercase">
+          <h1 className="font-headline text-6xl md:text-8xl font-bold tracking-tight text-foreground leading-[1] lowercase drop-shadow-sm">
             study better. <br /> study <span className="text-primary italic">your way.</span>
           </h1>
-          <p className="text-muted-foreground text-xl md:text-2xl max-w-2xl leading-relaxed lowercase">
-            get your study life together with notes, flashcards, and easy testing tools.
+          <p className="text-muted-foreground text-xl md:text-2xl max-w-2xl leading-relaxed lowercase font-medium">
+            get your study life together with notes, flashcards, and simple testing tools.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 pt-4">
             <Button asChild className="rounded-2xl py-8 px-10 text-lg font-bold shadow-xl shadow-primary/20 transition-all hover:scale-105">
@@ -71,7 +74,7 @@ function LandingPage() {
             <Button 
               variant="outline" 
               onClick={handleGuestSignIn}
-              className="rounded-2xl py-8 px-10 text-lg font-bold border-2 transition-all hover:bg-muted bg-white/50 backdrop-blur-sm"
+              className="rounded-2xl py-8 px-10 text-lg font-bold border-2 transition-all hover:bg-muted bg-white/80 backdrop-blur-sm"
             >
               continue as guest
             </Button>
@@ -126,7 +129,7 @@ function LandingPage() {
 
 function FeatureCard({ icon, title, description, color }: { icon: React.ReactNode, title: string, description: string, color: string }) {
   return (
-    <Card className="border-none shadow-sm rounded-[32px] p-8 space-y-4 hover:shadow-xl transition-all group">
+    <Card className="border-none shadow-sm rounded-[32px] p-8 space-y-4 hover:shadow-xl transition-all group bg-white">
       <div className={`w-14 h-14 rounded-2xl ${color} text-white flex items-center justify-center shadow-lg transition-transform group-hover:scale-110`}>
         {icon}
       </div>

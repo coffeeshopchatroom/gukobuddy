@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -145,7 +146,7 @@
   box-shadow: none !important;
 }
 
-/* Force all buttons, inputs, and labels to lowercase */
-button, input, textarea, label, span, p, h1, h2, h3, h4, h5, h6 {
+/* Force all text elements to lowercase globally */
+button, input, textarea, label, span, p, h1, h2, h3, h4, h5, h6, div, li, a {
   text-transform: lowercase !important;
 }
