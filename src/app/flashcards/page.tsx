@@ -14,10 +14,7 @@ import {
   LogIn, 
   ChevronLeft, 
   ChevronRight,
-  Search, 
-  GraduationCap,
   Image as ImageIcon,
-  BookOpen,
   RotateCcw,
   Bold,
   Italic,
@@ -29,7 +26,12 @@ import {
   XCircle,
   Trophy,
   Activity,
-  RefreshCw
+  RefreshCw,
+  BrainCircuit,
+  HelpCircle,
+  Check,
+  X,
+  Sparkles
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { 
@@ -67,7 +69,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
 
@@ -76,7 +77,10 @@ import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
 
-type StudyMode = 'classic' | 'tracking' | null
+// AI Flow imports
+import { generateQuiz, evaluateAnswer, type QuizQuestion } from "@/ai/flows/quiz-flow"
+
+type StudyMode = 'classic' | 'tracking' | 'quiz' | null
 
 export default function FlashcardsPage() {
   const { user, isUserLoading } = useUser()
@@ -90,11 +94,9 @@ export default function FlashcardsPage() {
   const [isCreateCardOpen, setIsCreateCardOpen] = React.useState(false)
   const [newDeckName, setNewDeckName] = React.useState("")
   
-  // Card form image state
   const [cardImageUrl, setCardImageUrl] = React.useState("")
   const [cardAnswerImageUrl, setCardAnswerImageUrl] = React.useState("")
 
-  // Tiptap editors
   const questionEditor = useEditor({
     extensions: [
       StarterKit,
@@ -111,7 +113,6 @@ export default function FlashcardsPage() {
     content: '',
   })
 
-  // Fetch courses first
   const coursesQuery = useMemoFirebase(() => {
     if (!db || !user) return null
     return query(collection(db, "users", user.uid, "courses"))
@@ -120,7 +121,6 @@ export default function FlashcardsPage() {
   const { data: courses, isLoading: isCoursesLoading } = useCollection(coursesQuery)
   const activeCourse = courses?.[0]
 
-  // Decks query
   const decksQuery = useMemoFirebase(() => {
     if (!db || !user || !activeCourse) return null
     return query(
@@ -132,7 +132,6 @@ export default function FlashcardsPage() {
   const { data: decks, isLoading: isDecksLoading } = useCollection(decksQuery)
   const selectedDeck = decks?.find(d => d.id === selectedDeckId)
 
-  // Cards query for selected deck
   const cardsQuery = useMemoFirebase(() => {
     if (!db || !user || !activeCourse || !selectedDeckId) return null
     return query(
@@ -252,6 +251,16 @@ export default function FlashcardsPage() {
   }
 
   if (selectedDeckId && selectedDeck && activeStudyMode) {
+    if (activeStudyMode === 'quiz') {
+      return (
+        <QuizView 
+          deckName={selectedDeck.name}
+          cards={cards || []}
+          onExit={() => setActiveStudyMode(null)}
+        />
+      )
+    }
+
     return (
       <StudyView 
         deckName={selectedDeck.name} 
@@ -335,6 +344,23 @@ export default function FlashcardsPage() {
                     </div>
                     <ChevronRight className="h-5 w-5 text-muted-foreground" />
                   </Button>
+
+                  <Button 
+                    variant="outline" 
+                    className="flex items-center justify-between p-6 h-auto rounded-2xl border-2 hover:border-indigo-500 hover:bg-indigo-50 transition-all text-left group"
+                    onClick={() => handleStartStudy('quiz')}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 rounded-xl bg-muted group-hover:bg-indigo-100 transition-colors">
+                        <BrainCircuit className="h-6 w-6 text-muted-foreground group-hover:text-indigo-600" />
+                      </div>
+                      <div>
+                        <div className="font-bold text-lg">AI Quiz Mode</div>
+                        <div className="text-sm text-muted-foreground">Test yourself with AI generated questions.</div>
+                      </div>
+                    </div>
+                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                  </Button>
                 </div>
               </DialogContent>
             </Dialog>
@@ -355,7 +381,6 @@ export default function FlashcardsPage() {
                 
                 <div className="flex-1 overflow-y-auto px-8 py-4 custom-scrollbar">
                   <div className="space-y-8 pb-4">
-                    {/* Question Section */}
                     <div className="space-y-3">
                       <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Question / Front</Label>
                       {cardImageUrl && (
@@ -377,7 +402,6 @@ export default function FlashcardsPage() {
                       </div>
                     </div>
 
-                    {/* Answer Section */}
                     <div className="space-y-3">
                       <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Answer / Back</Label>
                       {cardAnswerImageUrl && (
@@ -684,6 +708,244 @@ function RichFormattingToolbar({
   )
 }
 
+function QuizView({ 
+  deckName, 
+  cards, 
+  onExit 
+}: { 
+  deckName: string, 
+  cards: any[], 
+  onExit: () => void 
+}) {
+  const [questions, setQuestions] = React.useState<QuizQuestion[]>([])
+  const [currentIndex, setCurrentIndex] = React.useState(0)
+  const [isGenerating, setIsGenerating] = React.useState(true)
+  const [isEvaluating, setIsEvaluating] = React.useState(false)
+  const [userAnswer, setUserAnswer] = React.useState("")
+  const [results, setResults] = React.useState<{ cardId: string, isCorrect: boolean, feedback: string }[]>([])
+  const [isFinished, setIsFinished] = React.useState(false)
+
+  React.useEffect(() => {
+    async function initQuiz() {
+      try {
+        const simpleCards = cards.map(c => ({
+          id: c.id,
+          question: c.question.replace(/<[^>]*>?/gm, ''), // strip html for ai
+          answer: c.answer.replace(/<[^>]*>?/gm, ''),
+          imageUrl: c.imageUrl
+        }))
+        const output = await generateQuiz({ deckName, cards: simpleCards })
+        setQuestions(output.questions)
+      } catch (e) {
+        console.error("Quiz generation failed", e)
+      } finally {
+        setIsGenerating(false)
+      }
+    }
+    initQuiz()
+  }, [cards, deckName])
+
+  const handleNext = async () => {
+    const current = questions[currentIndex]
+    setIsEvaluating(true)
+
+    try {
+      let isCorrect = false
+      let feedback = ""
+
+      if (current.type === 'open-ended') {
+        const evalResult = await evaluateAnswer({
+          userAnswer,
+          correctAnswer: current.correctAnswer,
+          contextQuestion: current.prompt
+        })
+        isCorrect = evalResult.isCorrect
+        feedback = evalResult.feedback
+      } else {
+        isCorrect = userAnswer.toLowerCase() === current.correctAnswer.toLowerCase()
+        feedback = isCorrect ? "Great job! That's correct." : `Incorrect. The correct answer was: ${current.correctAnswer}`
+      }
+
+      setResults(prev => [...prev, { cardId: current.cardId, isCorrect, feedback }])
+      
+      if (currentIndex < questions.length - 1) {
+        setCurrentIndex(prev => prev + 1)
+        setUserAnswer("")
+      } else {
+        setIsFinished(true)
+      }
+    } catch (e) {
+      console.error("Evaluation failed", e)
+    } finally {
+      setIsEvaluating(false)
+    }
+  }
+
+  if (isGenerating) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 animate-pulse">
+        <div className="p-8 bg-indigo-100 rounded-full animate-bounce">
+          <BrainCircuit className="h-16 w-16 text-indigo-600" />
+        </div>
+        <div className="text-center">
+          <h2 className="text-2xl font-bold font-headline">Creating Test...</h2>
+          <p className="text-muted-foreground mt-2">AI is analyzing your cards to generate questions.</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (isFinished) {
+    const score = results.filter(r => r.isCorrect).length
+    const percent = Math.round((score / questions.length) * 100)
+
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-8 max-w-2xl mx-auto text-center px-4">
+        <div className="p-8 bg-primary/20 rounded-full">
+          <Trophy className="h-16 w-16 text-primary" />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-4xl font-bold font-headline">{percent}% Quiz Score</h2>
+          <p className="text-muted-foreground text-lg">
+            You got {score} out of {questions.length} questions correct!
+          </p>
+        </div>
+
+        <div className="w-full grid gap-3 text-left">
+          {results.map((res, i) => (
+            <div key={i} className="p-4 rounded-2xl bg-white border border-border flex items-start gap-4">
+              <div className={cn("p-2 rounded-full", res.isCorrect ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600")}>
+                {res.isCorrect ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
+              </div>
+              <div>
+                <p className="text-sm font-medium">{res.feedback}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex flex-col gap-3 w-full max-w-xs">
+          <Button onClick={onExit} className="rounded-2xl py-6 font-bold shadow-lg">Back to Decks</Button>
+        </div>
+      </div>
+    )
+  }
+
+  const current = questions[currentIndex]
+  const card = cards.find(c => c.id === current.cardId)
+
+  return (
+    <div className="max-w-3xl w-full mx-auto space-y-8 animate-smooth-slow px-4 py-8">
+      <div className="flex items-center justify-between">
+        <Button variant="ghost" size="sm" onClick={onExit} className="rounded-xl gap-2 font-bold text-muted-foreground">
+          <ChevronLeft className="h-4 w-4" /> Exit Quiz
+        </Button>
+        <div className="text-center">
+          <h2 className="font-headline text-xl font-bold">Quiz: {deckName}</h2>
+          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+            Question {currentIndex + 1} / {questions.length}
+          </p>
+        </div>
+        <div className="w-24" />
+      </div>
+
+      <Card className="border-none shadow-2xl rounded-[40px] overflow-hidden bg-white p-10 md:p-16">
+        <div className="space-y-10">
+          <div className="space-y-6">
+            <Badge className="bg-indigo-100 text-indigo-700 hover:bg-indigo-100 border-none px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest">
+              {current.type.replace('-', ' ')}
+            </Badge>
+            
+            <div className="space-y-6">
+              {current.type === 'image-selection' && card?.imageUrl && (
+                <div className="w-full h-48 md:h-64 relative rounded-3xl overflow-hidden border bg-muted/5">
+                  <img src={card.imageUrl} alt="Identify this" className="w-full h-full object-contain" />
+                </div>
+              )}
+              <h3 className="text-2xl md:text-3xl font-bold leading-tight">
+                {current.prompt}
+              </h3>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            {current.type === 'open-ended' ? (
+              <div className="space-y-4">
+                <Input 
+                  placeholder="Type your answer here..."
+                  value={userAnswer}
+                  onChange={(e) => setUserAnswer(e.target.value)}
+                  className="rounded-2xl h-16 text-lg px-6 no-focus-ring border-2 border-muted hover:border-indigo-200 transition-all"
+                  onKeyDown={(e) => e.key === 'Enter' && !isEvaluating && handleNext()}
+                />
+                <p className="text-xs text-muted-foreground text-center italic">
+                  AI will evaluate your answer semantically.
+                </p>
+              </div>
+            ) : (
+              <div className="grid gap-3">
+                {current.options?.map((option, i) => (
+                  <Button
+                    key={i}
+                    variant={userAnswer === option ? 'secondary' : 'outline'}
+                    className={cn(
+                      "h-auto py-5 px-8 rounded-2xl text-left justify-start text-lg transition-all",
+                      userAnswer === option ? "border-indigo-600 bg-indigo-50 text-indigo-700" : "border-2 hover:border-indigo-200"
+                    )}
+                    onClick={() => setUserAnswer(option)}
+                  >
+                    <div className="flex items-center gap-4 w-full">
+                      <div className={cn(
+                        "h-8 w-8 rounded-full border-2 flex items-center justify-center font-bold text-xs shrink-0",
+                        userAnswer === option ? "border-indigo-600 bg-indigo-600 text-white" : "border-muted text-muted-foreground"
+                      )}>
+                        {String.fromCharCode(65 + i)}
+                      </div>
+                      <span className="flex-1">{option}</span>
+                    </div>
+                  </Button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <Button 
+            disabled={!userAnswer || isEvaluating} 
+            onClick={handleNext}
+            className="w-full rounded-2xl py-8 text-xl font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xl shadow-indigo-200 group"
+          >
+            {isEvaluating ? (
+              <>
+                <Loader2 className="h-6 w-6 mr-2 animate-spin" />
+                Analyzing...
+              </>
+            ) : (
+              <>
+                Submit Answer
+                <ChevronRight className="h-6 w-6 ml-2 transition-transform group-hover:translate-x-1" />
+              </>
+            )}
+          </Button>
+        </div>
+      </Card>
+      
+      {isEvaluating && (
+        <div className="fixed inset-0 z-50 bg-white/60 backdrop-blur-sm flex items-center justify-center animate-in fade-in duration-300">
+          <div className="flex flex-col items-center gap-4">
+            <div className="relative">
+              <Sparkles className="h-12 w-12 text-indigo-600 animate-pulse" />
+              <div className="absolute inset-0 animate-ping opacity-25">
+                <Sparkles className="h-12 w-12 text-indigo-400" />
+              </div>
+            </div>
+            <p className="font-bold text-indigo-900 tracking-tight">Calculating Results...</p>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function StudyView({ 
   deckName, 
   cards, 
@@ -707,7 +969,6 @@ function StudyView({
   const [missedIds, setMissedIds] = React.useState<Set<string>>(new Set())
   const [hasInitialized, setHasInitialized] = React.useState(false)
 
-  // Initialize session cards only once when cards are available
   React.useEffect(() => {
     if (!hasInitialized && cards.length > 0) {
       setSessionCards([...cards])
@@ -727,7 +988,7 @@ function StudyView({
   if (cards.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 text-center">
-        <BookOpen className="h-16 w-16 text-muted-foreground opacity-20" />
+        <HelpCircle className="h-16 w-16 text-muted-foreground opacity-20" />
         <div>
           <h2 className="text-2xl font-bold font-headline">No cards to study</h2>
           <p className="text-muted-foreground mt-2">Add some cards to this deck first.</p>
@@ -843,13 +1104,6 @@ function StudyView({
 
   return (
     <div className="relative min-h-[85vh] flex flex-col items-center justify-center">
-      {/* Animated Background Blobs */}
-      <div className="absolute inset-0 -z-10 pointer-events-none overflow-hidden rounded-[48px]">
-        <div className="absolute top-0 -left-20 w-96 h-96 bg-primary/15 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-blob"></div>
-        <div className="absolute top-20 -right-20 w-96 h-96 bg-accent/15 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-blob animation-delay-2000"></div>
-        <div className="absolute -bottom-20 left-40 w-96 h-96 bg-secondary/20 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-blob animation-delay-4000"></div>
-      </div>
-
       <div className="max-w-3xl w-full space-y-8 animate-smooth-slow relative z-10 px-4">
         <div className="flex items-center justify-between">
           <Button variant="ghost" size="sm" onClick={onExit} className="rounded-xl gap-2 font-bold text-muted-foreground hover:text-foreground bg-white/50 backdrop-blur-sm">
@@ -875,7 +1129,6 @@ function StudyView({
             className="relative w-full aspect-[3/2] max-h-[500px] cursor-pointer perspective-1000 group"
           >
             <div className={`relative w-full h-full transition-all duration-500 transform-style-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
-              {/* Front Side */}
               <Card className={`absolute inset-0 backface-hidden border-none shadow-2xl rounded-[32px] flex flex-col items-center justify-center p-12 bg-white ${isFlipped ? 'pointer-events-none opacity-0' : 'opacity-100'}`}>
                 <div className="w-full h-full flex flex-col items-center justify-center gap-6 overflow-hidden">
                   {currentCard?.imageUrl && (
@@ -892,7 +1145,6 @@ function StudyView({
                 </p>
               </Card>
 
-              {/* Back Side */}
               <Card className={`absolute inset-0 backface-hidden border-none shadow-2xl rounded-[32px] flex flex-col items-center justify-center p-12 bg-primary/10 rotate-y-180 backdrop-blur-sm ${!isFlipped ? 'pointer-events-none opacity-0' : 'opacity-100'}`}>
                 <div className="w-full h-full flex flex-col items-center justify-center gap-6 overflow-hidden">
                   <span className="text-[10px] font-bold uppercase tracking-widest text-primary block text-center">Answer</span>
