@@ -27,11 +27,10 @@ import {
   Trophy,
   Activity,
   RefreshCw,
-  BrainCircuit,
   HelpCircle,
   Check,
   X,
-  Sparkles
+  FileText
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { 
@@ -352,11 +351,11 @@ export default function FlashcardsPage() {
                   >
                     <div className="flex items-center gap-4">
                       <div className="p-3 rounded-xl bg-muted group-hover:bg-indigo-100 transition-colors">
-                        <BrainCircuit className="h-6 w-6 text-muted-foreground group-hover:text-indigo-600" />
+                        <FileText className="h-6 w-6 text-muted-foreground group-hover:text-indigo-600" />
                       </div>
                       <div>
-                        <div className="font-bold text-lg">AI Quiz Mode</div>
-                        <div className="text-sm text-muted-foreground">Test yourself with AI generated questions.</div>
+                        <div className="font-bold text-lg">Quiz Mode</div>
+                        <div className="text-sm text-muted-foreground">Test yourself with generated questions.</div>
                       </div>
                     </div>
                     <ChevronRight className="h-5 w-5 text-muted-foreground" />
@@ -783,13 +782,13 @@ function QuizView({
 
   if (isGenerating) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 animate-pulse">
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6">
         <div className="p-8 bg-indigo-100 rounded-full animate-bounce">
-          <BrainCircuit className="h-16 w-16 text-indigo-600" />
+          <FileText className="h-16 w-16 text-indigo-600" />
         </div>
         <div className="text-center">
-          <h2 className="text-2xl font-bold font-headline">Creating Test...</h2>
-          <p className="text-muted-foreground mt-2">AI is analyzing your cards to generate questions.</p>
+          <h2 className="text-2xl font-bold font-headline">Creating quiz..</h2>
+          <p className="text-muted-foreground mt-2">Preparing your personal quiz from this deck.</p>
         </div>
       </div>
     )
@@ -879,7 +878,7 @@ function QuizView({
                   onKeyDown={(e) => e.key === 'Enter' && !isEvaluating && handleNext()}
                 />
                 <p className="text-xs text-muted-foreground text-center italic">
-                  AI will evaluate your answer semantically.
+                  Your answer will be evaluated based on the core concept.
                 </p>
               </div>
             ) : (
@@ -917,7 +916,7 @@ function QuizView({
             {isEvaluating ? (
               <>
                 <Loader2 className="h-6 w-6 mr-2 animate-spin" />
-                Analyzing...
+                Checking...
               </>
             ) : (
               <>
@@ -933,12 +932,9 @@ function QuizView({
         <div className="fixed inset-0 z-50 bg-white/60 backdrop-blur-sm flex items-center justify-center animate-in fade-in duration-300">
           <div className="flex flex-col items-center gap-4">
             <div className="relative">
-              <Sparkles className="h-12 w-12 text-indigo-600 animate-pulse" />
-              <div className="absolute inset-0 animate-ping opacity-25">
-                <Sparkles className="h-12 w-12 text-indigo-400" />
-              </div>
+              <RefreshCw className="h-12 w-12 text-indigo-600 animate-spin" />
             </div>
-            <p className="font-bold text-indigo-900 tracking-tight">Calculating Results...</p>
+            <p className="font-bold text-indigo-900 tracking-tight">Calculating results</p>
           </div>
         </div>
       )}
