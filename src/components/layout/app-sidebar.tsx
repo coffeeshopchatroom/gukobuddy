@@ -11,7 +11,9 @@ import {
   Layers,
   GraduationCap,
   Plus,
-  LogOut
+  LogOut,
+  UserCircle,
+  LogIn
 } from "lucide-react"
 
 import {
@@ -26,6 +28,7 @@ import {
   SidebarGroupLabel,
   SidebarGroupContent,
 } from "@/components/ui/sidebar"
+import { Button } from "@/components/ui/button"
 import { useFirebase } from "@/firebase"
 import { signOut } from "firebase/auth"
 
@@ -59,7 +62,7 @@ const navItems = [
 
 export function AppSidebar() {
   const pathname = usePathname()
-  const { auth } = useFirebase();
+  const { auth, user } = useFirebase();
 
   const handleSignOut = () => {
     if(auth) {
@@ -67,11 +70,16 @@ export function AppSidebar() {
     }
   }
 
+  // Determine user display info
+  const initials = user?.isAnonymous ? "GU" : (user?.displayName?.split(' ').map(n => n[0]).join('') || "U");
+  const userName = user?.isAnonymous ? "Guest User" : (user?.displayName || user?.email?.split('@')[0] || "Student");
+  const userRole = user?.isAnonymous ? "Temporary Session" : "Premium Member";
+
   return (
     <Sidebar className="border-r border-sidebar-border">
       <SidebarHeader className="px-6 py-8">
         <Link href="/" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
             <GraduationCap className="h-5 w-5" />
           </div>
           <span className="font-headline text-xl font-bold tracking-tight text-foreground">guko buddy</span>
@@ -105,33 +113,46 @@ export function AppSidebar() {
           <SidebarGroupLabel className="px-6 text-xs uppercase tracking-widest font-semibold opacity-50">Quick Actions</SidebarGroupLabel>
           <SidebarMenu className="px-4 py-2">
             <SidebarMenuItem>
-              <SidebarMenuButton className="flex items-center gap-3 px-4 py-6 rounded-xl text-muted-foreground hover:bg-accent/50">
-                <Plus className="h-5 w-5" />
-                <span className="font-medium">New Note</span>
+              <SidebarMenuButton asChild className="flex items-center gap-3 px-4 py-6 rounded-xl text-muted-foreground hover:bg-accent/50 transition-colors">
+                <Link href="/notebooks">
+                  <Plus className="h-5 w-5" />
+                  <span className="font-medium">New Note</span>
+                </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="p-4">
-        <SidebarMenu className="px-0 py-2">
-            <SidebarMenuItem>
-                <SidebarMenuButton
-                    onClick={handleSignOut}
-                    className="flex items-center gap-3 px-4 py-6 rounded-xl transition-all duration-300 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                >
-                    <LogOut className="h-5 w-5" />
-                    <span className="font-medium">Sign Out</span>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-        </SidebarMenu>
-        <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-secondary/50">
-          <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center font-bold text-primary">JD</div>
-          <div className="flex flex-col">
-            <span className="text-sm font-semibold">Jane Doe</span>
-            <span className="text-xs text-muted-foreground">Computer Science</span>
+      <SidebarFooter className="p-4 space-y-4">
+        {user && (
+          <SidebarMenu className="px-0 py-0">
+              <SidebarMenuItem>
+                  <SidebarMenuButton
+                      onClick={handleSignOut}
+                      className="flex items-center gap-3 px-4 py-6 rounded-xl transition-all duration-300 hover:bg-destructive/10 hover:text-destructive group"
+                  >
+                      <LogOut className="h-5 w-5 text-muted-foreground group-hover:text-destructive" />
+                      <span className="font-medium">Sign Out</span>
+                  </SidebarMenuButton>
+              </SidebarMenuItem>
+          </SidebarMenu>
+        )}
+
+        {user ? (
+          <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-secondary/50 backdrop-blur-sm border border-border/30">
+            <div className="h-9 w-9 rounded-full bg-primary/20 flex items-center justify-center font-bold text-primary shadow-sm">
+              {user.isAnonymous ? <UserCircle className="h-5 w-5" /> : initials}
+            </div>
+            <div className="flex flex-col min-w-0">
+              <span className="text-sm font-semibold truncate">{userName}</span>
+              <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-tighter truncate">{userRole}</span>
+            </div>
           </div>
-        </div>
+        ) : (
+          <Button asChild className="w-full rounded-2xl py-6 font-bold gap-2">
+            <Link href="/login"><LogIn className="h-4 w-4" /> Sign In</Link>
+          </Button>
+        )}
       </SidebarFooter>
     </Sidebar>
   )
