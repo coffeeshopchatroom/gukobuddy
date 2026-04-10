@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -30,7 +31,8 @@ import {
   HelpCircle,
   Check,
   X,
-  FileText
+  FileText,
+  Puzzle
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { 
@@ -79,7 +81,7 @@ import Placeholder from '@tiptap/extension-placeholder'
 // AI Flow imports
 import { generateQuiz, evaluateAnswer, type QuizQuestion } from "@/ai/flows/quiz-flow"
 
-type StudyMode = 'classic' | 'tracking' | 'quiz' | null
+type StudyMode = 'classic' | 'tracking' | 'quiz' | 'matching' | null
 
 export default function FlashcardsPage() {
   const { user, isUserLoading } = useUser()
@@ -260,6 +262,16 @@ export default function FlashcardsPage() {
       )
     }
 
+    if (activeStudyMode === 'matching') {
+      return (
+        <MatchingView 
+          deckName={selectedDeck.name}
+          cards={cards || []}
+          onExit={() => setActiveStudyMode(null)}
+        />
+      )
+    }
+
     return (
       <StudyView 
         deckName={selectedDeck.name} 
@@ -355,7 +367,24 @@ export default function FlashcardsPage() {
                       </div>
                       <div>
                         <div className="font-bold text-lg">Quiz Mode</div>
-                        <div className="text-sm text-muted-foreground">Test yourself with generated questions.</div>
+                        <div className="text-sm text-muted-foreground">Test yourself with questions.</div>
+                      </div>
+                    </div>
+                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                  </Button>
+
+                  <Button 
+                    variant="outline" 
+                    className="flex items-center justify-between p-6 h-auto rounded-2xl border-2 hover:border-orange-500 hover:bg-orange-50 transition-all text-left group"
+                    onClick={() => handleStartStudy('matching')}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 rounded-xl bg-muted group-hover:bg-orange-100 transition-colors">
+                        <Puzzle className="h-6 w-6 text-muted-foreground group-hover:text-orange-600" />
+                      </div>
+                      <div>
+                        <div className="font-bold text-lg">Matching Mode</div>
+                        <div className="text-sm text-muted-foreground">Pair questions with answers.</div>
                       </div>
                     </div>
                     <ChevronRight className="h-5 w-5 text-muted-foreground" />
@@ -703,6 +732,132 @@ function RichFormattingToolbar({
           </Button>
         </div>
       )}
+    </div>
+  )
+}
+
+function MatchingView({ deckName, cards, onExit }: { deckName: string, cards: any[], onExit: () => void }) {
+  const [tiles, setTiles] = React.useState<any[]>([])
+  const [selected, setSelected] = React.useState<string | null>(null)
+  const [matched, setMatched] = React.useState<Set<string>>(new Set())
+  const [incorrect, setIncorrect] = React.useState<Set<string>>(new Set())
+  const [startTime] = React.useState(Date.now())
+  const [endTime, setEndTime] = React.useState<number | null>(null)
+
+  React.useEffect(() => {
+    // Select a subset of cards if many, but for simplicity let's use up to 8 cards (16 tiles)
+    const sessionCards = [...cards].sort(() => 0.5 - Math.random()).slice(0, 8)
+    
+    const tileList: any[] = []
+    sessionCards.forEach(card => {
+      tileList.push({ id: `q-${card.id}`, cardId: card.id, content: card.question, type: 'question', imageUrl: card.imageUrl })
+      tileList.push({ id: `a-${card.id}`, cardId: card.id, content: card.answer, type: 'answer', imageUrl: card.answerImageUrl })
+    })
+
+    setTiles(tileList.sort(() => 0.5 - Math.random()))
+  }, [cards])
+
+  const handleTileClick = (tileId: string) => {
+    if (matched.has(tileId) || incorrect.has(tileId) || tileId === selected) return
+
+    if (!selected) {
+      setSelected(tileId)
+      return
+    }
+
+    const selectedTile = tiles.find(t => t.id === selected)
+    const currentTile = tiles.find(t => t.id === tileId)
+
+    if (selectedTile.cardId === currentTile.cardId && selectedTile.type !== currentTile.type) {
+      // Match!
+      setMatched(prev => new Set(prev).add(selected).add(tileId))
+      setSelected(null)
+      
+      if (matched.size + 2 === tiles.length) {
+        setEndTime(Date.now())
+      }
+    } else {
+      // Mismatch
+      setIncorrect(new Set([selected, tileId]))
+      setSelected(null)
+      setTimeout(() => {
+        setIncorrect(new Set())
+      }, 800)
+    }
+  }
+
+  if (endTime) {
+    const totalTime = Math.round((endTime - startTime) / 1000)
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-8 animate-in fade-in duration-500 max-w-2xl mx-auto text-center">
+        <div className="p-8 bg-orange-100 rounded-full">
+          <Trophy className="h-16 w-16 text-orange-600" />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-4xl font-bold font-headline">Deck Matched!</h2>
+          <p className="text-muted-foreground text-lg">
+            You completed the matching set in {totalTime} seconds.
+          </p>
+        </div>
+        <Button onClick={onExit} className="rounded-2xl py-6 px-12 font-bold bg-orange-600 hover:bg-orange-700 text-white shadow-xl shadow-orange-200">
+          Back to Decks
+        </Button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="max-w-6xl w-full mx-auto space-y-8 animate-smooth-slow px-4 py-8">
+      <div className="flex items-center justify-between">
+        <Button variant="ghost" size="sm" onClick={onExit} className="rounded-xl gap-2 font-bold text-muted-foreground">
+          <ChevronLeft className="h-4 w-4" /> Exit Matching
+        </Button>
+        <div className="text-center">
+          <h2 className="font-headline text-xl font-bold">Matching: {deckName}</h2>
+          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+            {matched.size / 2} / {tiles.length / 2} Paired
+          </p>
+        </div>
+        <div className="w-24" />
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {tiles.map((tile) => {
+          const isSelected = selected === tile.id
+          const isMatched = matched.has(tile.id)
+          const isIncorrect = incorrect.has(tile.id)
+
+          return (
+            <Card
+              key={tile.id}
+              onClick={() => handleTileClick(tile.id)}
+              className={cn(
+                "h-48 cursor-pointer transition-all duration-300 border-2 rounded-[32px] overflow-hidden flex flex-col items-center justify-center p-6 text-center shadow-sm relative",
+                isMatched && "opacity-0 scale-95 pointer-events-none",
+                isSelected && "border-orange-500 bg-orange-50 ring-4 ring-orange-200",
+                isIncorrect && "border-destructive bg-destructive/5 animate-shake",
+                !isSelected && !isMatched && !isIncorrect && "hover:border-orange-200 hover:bg-muted/30"
+              )}
+            >
+              <div className="absolute top-3 left-1/2 -translate-x-1/2">
+                <Badge variant="outline" className="text-[8px] font-bold uppercase tracking-tighter opacity-30">
+                  {tile.type}
+                </Badge>
+              </div>
+              <div className="w-full h-full flex flex-col items-center justify-center gap-2 overflow-hidden">
+                {tile.imageUrl && (
+                  <div className="relative w-full h-20 shrink-0">
+                    <img src={tile.imageUrl} alt="tile visual" className="w-full h-full object-contain" />
+                  </div>
+                )}
+                <div className={cn("font-medium line-clamp-4 leading-tight", tile.imageUrl ? "text-sm" : "text-base")}>
+                  <HtmlContent html={tile.content} />
+                </div>
+              </div>
+            </Card>
+          )
+        })}
+      </div>
     </div>
   )
 }
