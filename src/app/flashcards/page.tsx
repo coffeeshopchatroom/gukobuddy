@@ -25,7 +25,11 @@ import {
   Heading1,
   Heading2,
   Smile,
-  Settings2
+  Settings2,
+  CheckCircle2,
+  XCircle,
+  Trophy,
+  Activity
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { 
@@ -36,9 +40,10 @@ import {
   useMemoFirebase,
   setDocumentNonBlocking,
   deleteDocumentNonBlocking,
+  updateDocumentNonBlocking,
   initiateAnonymousSignIn
 } from "@/firebase"
-import { collection, doc, query, orderBy } from "firebase/firestore"
+import { collection, doc, query, orderBy, serverTimestamp } from "firebase/firestore"
 import {
   Dialog,
   DialogContent,
@@ -71,13 +76,16 @@ import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
 
+type StudyMode = 'classic' | 'tracking' | null
+
 export default function FlashcardsPage() {
   const { user, isUserLoading } = useUser()
   const db = useFirestore()
   const auth = useAuth()
   
   const [selectedDeckId, setSelectedDeckId] = React.useState<string | null>(null)
-  const [isStudyMode, setIsStudyMode] = React.useState(false)
+  const [activeStudyMode, setActiveStudyMode] = React.useState<StudyMode>(null)
+  const [isModeSelectorOpen, setIsModeSelectorOpen] = React.useState(false)
   const [isCreateDeckOpen, setIsCreateDeckOpen] = React.useState(false)
   const [isCreateCardOpen, setIsCreateCardOpen] = React.useState(false)
   const [newDeckName, setNewDeckName] = React.useState("")
@@ -170,7 +178,7 @@ export default function FlashcardsPage() {
     deleteDocumentNonBlocking(deckRef)
     if (selectedDeckId === deckId) {
       setSelectedDeckId(null)
-      setIsStudyMode(false)
+      setActiveStudyMode(null)
     }
   }
 
@@ -213,6 +221,11 @@ export default function FlashcardsPage() {
     deleteDocumentNonBlocking(cardRef)
   }
 
+  const handleStartStudy = (mode: StudyMode) => {
+    setActiveStudyMode(mode)
+    setIsModeSelectorOpen(false)
+  }
+
   if (isUserLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -238,18 +251,29 @@ export default function FlashcardsPage() {
     )
   }
 
-  if (selectedDeckId && selectedDeck && isStudyMode) {
+  if (selectedDeckId && selectedDeck && activeStudyMode) {
     return (
       <StudyView 
         deckName={selectedDeck.name} 
         cards={cards || []} 
+        mode={activeStudyMode}
         isLoading={isCardsLoading}
-        onExit={() => setIsStudyMode(false)}
+        onExit={() => setActiveStudyMode(null)}
+        onCardAction={(cardId, correct) => {
+          if (!db || !user || !activeCourse) return;
+          const cardRef = doc(db, "users", user.uid, "courses", activeCourse.id, "flashcardSets", selectedDeckId, "flashcards", cardId);
+          updateDocumentNonBlocking(cardRef, {
+            reviewCount: (cards?.find(c => c.id === cardId)?.reviewCount || 0) + 1,
+            lastReviewedAt: new Date().toISOString(),
+            // Simplistic mastery tracking
+            easeFactor: correct ? 3.0 : 1.5
+          });
+        }}
       />
     )
   }
 
-  if (selectedDeckId && selectedDeck && !isStudyMode) {
+  if (selectedDeckId && selectedDeck && !activeStudyMode) {
     return (
       <div className="space-y-8 animate-smooth-slow">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -265,12 +289,74 @@ export default function FlashcardsPage() {
             </div>
           </div>
           <div className="flex gap-4">
-            <Button 
-              onClick={() => setIsStudyMode(true)}
-              className="bg-primary text-primary-foreground font-bold py-6 px-8 rounded-2xl shadow-lg transition-all hover:scale-105"
-            >
-              <Play className="h-5 w-5 mr-2" /> Study Now
-            </Button>
+            <Dialog open={isModeSelectorOpen} onOpenChange={setIsModeSelectorOpen}>
+              <DialogTrigger asChild>
+                <Button 
+                  className="bg-primary text-primary-foreground font-bold py-6 px-8 rounded-2xl shadow-lg transition-all hover:scale-105"
+                >
+                  <Play className="h-5 w-5 mr-2" /> Study Now
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="rounded-[32px] sm:max-w-md border-none bg-background shadow-2xl p-8">
+                <DialogHeader className="text-left mb-6">
+                  <DialogTitle className="font-headline text-2xl font-bold">Select Study Mode</DialogTitle>
+                  <DialogDescription>Choose how you want to learn today.</DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4">
+                  <Button 
+                    variant="outline" 
+                    className="flex items-center justify-between p-6 h-auto rounded-2xl border-2 hover:border-primary hover:bg-primary/5 transition-all text-left group"
+                    onClick={() => handleStartStudy('classic')}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 rounded-xl bg-muted group-hover:bg-primary/20 transition-colors">
+                        <RotateCcw className="h-6 w-6 text-muted-foreground group-hover:text-primary" />
+                      </div>
+                      <div>
+                        <div className="font-bold text-lg">Classic Mode</div>
+                        <div className="text-sm text-muted-foreground">Standard flip and review.</div>
+                      </div>
+                    </div>
+                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                  </Button>
+
+                  <Button 
+                    variant="outline" 
+                    className="flex items-center justify-between p-6 h-auto rounded-2xl border-2 hover:border-accent hover:bg-accent/5 transition-all text-left group"
+                    onClick={() => handleStartStudy('tracking')}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 rounded-xl bg-muted group-hover:bg-accent/20 transition-colors">
+                        <Activity className="h-6 w-6 text-muted-foreground group-hover:text-accent-foreground" />
+                      </div>
+                      <div>
+                        <div className="font-bold text-lg">Tracking Mode</div>
+                        <div className="text-sm text-muted-foreground">Track mastery with Got it/Need Review.</div>
+                      </div>
+                    </div>
+                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                  </Button>
+                  
+                  <div className="opacity-50 pointer-events-none">
+                    <Button 
+                      variant="outline" 
+                      className="flex items-center justify-between p-6 h-auto rounded-2xl border-2 text-left w-full"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 rounded-xl bg-muted">
+                          <Search className="h-6 w-6 text-muted-foreground" />
+                        </div>
+                        <div>
+                          <div className="font-bold text-lg">Quiz Mode</div>
+                          <div className="text-sm text-muted-foreground">Coming soon...</div>
+                        </div>
+                      </div>
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+
             <Dialog open={isCreateCardOpen} onOpenChange={setIsCreateCardOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline" className="font-bold py-6 px-8 rounded-2xl shadow-sm transition-all hover:bg-muted">
@@ -457,11 +543,11 @@ export default function FlashcardsPage() {
               onDelete={() => handleDeleteDeck(deck.id)}
               onEdit={() => {
                 setSelectedDeckId(deck.id)
-                setIsStudyMode(false)
+                setActiveStudyMode(null)
               }}
               onStudy={() => {
                 setSelectedDeckId(deck.id)
-                setIsStudyMode(true)
+                setIsModeSelectorOpen(true)
               }}
             />
           ))}
@@ -616,9 +702,33 @@ function RichFormattingToolbar({
   )
 }
 
-function StudyView({ deckName, cards, isLoading, onExit }: { deckName: string, cards: any[], isLoading: boolean, onExit: () => void }) {
+function StudyView({ 
+  deckName, 
+  cards, 
+  mode, 
+  isLoading, 
+  onExit,
+  onCardAction 
+}: { 
+  deckName: string, 
+  cards: any[], 
+  mode: StudyMode, 
+  isLoading: boolean, 
+  onExit: () => void,
+  onCardAction?: (cardId: string, correct: boolean) => void
+}) {
+  const [sessionCards, setSessionCards] = React.useState<any[]>([])
   const [currentIndex, setCurrentIndex] = React.useState(0)
   const [isFlipped, setIsFlipped] = React.useState(false)
+  const [isFinished, setIsFinished] = React.useState(false)
+  const [correctCount, setCorrectCount] = React.useState(0)
+
+  // Initialize session cards
+  React.useEffect(() => {
+    if (cards.length > 0) {
+      setSessionCards([...cards])
+    }
+  }, [cards])
 
   if (isLoading) {
     return (
@@ -642,29 +752,99 @@ function StudyView({ deckName, cards, isLoading, onExit }: { deckName: string, c
     )
   }
 
-  const currentCard = cards[currentIndex]
+  if (isFinished) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-8 animate-in fade-in zoom-in duration-500 text-center max-w-md mx-auto">
+        <div className="p-8 bg-primary/20 rounded-full">
+          <Trophy className="h-16 w-16 text-primary" />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-4xl font-bold font-headline">Session Complete!</h2>
+          <p className="text-muted-foreground text-lg">You've mastered the deck for this session.</p>
+        </div>
+        <Card className="w-full border-none bg-muted/30 p-6 rounded-[32px]">
+          <div className="flex justify-around items-center">
+            <div>
+              <div className="text-3xl font-bold text-primary">{correctCount}</div>
+              <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Mastered</div>
+            </div>
+            <div className="h-8 w-px bg-border" />
+            <div>
+              <div className="text-3xl font-bold">{cards.length}</div>
+              <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Total Cards</div>
+            </div>
+          </div>
+        </Card>
+        <div className="flex gap-4 w-full">
+          <Button onClick={onExit} variant="outline" className="flex-1 rounded-2xl py-6 font-bold">Close</Button>
+          <Button onClick={() => {
+            setSessionCards([...cards]);
+            setCurrentIndex(0);
+            setIsFinished(false);
+            setCorrectCount(0);
+          }} className="flex-1 rounded-2xl py-6 font-bold bg-primary text-primary-foreground">Restart</Button>
+        </div>
+      </div>
+    )
+  }
+
+  const currentCard = sessionCards[currentIndex]
 
   const handleNext = () => {
     setIsFlipped(false)
-    setCurrentIndex((prev) => (prev + 1) % cards.length)
+    setCurrentIndex((prev) => (prev + 1) % sessionCards.length)
   }
 
   const handlePrev = () => {
     setIsFlipped(false)
-    setCurrentIndex((prev) => (prev - 1 + cards.length) % cards.length)
+    setCurrentIndex((prev) => (prev - 1 + sessionCards.length) % sessionCards.length)
+  }
+
+  const handleTrackingAction = (correct: boolean) => {
+    const cardId = currentCard.id
+    onCardAction?.(cardId, correct)
+
+    if (correct) {
+      setCorrectCount(prev => prev + 1)
+      const newSessionCards = sessionCards.filter(c => c.id !== cardId)
+      
+      if (newSessionCards.length === 0) {
+        setIsFinished(true)
+      } else {
+        setSessionCards(newSessionCards)
+        setCurrentIndex(prev => prev % newSessionCards.length)
+        setIsFlipped(false)
+      }
+    } else {
+      // Re-queue card at the end of the deck
+      const newSessionCards = [...sessionCards]
+      const [removed] = newSessionCards.splice(currentIndex, 1)
+      newSessionCards.push(removed)
+      setSessionCards(newSessionCards)
+      setIsFlipped(false)
+      // Current index stays same but it's now a different card (the next one)
+      // unless it was the only card, in which case it just flips back
+    }
   }
 
   return (
     <div className="max-w-3xl mx-auto space-y-8 animate-smooth-slow h-full flex flex-col justify-center min-h-[80vh]">
       <div className="flex items-center justify-between">
         <Button variant="ghost" size="sm" onClick={onExit} className="rounded-xl gap-2 font-bold text-muted-foreground hover:text-foreground">
-          <ChevronLeft className="h-4 w-4" /> Exit Study Mode
+          <ChevronLeft className="h-4 w-4" /> Exit Study
         </Button>
         <div className="text-center">
           <h2 className="font-headline text-xl font-bold">{deckName}</h2>
-          <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{currentIndex + 1} of {cards.length}</p>
+          <div className="flex items-center justify-center gap-2">
+            <Badge variant="secondary" className="text-[10px] font-bold uppercase tracking-widest px-2 py-0">
+              {mode}
+            </Badge>
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+              {mode === 'tracking' ? `${cards.length - sessionCards.length} / ${cards.length} MASTERED` : `${currentIndex + 1} of ${sessionCards.length}`}
+            </p>
+          </div>
         </div>
-        <div className="w-20" /> 
+        <div className="w-24" /> 
       </div>
 
       <div className="flex flex-col items-center justify-center gap-12">
@@ -676,13 +856,13 @@ function StudyView({ deckName, cards, isLoading, onExit }: { deckName: string, c
             {/* Front Side */}
             <Card className={`absolute inset-0 backface-hidden border-none shadow-2xl rounded-[32px] flex flex-col items-center justify-center p-12 bg-white ${isFlipped ? 'pointer-events-none opacity-0' : 'opacity-100'}`}>
               <div className="w-full h-full flex flex-col items-center justify-center gap-6 overflow-hidden">
-                {currentCard.imageUrl && (
+                {currentCard?.imageUrl && (
                   <div className="w-full flex-1 min-h-0 relative">
                     <img src={currentCard.imageUrl} alt="Card visual" className="w-full h-full object-contain block mx-auto" />
                   </div>
                 )}
-                <div className={cn("font-headline font-bold text-center leading-tight w-full", currentCard.imageUrl ? "text-2xl" : "text-4xl")}>
-                  <HtmlContent html={currentCard.question} />
+                <div className={cn("font-headline font-bold text-center leading-tight w-full", currentCard?.imageUrl ? "text-2xl" : "text-4xl")}>
+                  <HtmlContent html={currentCard?.question || ''} />
                 </div>
               </div>
               <p className="absolute bottom-6 text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-primary transition-colors">
@@ -694,13 +874,13 @@ function StudyView({ deckName, cards, isLoading, onExit }: { deckName: string, c
             <Card className={`absolute inset-0 backface-hidden border-none shadow-2xl rounded-[32px] flex flex-col items-center justify-center p-12 bg-primary/10 rotate-y-180 ${!isFlipped ? 'pointer-events-none opacity-0' : 'opacity-100'}`}>
               <div className="w-full h-full flex flex-col items-center justify-center gap-6 overflow-hidden">
                 <span className="text-[10px] font-bold uppercase tracking-widest text-primary block text-center">Answer</span>
-                {currentCard.answerImageUrl && (
+                {currentCard?.answerImageUrl && (
                   <div className="w-full flex-1 min-h-0 relative">
                     <img src={currentCard.answerImageUrl} alt="Answer visual" className="w-full h-full object-contain block mx-auto" />
                   </div>
                 )}
-                <div className={cn("font-medium text-center leading-relaxed w-full", currentCard.answerImageUrl ? "text-xl" : "text-3xl")}>
-                  <HtmlContent html={currentCard.answer} />
+                <div className={cn("font-medium text-center leading-relaxed w-full", currentCard?.answerImageUrl ? "text-xl" : "text-3xl")}>
+                  <HtmlContent html={currentCard?.answer || ''} />
                 </div>
               </div>
               <p className="absolute bottom-6 text-[10px] font-bold uppercase tracking-widest text-primary">
@@ -710,41 +890,70 @@ function StudyView({ deckName, cards, isLoading, onExit }: { deckName: string, c
           </div>
         </div>
 
-        <div className="flex items-center gap-6">
-          <Button 
-            variant="outline" 
-            size="icon" 
-            onClick={handlePrev}
-            className="h-14 w-14 rounded-full border-none shadow-md hover:scale-110 transition-transform bg-white"
-          >
-            <ChevronLeft className="h-6 w-6" />
-          </Button>
-          
-          <Button 
-            variant="outline" 
-            size="icon" 
-            onClick={() => setIsFlipped(!isFlipped)}
-            className="h-16 w-16 rounded-full border-none shadow-lg hover:scale-110 transition-transform bg-accent text-accent-foreground"
-          >
-            <RotateCcw className="h-6 w-6" />
-          </Button>
+        {mode === 'classic' ? (
+          <div className="flex items-center gap-6">
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={handlePrev}
+              className="h-14 w-14 rounded-full border-none shadow-md hover:scale-110 transition-transform bg-white"
+            >
+              <ChevronLeft className="h-6 w-6" />
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={() => setIsFlipped(!isFlipped)}
+              className="h-16 w-16 rounded-full border-none shadow-lg hover:scale-110 transition-transform bg-accent text-accent-foreground"
+            >
+              <RotateCcw className="h-6 w-6" />
+            </Button>
 
-          <Button 
-            variant="outline" 
-            size="icon" 
-            onClick={handleNext}
-            className="h-14 w-14 rounded-full border-none shadow-md hover:scale-110 transition-transform bg-white"
-          >
-            <ChevronRight className="h-6 w-6" />
-          </Button>
-        </div>
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={handleNext}
+              className="h-14 w-14 rounded-full border-none shadow-md hover:scale-110 transition-transform bg-white"
+            >
+              <ChevronRight className="h-6 w-6" />
+            </Button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-8">
+            <Button 
+              onClick={() => handleTrackingAction(false)}
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-bold rounded-2xl py-8 px-10 shadow-lg shadow-destructive/20 flex flex-col gap-1 transition-all hover:scale-105"
+            >
+              <XCircle className="h-6 w-6" />
+              <span className="text-[10px] uppercase tracking-widest">Need Review</span>
+            </Button>
+
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={() => setIsFlipped(!isFlipped)}
+              className="h-14 w-14 rounded-full border-none shadow-md hover:scale-110 transition-transform bg-white"
+            >
+              <RotateCcw className="h-5 w-5 text-muted-foreground" />
+            </Button>
+
+            <Button 
+              onClick={() => handleTrackingAction(true)}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-2xl py-8 px-10 shadow-lg shadow-primary/20 flex flex-col gap-1 transition-all hover:scale-105"
+            >
+              <CheckCircle2 className="h-6 w-6" />
+              <span className="text-[10px] uppercase tracking-widest">Got it</span>
+            </Button>
+          </div>
+        )}
       </div>
       
       <div className="pt-8">
         <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
           <div 
             className="h-full bg-primary transition-all duration-500" 
-            style={{ width: `${((currentIndex + 1) / cards.length) * 100}%` }}
+            style={{ width: `${((cards.length - sessionCards.length + (mode === 'classic' ? currentIndex + 1 : 0)) / cards.length) * 100}%` }}
           />
         </div>
       </div>
