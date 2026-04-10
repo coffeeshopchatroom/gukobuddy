@@ -265,7 +265,6 @@ export default function FlashcardsPage() {
           updateDocumentNonBlocking(cardRef, {
             reviewCount: (cards?.find(c => c.id === cardId)?.reviewCount || 0) + 1,
             lastReviewedAt: new Date().toISOString(),
-            // Simplistic mastery tracking
             easeFactor: correct ? 3.0 : 1.5
           });
         }}
@@ -722,13 +721,15 @@ function StudyView({
   const [isFlipped, setIsFlipped] = React.useState(false)
   const [isFinished, setIsFinished] = React.useState(false)
   const [correctCount, setCorrectCount] = React.useState(0)
+  const [hasInitialized, setHasInitialized] = React.useState(false)
 
-  // Initialize session cards
+  // Initialize session cards only once when cards are available
   React.useEffect(() => {
-    if (cards.length > 0) {
+    if (!hasInitialized && cards.length > 0) {
       setSessionCards([...cards])
+      setHasInitialized(true)
     }
-  }, [cards])
+  }, [cards, hasInitialized])
 
   if (isLoading) {
     return (
@@ -782,6 +783,7 @@ function StudyView({
             setCurrentIndex(0);
             setIsFinished(false);
             setCorrectCount(0);
+            setIsFlipped(false);
           }} className="flex-1 rounded-2xl py-6 font-bold bg-primary text-primary-foreground">Restart</Button>
         </div>
       </div>
@@ -801,6 +803,8 @@ function StudyView({
   }
 
   const handleTrackingAction = (correct: boolean) => {
+    if (!currentCard) return;
+
     const cardId = currentCard.id
     onCardAction?.(cardId, correct)
 
@@ -812,18 +816,24 @@ function StudyView({
         setIsFinished(true)
       } else {
         setSessionCards(newSessionCards)
-        setCurrentIndex(prev => prev % newSessionCards.length)
+        // If we removed a card, we might need to adjust current index if it was at the end
+        setCurrentIndex(prev => prev >= newSessionCards.length ? 0 : prev)
         setIsFlipped(false)
       }
     } else {
       // Re-queue card at the end of the deck
-      const newSessionCards = [...sessionCards]
-      const [removed] = newSessionCards.splice(currentIndex, 1)
-      newSessionCards.push(removed)
-      setSessionCards(newSessionCards)
-      setIsFlipped(false)
-      // Current index stays same but it's now a different card (the next one)
-      // unless it was the only card, in which case it just flips back
+      if (sessionCards.length > 1) {
+        const newSessionCards = [...sessionCards]
+        const [removed] = newSessionCards.splice(currentIndex, 1)
+        newSessionCards.push(removed)
+        setSessionCards(newSessionCards)
+        // No need to change currentIndex, as the next card has shifted into the current index
+        // except when we were at the very last card already
+        setIsFlipped(false)
+      } else {
+        // Only one card left, just flip it back
+        setIsFlipped(false)
+      }
     }
   }
 
