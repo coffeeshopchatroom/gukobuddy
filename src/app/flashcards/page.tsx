@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -745,7 +744,7 @@ function StudyView({
     const missedCards = sessionCards.filter(c => missedIds.has(c.id));
 
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-8 animate-in fade-in zoom-in duration-500 text-center max-w-md mx-auto">
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-8 animate-in fade-in zoom-in duration-500 text-center max-w-md mx-auto relative z-10">
         <div className="p-8 bg-primary/20 rounded-full">
           <Trophy className="h-16 w-16 text-primary" />
         </div>
@@ -843,133 +842,142 @@ function StudyView({
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-8 animate-smooth-slow h-full flex flex-col justify-center min-h-[80vh]">
-      <div className="flex items-center justify-between">
-        <Button variant="ghost" size="sm" onClick={onExit} className="rounded-xl gap-2 font-bold text-muted-foreground hover:text-foreground">
-          <ChevronLeft className="h-4 w-4" /> Exit Study
-        </Button>
-        <div className="text-center">
-          <h2 className="font-headline text-xl font-bold">{deckName}</h2>
-          <div className="flex items-center justify-center gap-2">
-            <Badge variant="secondary" className="text-[10px] font-bold uppercase tracking-widest px-2 py-0">
-              {mode}
-            </Badge>
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-              {currentIndex + 1} / {sessionCards.length}
-            </p>
-          </div>
-        </div>
-        <div className="w-24" /> 
+    <div className="relative min-h-[85vh] flex flex-col items-center justify-center">
+      {/* Animated Background Blobs */}
+      <div className="absolute inset-0 -z-10 pointer-events-none overflow-hidden rounded-[48px]">
+        <div className="absolute top-0 -left-20 w-96 h-96 bg-primary/15 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-blob"></div>
+        <div className="absolute top-20 -right-20 w-96 h-96 bg-accent/15 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-blob animation-delay-2000"></div>
+        <div className="absolute -bottom-20 left-40 w-96 h-96 bg-secondary/20 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-blob animation-delay-4000"></div>
       </div>
 
-      <div className="flex flex-col items-center justify-center gap-12">
-        <div 
-          onClick={() => setIsFlipped(!isFlipped)}
-          className="relative w-full aspect-[3/2] max-h-[500px] cursor-pointer perspective-1000 group"
-        >
-          <div className={`relative w-full h-full transition-all duration-500 transform-style-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
-            {/* Front Side */}
-            <Card className={`absolute inset-0 backface-hidden border-none shadow-2xl rounded-[32px] flex flex-col items-center justify-center p-12 bg-white ${isFlipped ? 'pointer-events-none opacity-0' : 'opacity-100'}`}>
-              <div className="w-full h-full flex flex-col items-center justify-center gap-6 overflow-hidden">
-                {currentCard?.imageUrl && (
-                  <div className="w-full flex-1 min-h-0 relative">
-                    <img src={currentCard.imageUrl} alt="Card visual" className="w-full h-full object-contain block mx-auto" />
-                  </div>
-                )}
-                <div className={cn("font-headline font-bold text-center leading-tight w-full", currentCard?.imageUrl ? "text-2xl" : "text-4xl")}>
-                  <HtmlContent html={currentCard?.question || ''} />
-                </div>
-              </div>
-              <p className="absolute bottom-6 text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-primary transition-colors">
-                Click to reveal answer
+      <div className="max-w-3xl w-full space-y-8 animate-smooth-slow relative z-10 px-4">
+        <div className="flex items-center justify-between">
+          <Button variant="ghost" size="sm" onClick={onExit} className="rounded-xl gap-2 font-bold text-muted-foreground hover:text-foreground bg-white/50 backdrop-blur-sm">
+            <ChevronLeft className="h-4 w-4" /> Exit Study
+          </Button>
+          <div className="text-center">
+            <h2 className="font-headline text-xl font-bold">{deckName}</h2>
+            <div className="flex items-center justify-center gap-2">
+              <Badge variant="secondary" className="text-[10px] font-bold uppercase tracking-widest px-2 py-0">
+                {mode}
+              </Badge>
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                {currentIndex + 1} / {sessionCards.length}
               </p>
-            </Card>
-
-            {/* Back Side */}
-            <Card className={`absolute inset-0 backface-hidden border-none shadow-2xl rounded-[32px] flex flex-col items-center justify-center p-12 bg-primary/10 rotate-y-180 ${!isFlipped ? 'pointer-events-none opacity-0' : 'opacity-100'}`}>
-              <div className="w-full h-full flex flex-col items-center justify-center gap-6 overflow-hidden">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-primary block text-center">Answer</span>
-                {currentCard?.answerImageUrl && (
-                  <div className="w-full flex-1 min-h-0 relative">
-                    <img src={currentCard.answerImageUrl} alt="Answer visual" className="w-full h-full object-contain block mx-auto" />
-                  </div>
-                )}
-                <div className={cn("font-medium text-center leading-relaxed w-full", currentCard?.answerImageUrl ? "text-xl" : "text-3xl")}>
-                  <HtmlContent html={currentCard?.answer || ''} />
-                </div>
-              </div>
-              <p className="absolute bottom-6 text-[10px] font-bold uppercase tracking-widest text-primary">
-                Click to flip back
-              </p>
-            </Card>
+            </div>
           </div>
+          <div className="w-24" /> 
         </div>
 
-        {mode === 'classic' ? (
-          <div className="flex items-center gap-6">
-            <Button 
-              variant="outline" 
-              size="icon" 
-              onClick={handlePrev}
-              className="h-14 w-14 rounded-full border-none shadow-md hover:scale-110 transition-transform bg-white"
-            >
-              <ChevronLeft className="h-6 w-6" />
-            </Button>
-            
-            <Button 
-              variant="outline" 
-              size="icon" 
-              onClick={() => setIsFlipped(!isFlipped)}
-              className="h-16 w-16 rounded-full border-none shadow-lg hover:scale-110 transition-transform bg-accent text-accent-foreground"
-            >
-              <RotateCcw className="h-6 w-6" />
-            </Button>
-
-            <Button 
-              variant="outline" 
-              size="icon" 
-              onClick={handleNext}
-              className="h-14 w-14 rounded-full border-none shadow-md hover:scale-110 transition-transform bg-white"
-            >
-              <ChevronRight className="h-6 w-6" />
-            </Button>
-          </div>
-        ) : (
-          <div className="flex items-center gap-8">
-            <Button 
-              onClick={() => handleTrackingAction(false)}
-              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-bold rounded-2xl py-8 px-10 shadow-lg shadow-destructive/20 flex flex-col gap-1 transition-all hover:scale-105"
-            >
-              <XCircle className="h-6 w-6" />
-              <span className="text-[10px] uppercase tracking-widest">Need Review</span>
-            </Button>
-
-            <Button 
-              variant="outline" 
-              size="icon" 
-              onClick={() => setIsFlipped(!isFlipped)}
-              className="h-14 w-14 rounded-full border-none shadow-md hover:scale-110 transition-transform bg-white"
-            >
-              <RotateCcw className="h-5 w-5 text-muted-foreground" />
-            </Button>
-
-            <Button 
-              onClick={() => handleTrackingAction(true)}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-2xl py-8 px-10 shadow-lg shadow-primary/20 flex flex-col gap-1 transition-all hover:scale-105"
-            >
-              <CheckCircle2 className="h-6 w-6" />
-              <span className="text-[10px] uppercase tracking-widest">Got it</span>
-            </Button>
-          </div>
-        )}
-      </div>
-      
-      <div className="pt-8">
-        <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+        <div className="flex flex-col items-center justify-center gap-12">
           <div 
-            className="h-full bg-primary transition-all duration-500" 
-            style={{ width: `${((currentIndex + 1) / sessionCards.length) * 100}%` }}
-          />
+            onClick={() => setIsFlipped(!isFlipped)}
+            className="relative w-full aspect-[3/2] max-h-[500px] cursor-pointer perspective-1000 group"
+          >
+            <div className={`relative w-full h-full transition-all duration-500 transform-style-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
+              {/* Front Side */}
+              <Card className={`absolute inset-0 backface-hidden border-none shadow-2xl rounded-[32px] flex flex-col items-center justify-center p-12 bg-white ${isFlipped ? 'pointer-events-none opacity-0' : 'opacity-100'}`}>
+                <div className="w-full h-full flex flex-col items-center justify-center gap-6 overflow-hidden">
+                  {currentCard?.imageUrl && (
+                    <div className="w-full flex-1 min-h-0 relative">
+                      <img src={currentCard.imageUrl} alt="Card visual" className="w-full h-full object-contain block mx-auto" />
+                    </div>
+                  )}
+                  <div className={cn("font-headline font-bold text-center leading-tight w-full", currentCard?.imageUrl ? "text-2xl" : "text-4xl")}>
+                    <HtmlContent html={currentCard?.question || ''} />
+                  </div>
+                </div>
+                <p className="absolute bottom-6 text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-primary transition-colors">
+                  Click to reveal answer
+                </p>
+              </Card>
+
+              {/* Back Side */}
+              <Card className={`absolute inset-0 backface-hidden border-none shadow-2xl rounded-[32px] flex flex-col items-center justify-center p-12 bg-primary/10 rotate-y-180 backdrop-blur-sm ${!isFlipped ? 'pointer-events-none opacity-0' : 'opacity-100'}`}>
+                <div className="w-full h-full flex flex-col items-center justify-center gap-6 overflow-hidden">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-primary block text-center">Answer</span>
+                  {currentCard?.answerImageUrl && (
+                    <div className="w-full flex-1 min-h-0 relative">
+                      <img src={currentCard.answerImageUrl} alt="Answer visual" className="w-full h-full object-contain block mx-auto" />
+                    </div>
+                  )}
+                  <div className={cn("font-medium text-center leading-relaxed w-full", currentCard?.answerImageUrl ? "text-xl" : "text-3xl")}>
+                    <HtmlContent html={currentCard?.answer || ''} />
+                  </div>
+                </div>
+                <p className="absolute bottom-6 text-[10px] font-bold uppercase tracking-widest text-primary">
+                  Click to flip back
+                </p>
+              </Card>
+            </div>
+          </div>
+
+          {mode === 'classic' ? (
+            <div className="flex items-center gap-6">
+              <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={handlePrev}
+                className="h-14 w-14 rounded-full border-none shadow-md hover:scale-110 transition-transform bg-white"
+              >
+                <ChevronLeft className="h-6 w-6" />
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={() => setIsFlipped(!isFlipped)}
+                className="h-16 w-16 rounded-full border-none shadow-lg hover:scale-110 transition-transform bg-accent text-accent-foreground"
+              >
+                <RotateCcw className="h-6 w-6" />
+              </Button>
+
+              <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={handleNext}
+                className="h-14 w-14 rounded-full border-none shadow-md hover:scale-110 transition-transform bg-white"
+              >
+                <ChevronRight className="h-6 w-6" />
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-8">
+              <Button 
+                onClick={() => handleTrackingAction(false)}
+                className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-bold rounded-2xl py-8 px-10 shadow-lg shadow-destructive/20 flex flex-col gap-1 transition-all hover:scale-105"
+              >
+                <XCircle className="h-6 w-6" />
+                <span className="text-[10px] uppercase tracking-widest">Need Review</span>
+              </Button>
+
+              <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={() => setIsFlipped(!isFlipped)}
+                className="h-14 w-14 rounded-full border-none shadow-md hover:scale-110 transition-transform bg-white/80 backdrop-blur-sm"
+              >
+                <RotateCcw className="h-5 w-5 text-muted-foreground" />
+              </Button>
+
+              <Button 
+                onClick={() => handleTrackingAction(true)}
+                className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-2xl py-8 px-10 shadow-lg shadow-primary/20 flex flex-col gap-1 transition-all hover:scale-105"
+              >
+                <CheckCircle2 className="h-6 w-6" />
+                <span className="text-[10px] uppercase tracking-widest">Got it</span>
+              </Button>
+            </div>
+          )}
+        </div>
+        
+        <div className="pt-8">
+          <div className="h-2 w-full bg-white/30 backdrop-blur-sm rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-primary transition-all duration-500" 
+              style={{ width: `${((currentIndex + 1) / sessionCards.length) * 100}%` }}
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -1023,7 +1031,7 @@ function DeckCard({ deck, onDelete, onEdit, onStudy }: { deck: any, onDelete: ()
           <div className="space-y-2">
             <div className="flex justify-between text-xs font-bold uppercase tracking-tighter">
               <span>Mastery</span>
-              <span className="text-primary">{mastery}%</span>
+              <span>{mastery}%</span>
             </div>
             <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
               <div 
