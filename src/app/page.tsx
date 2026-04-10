@@ -47,13 +47,13 @@ function LandingPage() {
             muted 
             loop 
             playsInline 
+            preload="auto"
             className="w-full h-full object-cover"
-            poster="https://picsum.photos/seed/study-hero/1200/800"
           >
-            <source src="https://assets.mixkit.co/videos/preview/mixkit-girl-in-white-t-shirt-studying-with-her-laptop-4050-large.mp4" type="video/mp4" />
+            <source src="https://cdn.pixabay.com/video/2020/09/10/49416-457333068_large.mp4" type="video/mp4" />
           </video>
-          {/* overlay to ensure text readability */}
-          <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px]" />
+          {/* overlay to ensure readability and "cool" look */}
+          <div className="absolute inset-0 bg-background/40 backdrop-blur-[1px]" />
         </div>
 
         <div className="relative z-10 space-y-8 flex flex-col items-center">
@@ -65,7 +65,7 @@ function LandingPage() {
             study better. <br /> study <span className="text-primary italic">your way.</span>
           </h1>
           <p className="text-muted-foreground text-xl md:text-2xl max-w-2xl leading-relaxed lowercase font-medium">
-            get your study life together with notes, flashcards, and simple testing tools.
+            get your study life together with notes, flashcards, and simple tools.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 pt-4">
             <Button asChild className="rounded-2xl py-8 px-10 text-lg font-bold shadow-xl shadow-primary/20 transition-all hover:scale-105">
@@ -97,8 +97,8 @@ function LandingPage() {
         />
         <FeatureCard 
           icon={<Sparkles className="h-6 w-6" />}
-          title="testing tools"
-          description="practice with multiple ways to answer until you've got it down."
+          title="organized notes"
+          description="keep your thoughts together with a clean digital notebook."
           color="bg-indigo-500"
         />
       </div>
