@@ -29,7 +29,8 @@ import {
   CheckCircle2,
   XCircle,
   Trophy,
-  Activity
+  Activity,
+  RefreshCw
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { 
@@ -335,23 +336,6 @@ export default function FlashcardsPage() {
                     </div>
                     <ChevronRight className="h-5 w-5 text-muted-foreground" />
                   </Button>
-                  
-                  <div className="opacity-50 pointer-events-none">
-                    <Button 
-                      variant="outline" 
-                      className="flex items-center justify-between p-6 h-auto rounded-2xl border-2 text-left w-full"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="p-3 rounded-xl bg-muted">
-                          <Search className="h-6 w-6 text-muted-foreground" />
-                        </div>
-                        <div>
-                          <div className="font-bold text-lg">Quiz Mode</div>
-                          <div className="text-sm text-muted-foreground">Coming soon...</div>
-                        </div>
-                      </div>
-                    </Button>
-                  </div>
                 </div>
               </DialogContent>
             </Dialog>
@@ -720,7 +704,8 @@ function StudyView({
   const [currentIndex, setCurrentIndex] = React.useState(0)
   const [isFlipped, setIsFlipped] = React.useState(false)
   const [isFinished, setIsFinished] = React.useState(false)
-  const [correctCount, setCorrectCount] = React.useState(0)
+  const [masteredIds, setMasteredIds] = React.useState<Set<string>>(new Set())
+  const [missedIds, setMissedIds] = React.useState<Set<string>>(new Set())
   const [hasInitialized, setHasInitialized] = React.useState(false)
 
   // Initialize session cards only once when cards are available
@@ -754,37 +739,72 @@ function StudyView({
   }
 
   if (isFinished) {
+    const totalInPass = sessionCards.length;
+    const masteredInPass = masteredIds.size;
+    const masteryPercent = totalInPass > 0 ? Math.round((masteredInPass / totalInPass) * 100) : 0;
+    const missedCards = sessionCards.filter(c => missedIds.has(c.id));
+
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-8 animate-in fade-in zoom-in duration-500 text-center max-w-md mx-auto">
         <div className="p-8 bg-primary/20 rounded-full">
           <Trophy className="h-16 w-16 text-primary" />
         </div>
         <div className="space-y-2">
-          <h2 className="text-4xl font-bold font-headline">Session Complete!</h2>
-          <p className="text-muted-foreground text-lg">You've mastered the deck for this session.</p>
+          <h2 className="text-4xl font-bold font-headline">{masteryPercent}% Mastered</h2>
+          <p className="text-muted-foreground text-lg">
+            {masteredInPass === totalInPass 
+              ? "Perfect! You've mastered all cards in this pass." 
+              : `You mastered ${masteredInPass} out of ${totalInPass} cards.`}
+          </p>
         </div>
+        
         <Card className="w-full border-none bg-muted/30 p-6 rounded-[32px]">
           <div className="flex justify-around items-center">
             <div>
-              <div className="text-3xl font-bold text-primary">{correctCount}</div>
+              <div className="text-3xl font-bold text-primary">{masteredInPass}</div>
               <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Mastered</div>
             </div>
             <div className="h-8 w-px bg-border" />
             <div>
-              <div className="text-3xl font-bold">{cards.length}</div>
-              <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Total Cards</div>
+              <div className="text-3xl font-bold text-destructive">{missedCards.length}</div>
+              <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Reviewing</div>
             </div>
           </div>
         </Card>
-        <div className="flex gap-4 w-full">
-          <Button onClick={onExit} variant="outline" className="flex-1 rounded-2xl py-6 font-bold">Close</Button>
-          <Button onClick={() => {
-            setSessionCards([...cards]);
-            setCurrentIndex(0);
-            setIsFinished(false);
-            setCorrectCount(0);
-            setIsFlipped(false);
-          }} className="flex-1 rounded-2xl py-6 font-bold bg-primary text-primary-foreground">Restart</Button>
+
+        <div className="flex flex-col gap-3 w-full">
+          {missedCards.length > 0 && (
+            <Button 
+              onClick={() => {
+                setSessionCards(missedCards);
+                setCurrentIndex(0);
+                setIsFinished(false);
+                setMasteredIds(new Set());
+                setMissedIds(new Set());
+                setIsFlipped(false);
+              }} 
+              className="w-full rounded-2xl py-6 font-bold bg-accent text-accent-foreground"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" /> Study Remaining ({missedCards.length})
+            </Button>
+          )}
+          <Button 
+            onClick={() => {
+              setSessionCards([...cards]);
+              setCurrentIndex(0);
+              setIsFinished(false);
+              setMasteredIds(new Set());
+              setMissedIds(new Set());
+              setIsFlipped(false);
+            }} 
+            variant="outline"
+            className="w-full rounded-2xl py-6 font-bold"
+          >
+            Restart Full Deck
+          </Button>
+          <Button onClick={onExit} variant="ghost" className="w-full rounded-2xl py-6 font-bold text-muted-foreground">
+            Close Session
+          </Button>
         </div>
       </div>
     )
@@ -809,31 +829,16 @@ function StudyView({
     onCardAction?.(cardId, correct)
 
     if (correct) {
-      setCorrectCount(prev => prev + 1)
-      const newSessionCards = sessionCards.filter(c => c.id !== cardId)
-      
-      if (newSessionCards.length === 0) {
-        setIsFinished(true)
-      } else {
-        setSessionCards(newSessionCards)
-        // If we removed a card, we might need to adjust current index if it was at the end
-        setCurrentIndex(prev => prev >= newSessionCards.length ? 0 : prev)
-        setIsFlipped(false)
-      }
+      setMasteredIds(prev => new Set(prev).add(cardId))
     } else {
-      // Re-queue card at the end of the deck
-      if (sessionCards.length > 1) {
-        const newSessionCards = [...sessionCards]
-        const [removed] = newSessionCards.splice(currentIndex, 1)
-        newSessionCards.push(removed)
-        setSessionCards(newSessionCards)
-        // No need to change currentIndex, as the next card has shifted into the current index
-        // except when we were at the very last card already
-        setIsFlipped(false)
-      } else {
-        // Only one card left, just flip it back
-        setIsFlipped(false)
-      }
+      setMissedIds(prev => new Set(prev).add(cardId))
+    }
+
+    if (currentIndex < sessionCards.length - 1) {
+      setCurrentIndex(prev => prev + 1)
+      setIsFlipped(false)
+    } else {
+      setIsFinished(true)
     }
   }
 
@@ -850,7 +855,7 @@ function StudyView({
               {mode}
             </Badge>
             <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-              {mode === 'tracking' ? `${cards.length - sessionCards.length} / ${cards.length} MASTERED` : `${currentIndex + 1} of ${sessionCards.length}`}
+              {currentIndex + 1} / {sessionCards.length}
             </p>
           </div>
         </div>
@@ -963,7 +968,7 @@ function StudyView({
         <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
           <div 
             className="h-full bg-primary transition-all duration-500" 
-            style={{ width: `${((cards.length - sessionCards.length + (mode === 'classic' ? currentIndex + 1 : 0)) / cards.length) * 100}%` }}
+            style={{ width: `${((currentIndex + 1) / sessionCards.length) * 100}%` }}
           />
         </div>
       </div>
