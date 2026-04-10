@@ -40,6 +40,7 @@
   body {
     @apply bg-background text-foreground;
     transition: background-color 0.5s ease, color 0.5s ease;
+    text-transform: lowercase;
   }
 }
 
@@ -69,6 +70,7 @@
   outline: none !important;
   border: none !important;
   box-shadow: none !important;
+  text-transform: lowercase;
 }
 
 .tiptap-editor .ProseMirror:focus {
@@ -93,6 +95,7 @@
   margin-top: 1.5rem !important;
   margin-bottom: 1rem !important;
   color: hsl(var(--foreground));
+  text-transform: lowercase;
 }
 
 .tiptap-editor h2, .tiptap-content h2 {
@@ -102,6 +105,7 @@
   margin-top: 1.25rem !important;
   margin-bottom: 0.75rem !important;
   color: hsl(var(--foreground));
+  text-transform: lowercase;
 }
 
 .tiptap-editor p, .tiptap-content p {
@@ -141,30 +145,7 @@
   box-shadow: none !important;
 }
 
-/* Mesh Gradient Background Animations */
-@keyframes blob {
-  0% {
-    transform: translate(0px, 0px) scale(1);
-  }
-  33% {
-    transform: translate(30px, -50px) scale(1.1);
-  }
-  66% {
-    transform: translate(-20px, 20px) scale(0.9);
-  }
-  100% {
-    transform: translate(0px, 0px) scale(1);
-  }
-}
-
-.animate-blob {
-  animation: blob 7s infinite;
-}
-
-.animation-delay-2000 {
-  animation-delay: 2s;
-}
-
-.animation-delay-4000 {
-  animation-delay: 4s;
+/* Force all buttons, inputs, and labels to lowercase */
+button, input, textarea, label, span, p, h1, h2, h3, h4, h5, h6 {
+  text-transform: lowercase !important;
 }
