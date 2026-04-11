@@ -13,7 +13,7 @@ import { z } from 'genkit';
 const GeneratedCardSchema = z.object({
   question: z.string().describe('a clear, concise question or prompt.'),
   answer: z.string().describe('the accurate answer or explanation.'),
-  imagePrompt: z.string().optional().describe('a short descriptive prompt for generating a supporting visual for this card.'),
+  searchKeyword: z.string().optional().describe('a single, strong keyword to search for a relevant image online (e.g., "mitosis", "volcano", "shakespeare").'),
 });
 
 const GenerateFlashcardsInputSchema = z.object({
@@ -52,7 +52,7 @@ export async function generateFlashcardsFromFile(input: z.infer<typeof GenerateF
     2. identify the most important concepts, definitions, and facts.
     3. create 5-10 high-quality flashcards.
     4. for each card, provide a "question" and an "answer".
-    5. provide an "imagePrompt" that describes a simple, clear visual that could represent the question's core concept.
+    5. provide a "searchKeyword" that is a specific, simple noun or concept that can be used to find a clear image online representing the card.
     
     rules:
     - strictly lowercase: all text content must be in lowercase.

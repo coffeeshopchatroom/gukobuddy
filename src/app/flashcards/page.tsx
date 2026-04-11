@@ -86,7 +86,6 @@ import Placeholder from '@tiptap/extension-placeholder'
 // AI Flow imports
 import { generateQuiz, evaluateAnswer, type QuizQuestion } from "@/ai/flows/quiz-flow"
 import { generateFlashcardsFromFile, type GeneratedCard } from "@/ai/flows/generate-flashcards-flow"
-import { generateCardImage } from "@/ai/flows/generate-card-image-flow"
 import { Progress } from "@/components/ui/progress"
 
 type StudyMode = 'classic' | 'tracking' | 'quiz' | 'matching' | null
@@ -652,7 +651,7 @@ export default function FlashcardsPage() {
         <div className="flex flex-col items-center justify-center py-20 border-2 border-dashed rounded-3xl bg-muted/5">
           <Layers className="h-12 w-12 text-muted-foreground mb-4 opacity-20" />
           <h3 className="text-xl font-bold font-headline lowercase">no decks yet</h3>
-          <p className="text-muted-foreground mt-2 lowercase">create your first flashcard deck or use ai to generate one.</p>
+          <p className="text-muted-foreground mt-2 lowercase">create your first flashcard deck or create from your notes.</p>
           <div className="flex gap-4 mt-6">
             <Button 
               onClick={() => setIsCreateDeckOpen(true)}
@@ -663,9 +662,9 @@ export default function FlashcardsPage() {
             </Button>
             <Button 
               onClick={() => setIsAiGeneratorOpen(true)}
-              className="rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white lowercase"
+              className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground lowercase"
             >
-              <Sparkles className="h-4 w-4 mr-2" /> generate with ai
+              <FileText className="h-4 w-4 mr-2" /> create from notes
             </Button>
           </div>
         </div>
@@ -702,7 +701,7 @@ function AiGeneratorDialog({ isOpen, setIsOpen, isHighSchool, user, activeCourse
       }
 
       setGenerationProgress(30)
-      setStatusMessage("ai is drafting your cards...")
+      setStatusMessage("analyzing content...")
 
       const output = await generateFlashcardsFromFile({
         fileDataUri: fileDataUri || undefined,
@@ -712,7 +711,7 @@ function AiGeneratorDialog({ isOpen, setIsOpen, isHighSchool, user, activeCourse
       })
 
       setGenerationProgress(60)
-      setStatusMessage(`generated ${output.cards.length} cards. creating deck...`)
+      setStatusMessage(`drafting ${output.cards.length} cards...`)
 
       // 1. Create Course if needed
       let courseIdToUse = activeCourse?.id
@@ -731,16 +730,16 @@ function AiGeneratorDialog({ isOpen, setIsOpen, isHighSchool, user, activeCourse
       const deckRef = doc(db, "users", user.uid, "courses", courseIdToUse, "flashcardSets", deckId)
       setDocumentNonBlocking(deckRef, {
         id: deckId,
-        name: deckName || `ai generated: ${new Date().toLocaleDateString()}`,
+        name: deckName || `from notes: ${new Date().toLocaleDateString()}`,
         courseId: courseIdToUse,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       }, { merge: true })
 
-      // 3. Create Cards (and generate images if requested)
+      // 3. Create Cards (and pull images if requested)
       setGenerationProgress(80)
       if (includeImages) {
-        setStatusMessage("adding visual aids...")
+        setStatusMessage("finding relevant images...")
       }
 
       for (let i = 0; i < output.cards.length; i++) {
@@ -749,13 +748,9 @@ function AiGeneratorDialog({ isOpen, setIsOpen, isHighSchool, user, activeCourse
         const cardRef = doc(db, "users", user.uid, "courses", courseIdToUse, "flashcardSets", deckId, "flashcards", cardId)
         
         let imageUrl = null
-        if (includeImages && cardData.imagePrompt) {
-          try {
-            const imgResult = await generateCardImage({ prompt: cardData.imagePrompt })
-            imageUrl = imgResult.imageUrl
-          } catch (e) {
-            console.error("failed to generate card image", e)
-          }
+        if (includeImages && cardData.searchKeyword) {
+          // Use a placeholder service with the keyword to "search" the web
+          imageUrl = `https://picsum.photos/seed/${encodeURIComponent(cardData.searchKeyword)}/400/300`
         }
 
         setDocumentNonBlocking(cardRef, {
@@ -786,7 +781,7 @@ function AiGeneratorDialog({ isOpen, setIsOpen, isHighSchool, user, activeCourse
 
     } catch (e) {
       console.error("ai generation failed", e)
-      setStatusMessage("generation failed. try again?")
+      setStatusMessage("something went wrong. try again?")
       setIsGenerating(false)
     }
   }
@@ -794,17 +789,17 @@ function AiGeneratorDialog({ isOpen, setIsOpen, isHighSchool, user, activeCourse
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-6 px-8 rounded-2xl shadow-lg transition-all hover:scale-105 lowercase">
-          <Sparkles className="h-5 w-5 mr-2" /> generate with ai
+        <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-6 px-8 rounded-2xl shadow-lg transition-all hover:scale-105 lowercase">
+          <FileText className="h-5 w-5 mr-2" /> create from notes
         </Button>
       </DialogTrigger>
       <DialogContent className="rounded-[32px] sm:max-w-xl p-0 overflow-hidden border-none bg-background shadow-2xl">
-        <DialogHeader className="p-8 pb-4 text-left bg-indigo-50/50">
-          <DialogTitle className="font-headline text-2xl font-bold flex items-center gap-2 text-indigo-900 lowercase">
-            <Sparkles className="h-6 w-6" /> ai deck builder
+        <DialogHeader className="p-8 pb-4 text-left bg-primary/5">
+          <DialogTitle className="font-headline text-2xl font-bold flex items-center gap-2 text-foreground lowercase">
+            <FileText className="h-6 w-6 text-primary" /> build from notes
           </DialogTitle>
-          <DialogDescription className="text-indigo-700 lowercase">
-            upload notes or describe a topic to get a custom deck in seconds.
+          <DialogDescription className="text-muted-foreground lowercase">
+            upload files or describe a topic to build your deck instantly.
           </DialogDescription>
         </DialogHeader>
 
@@ -812,12 +807,12 @@ function AiGeneratorDialog({ isOpen, setIsOpen, isHighSchool, user, activeCourse
           {isGenerating ? (
             <div className="py-12 flex flex-col items-center gap-6 animate-in fade-in zoom-in duration-300">
               <div className="relative">
-                <div className="h-24 w-24 rounded-full border-4 border-indigo-100 border-t-indigo-600 animate-spin" />
-                <Sparkles className="h-8 w-8 text-indigo-600 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse" />
+                <div className="h-24 w-24 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
+                <FileText className="h-8 w-8 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse" />
               </div>
               <div className="text-center space-y-2">
-                <h3 className="font-bold text-lg text-indigo-900 lowercase">{statusMessage}</h3>
-                <Progress value={generationProgress} className="w-64 h-2 bg-indigo-100" />
+                <h3 className="font-bold text-lg text-foreground lowercase">{statusMessage}</h3>
+                <Progress value={generationProgress} className="w-64 h-2 bg-primary/10" />
               </div>
             </div>
           ) : (
@@ -825,8 +820,8 @@ function AiGeneratorDialog({ isOpen, setIsOpen, isHighSchool, user, activeCourse
               <div className="space-y-4">
                 <div 
                   className={cn(
-                    "border-2 border-dashed rounded-3xl p-8 flex flex-col items-center justify-center transition-all cursor-pointer hover:bg-indigo-50/50",
-                    file ? "border-indigo-600 bg-indigo-50/30" : "border-muted"
+                    "border-2 border-dashed rounded-3xl p-8 flex flex-col items-center justify-center transition-all cursor-pointer hover:bg-primary/5",
+                    file ? "border-primary bg-primary/5" : "border-muted"
                   )}
                   onClick={() => document.getElementById('ai-file-upload')?.click()}
                 >
@@ -839,15 +834,15 @@ function AiGeneratorDialog({ isOpen, setIsOpen, isHighSchool, user, activeCourse
                   />
                   {file ? (
                     <div className="flex flex-col items-center gap-2">
-                      <FileText className="h-10 w-10 text-indigo-600" />
-                      <span className="font-bold text-sm text-indigo-900 truncate max-w-[200px] lowercase">{file.name}</span>
+                      <FileText className="h-10 w-10 text-primary" />
+                      <span className="font-bold text-sm text-foreground truncate max-w-[200px] lowercase">{file.name}</span>
                       <Button variant="ghost" size="sm" className="text-xs lowercase text-muted-foreground" onClick={(e) => { e.stopPropagation(); setFile(null); }}>remove</Button>
                     </div>
                   ) : (
                     <div className="flex flex-col items-center gap-2 text-muted-foreground">
                       <Upload className="h-10 w-10 opacity-20" />
-                      <span className="font-bold lowercase">drop your notes or click to upload</span>
-                      <span className="text-xs lowercase">supports images and pdfs</span>
+                      <span className="font-bold lowercase">upload your notes or images</span>
+                      <span className="text-xs lowercase">images and pdfs supported</span>
                     </div>
                   )}
                 </div>
@@ -856,7 +851,7 @@ function AiGeneratorDialog({ isOpen, setIsOpen, isHighSchool, user, activeCourse
                   <div className="space-y-2">
                     <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">deck name</Label>
                     <Input 
-                      placeholder="e.g. biology: mitosis" 
+                      placeholder="e.g. physics study guide" 
                       value={deckName}
                       onChange={(e) => setDeckName(e.target.value)}
                       className="rounded-xl lowercase no-focus-ring"
@@ -865,7 +860,7 @@ function AiGeneratorDialog({ isOpen, setIsOpen, isHighSchool, user, activeCourse
                   <div className="space-y-2">
                     <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">grade/level</Label>
                     <Input 
-                      placeholder={isHighSchool ? "e.g. 10th grade" : "e.g. college intro"} 
+                      placeholder={isHighSchool ? "e.g. 11th grade" : "e.g. psych 101"} 
                       value={gradeLevel}
                       onChange={(e) => setGradeLevel(e.target.value)}
                       className="rounded-xl lowercase no-focus-ring"
@@ -874,9 +869,9 @@ function AiGeneratorDialog({ isOpen, setIsOpen, isHighSchool, user, activeCourse
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">specific instructions (optional)</Label>
+                  <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">additional details (optional)</Label>
                   <Textarea 
-                    placeholder="e.g. focus on key dates and events" 
+                    placeholder="e.g. focus on vocabulary terms" 
                     value={instructions}
                     onChange={(e) => setInstructions(e.target.value)}
                     className="rounded-2xl min-h-[80px] lowercase no-focus-ring"
@@ -891,8 +886,8 @@ function AiGeneratorDialog({ isOpen, setIsOpen, isHighSchool, user, activeCourse
                     className="h-5 w-5 rounded-md"
                   />
                   <div className="flex-1">
-                    <Label htmlFor="include-images" className="font-bold text-sm lowercase">generate visual aids with ai</Label>
-                    <p className="text-[10px] text-muted-foreground lowercase">we'll use imagen to create helpful illustrations for your cards.</p>
+                    <Label htmlFor="include-images" className="font-bold text-sm lowercase">find relevant images online</Label>
+                    <p className="text-[10px] text-muted-foreground lowercase">we'll search for clear visuals to help you remember each card.</p>
                   </div>
                 </div>
               </div>
@@ -902,9 +897,9 @@ function AiGeneratorDialog({ isOpen, setIsOpen, isHighSchool, user, activeCourse
                 <Button 
                   disabled={!file && !instructions} 
                   onClick={handleGenerate}
-                  className="flex-[2] rounded-2xl py-6 font-bold bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-200 lowercase"
+                  className="flex-[2] rounded-2xl py-6 font-bold bg-primary text-primary-foreground shadow-lg shadow-primary/20 lowercase"
                 >
-                  generate deck
+                  create cards
                 </Button>
               </div>
             </>
