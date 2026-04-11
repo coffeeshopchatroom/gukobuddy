@@ -1,6 +1,38 @@
 
 {
   "entities": {
+    "UserProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserProfile",
+      "type": "object",
+      "description": "User-specific settings and personalization preferences.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Matches the User UID."
+        },
+        "studentType": {
+          "type": "string",
+          "enum": ["high-school", "college"],
+          "description": "The educational level of the user."
+        },
+        "useAi": {
+          "type": "boolean",
+          "description": "Whether the user wants to enable generative AI features."
+        },
+        "focus": {
+          "type": "string",
+          "enum": ["flashcards", "notebooks", "tasks", "all"],
+          "description": "The primary tool the user wants to focus on."
+        }
+      },
+      "required": [
+        "id",
+        "studentType",
+        "useAi",
+        "focus"
+      ]
+    },
     "Course": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Course",
@@ -143,6 +175,22 @@
   },
   "firestore": {
     "structure": [
+      {
+        "path": "/users/{userId}/profile/settings",
+        "definition": {
+          "entityName": "UserProfile",
+          "schema": {
+            "$ref": "#/backend/entities/UserProfile"
+          },
+          "description": "User personalization preferences.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            }
+          ]
+        }
+      },
       {
         "path": "/users/{userId}/courses/{courseId}",
         "definition": {

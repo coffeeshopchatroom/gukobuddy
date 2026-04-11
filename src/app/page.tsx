@@ -5,15 +5,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { CheckSquare, Layers, StickyNote, TrendingUp, ArrowRight, Plus, LogIn, Sparkles, GraduationCap } from "lucide-react";
+import { CheckSquare, Layers, StickyNote, TrendingUp, ArrowRight, Plus, Sparkles, GraduationCap } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-import { useUser, useAuth, initiateAnonymousSignIn } from "@/firebase";
+import { useUser, useAuth, initiateAnonymousSignIn, useDoc, useFirestore, useMemoFirebase } from "@/firebase";
+import { doc } from 'firebase/firestore';
 
 export default function Page() {
   const { user, isUserLoading } = useUser();
+  const db = useFirestore();
+  const profileRef = useMemoFirebase(() => user ? doc(db, 'users', user.uid, 'profile', 'settings') : null, [user, db]);
+  const { data: profile, isLoading: isProfileLoading } = useDoc(profileRef);
 
-  if (isUserLoading) {
+  if (isUserLoading || (user && isProfileLoading)) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <GraduationCap className="h-12 w-12 animate-pulse text-primary/40" />
@@ -25,7 +29,7 @@ export default function Page() {
     return <LandingPage />;
   }
 
-  return <DashboardPage user={user} />;
+  return <DashboardPage user={user} profile={profile} />;
 }
 
 function LandingPage() {
@@ -40,7 +44,6 @@ function LandingPage() {
   return (
     <div className="space-y-24 animate-smooth-slow py-12">
       <section className="relative flex flex-col items-center text-center space-y-8 max-w-5xl mx-auto p-12 rounded-[48px] overflow-hidden min-h-[600px] justify-center bg-muted/20">
-        {/* background video container */}
         <div className="absolute inset-0 z-0">
           <video 
             autoPlay 
@@ -50,12 +53,9 @@ function LandingPage() {
             preload="auto"
             className="w-full h-full object-cover"
           >
-            {/* primary local source */}
             <source src="/hero-video.mp4" type="video/mp4" />
-            {/* secondary fallback source */}
             <source src="https://cdn.pixabay.com/video/2020/09/10/49416-457333068_large.mp4" type="video/mp4" />
           </video>
-          {/* overlay to ensure readability and "cool" look */}
           <div className="absolute inset-0 bg-background/40 backdrop-blur-[1px]" />
         </div>
 
@@ -72,7 +72,7 @@ function LandingPage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 pt-4">
             <Button asChild className="rounded-2xl py-8 px-10 text-lg font-bold shadow-xl shadow-primary/20 transition-all hover:scale-105">
-              <Link href="/login">get started free</Link>
+              <Link href="/signup">get started free</Link>
             </Button>
             <Button 
               variant="outline" 
@@ -105,27 +105,6 @@ function LandingPage() {
           color="bg-indigo-500"
         />
       </div>
-
-      <section className="relative rounded-[48px] overflow-hidden min-h-[400px] flex items-center px-12 py-20 bg-muted/30">
-        <div className="relative z-10 max-w-2xl space-y-6">
-          <h2 className="font-headline text-4xl font-bold text-foreground lowercase">ready to get organized?</h2>
-          <p className="text-muted-foreground text-lg leading-relaxed lowercase">
-            join other students who are making their study sessions a lot less stressful.
-          </p>
-          <Button asChild className="rounded-xl py-6 px-8 font-bold text-lg">
-            <Link href="/login">create your account <ArrowRight className="ml-2 h-5 w-5" /></Link>
-          </Button>
-        </div>
-        <div className="absolute right-0 top-0 bottom-0 w-1/3 hidden lg:block">
-           <Image 
-            src="https://picsum.photos/seed/student-minimal/600/800" 
-            alt="study vibes" 
-            fill 
-            className="object-cover opacity-80"
-            data-ai-hint="minimal student"
-          />
-        </div>
-      </section>
     </div>
   );
 }
@@ -142,53 +121,64 @@ function FeatureCard({ icon, title, description, color }: { icon: React.ReactNod
   )
 }
 
-function DashboardPage({ user }: { user: any }) {
-  const displayName = user.isAnonymous ? "guest" : (user.displayName || "student");
+function DashboardPage({ user, profile }: { user: any, profile?: any }) {
+  const displayName = user.isAnonymous ? "guest" : (user.displayName || user.email?.split('@')[0]);
+  const isHighSchool = profile?.studentType === 'high-school';
+  const categoryLabel = isHighSchool ? "classes" : "courses";
+  const focus = profile?.focus || 'all';
 
   return (
     <div className="space-y-8 animate-smooth-slow">
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h1 className="font-headline text-4xl font-bold tracking-tight text-foreground lowercase">welcome back, {displayName}!</h1>
-          <p className="text-muted-foreground mt-2 text-lg lowercase">you've got some tasks to look at today.</p>
+          <p className="text-muted-foreground mt-2 text-lg lowercase">ready to tackle your {categoryLabel} today?</p>
         </div>
         <div className="flex items-center gap-3">
-          <Badge variant="secondary" className="px-4 py-1 rounded-full text-sm font-medium">semester 2</Badge>
-          <Badge variant="outline" className="px-4 py-1 rounded-full text-sm font-medium lowercase">gpa: 3.82</Badge>
+          <Badge variant="secondary" className="px-4 py-1 rounded-full text-sm font-medium">{isHighSchool ? 'high school' : 'college'}</Badge>
+          {profile?.useAi && (
+            <Badge variant="outline" className="px-4 py-1 rounded-full text-sm font-medium border-indigo-200 text-indigo-600 bg-indigo-50">smart buddy enabled</Badge>
+          )}
         </div>
       </header>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="hover:shadow-lg transition-all duration-500 border-none bg-primary/10 group cursor-pointer">
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <span className="text-sm font-semibold uppercase tracking-wider text-primary-foreground/70">tasks</span>
-            <CheckSquare className="h-5 w-5 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold lowercase">12 active</div>
-            <p className="text-xs text-muted-foreground mt-1 lowercase">+2 added today</p>
-          </CardContent>
-        </Card>
-        <Card className="hover:shadow-lg transition-all duration-500 border-none bg-accent/20 group cursor-pointer">
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <span className="text-sm font-semibold uppercase tracking-wider text-accent-foreground/70">flashcards</span>
-            <Layers className="h-5 w-5 text-accent-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold lowercase">450 cards</div>
-            <p className="text-xs text-muted-foreground mt-1 lowercase">across 8 decks</p>
-          </CardContent>
-        </Card>
-        <Card className="hover:shadow-lg transition-all duration-500 border-none bg-secondary/50 group cursor-pointer">
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <span className="text-sm font-semibold uppercase tracking-wider text-secondary-foreground/70">notebooks</span>
-            <StickyNote className="h-5 w-5 text-secondary-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold lowercase">24 notes</div>
-            <p className="text-xs text-muted-foreground mt-1 lowercase">updated recently</p>
-          </CardContent>
-        </Card>
+        {(focus === 'all' || focus === 'tasks') && (
+          <Card className="hover:shadow-lg transition-all duration-500 border-none bg-primary/10 group cursor-pointer">
+            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+              <span className="text-sm font-semibold uppercase tracking-wider text-primary-foreground/70">tasks</span>
+              <CheckSquare className="h-5 w-5 text-primary" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold lowercase">12 active</div>
+              <p className="text-xs text-muted-foreground mt-1 lowercase">+2 added today</p>
+            </CardContent>
+          </Card>
+        )}
+        {(focus === 'all' || focus === 'flashcards') && (
+          <Card className="hover:shadow-lg transition-all duration-500 border-none bg-accent/20 group cursor-pointer">
+            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+              <span className="text-sm font-semibold uppercase tracking-wider text-accent-foreground/70">flashcards</span>
+              <Layers className="h-5 w-5 text-accent-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold lowercase">450 cards</div>
+              <p className="text-xs text-muted-foreground mt-1 lowercase">across 8 decks</p>
+            </CardContent>
+          </Card>
+        )}
+        {(focus === 'all' || focus === 'notebooks') && (
+          <Card className="hover:shadow-lg transition-all duration-500 border-none bg-secondary/50 group cursor-pointer">
+            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+              <span className="text-sm font-semibold uppercase tracking-wider text-secondary-foreground/70">notebooks</span>
+              <StickyNote className="h-5 w-5 text-secondary-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold lowercase">24 notes</div>
+              <p className="text-xs text-muted-foreground mt-1 lowercase">updated recently</p>
+            </CardContent>
+          </Card>
+        )}
         <Card className="hover:shadow-lg transition-all duration-500 border-none bg-muted group cursor-pointer">
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
             <span className="text-sm font-semibold uppercase tracking-wider text-muted-foreground/70">grades</span>
@@ -240,57 +230,21 @@ function DashboardPage({ user }: { user: any }) {
           <CardContent className="space-y-6">
             <div className="space-y-2">
               <div className="flex justify-between text-sm font-medium lowercase">
-                <span>calculus iii</span>
+                <span>{isHighSchool ? 'algebra ii' : 'calculus iii'}</span>
                 <span>92%</span>
               </div>
               <Progress value={92} className="h-3 bg-white/50" />
             </div>
             <div className="space-y-2">
               <div className="flex justify-between text-sm font-medium lowercase">
-                <span>modern history</span>
+                <span>{isHighSchool ? 'world history' : 'modern history'}</span>
                 <span>85%</span>
               </div>
               <Progress value={85} className="h-3 bg-white/50" />
             </div>
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm font-medium lowercase">
-                <span>data structures</span>
-                <span>78%</span>
-              </div>
-              <Progress value={78} className="h-3 bg-white/50" />
-            </div>
-            <Link href="/tracker" className="block w-full mt-4">
-              <div className="flex items-center justify-center gap-2 p-4 rounded-2xl bg-primary text-primary-foreground font-bold hover:opacity-90 transition-opacity lowercase">
-                full analysis <TrendingUp className="h-4 w-4" />
-              </div>
-            </Link>
           </CardContent>
         </Card>
       </div>
-      
-      <section className="relative rounded-[40px] overflow-hidden min-h-[300px] flex items-center px-12 py-12">
-        <Image 
-          src="https://picsum.photos/seed/desk-minimal/1200/400" 
-          alt="focus" 
-          fill 
-          className="object-cover opacity-20"
-          data-ai-hint="minimal workspace"
-        />
-        <div className="relative z-10 max-w-xl">
-          <h2 className="font-headline text-3xl font-bold text-foreground lowercase">stay focused, stay ahead.</h2>
-          <p className="text-muted-foreground text-lg mt-4 lowercase">
-            visualize your topics or dive into your cards for a quick review session.
-          </p>
-          <div className="flex gap-4 mt-8">
-            <Button asChild className="rounded-xl py-6 px-8 bg-accent text-accent-foreground font-bold hover:scale-105 transition-transform flex items-center gap-2 shadow-lg shadow-accent/20">
-              <Link href="/flashcards"><Plus className="h-5 w-5" /> start studying</Link>
-            </Button>
-            <Button variant="outline" asChild className="rounded-xl py-6 px-8 bg-white border-border text-foreground font-bold hover:bg-muted transition-colors lowercase">
-              <Link href="/notebooks">explore tools</Link>
-            </Button>
-          </div>
-        </div>
-      </section>
     </div>
   );
 }
