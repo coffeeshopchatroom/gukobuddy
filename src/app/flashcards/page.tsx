@@ -750,7 +750,7 @@ function AiGeneratorDialog({ isOpen, setIsOpen, isHighSchool, user, activeCourse
         let imageUrl = null
         if (includeImages && cardData.searchKeyword) {
           // Using loremflickr for actual keyword-based photo retrieval
-          imageUrl = `https://loremflickr.com/400/300/${encodeURIComponent(cardData.searchKeyword.toLowerCase())}`
+          imageUrl = `https://source.unsplash.com/400x300/?${encodeURIComponent(cardData.searchKeyword.toLowerCase())}`
         }
 
         setDocumentNonBlocking(cardRef, {
