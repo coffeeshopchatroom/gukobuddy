@@ -8,20 +8,20 @@ export async function POST(request: Request): Promise<NextResponse> {
   const { searchParams } = new URL(request.url);
   const filename = searchParams.get('filename');
 
+  // The request body is a ReadableStream. The Vercel Blob SDK is designed to stream this directly.
   if (!filename || !request.body) {
     return NextResponse.json({ message: 'No filename or body provided' }, { status: 400 });
   }
 
   try {
-    const fileBlob = await request.blob();
-    const blob = await put(filename, fileBlob, {
+    // Pass the ReadableStream directly to put.
+    const blob = await put(filename, request.body, {
       access: 'public',
     });
     return NextResponse.json(blob);
   } catch (error) {
     console.error("Upload to Vercel Blob failed", error);
     const message = (error instanceof Error) ? error.message : 'An unknown error occurred';
-    // Provide a more specific error message if the store is not found
     if (message.includes('No store found')) {
         return NextResponse.json({ message: "Vercel Blob store not connected. Please connect a store in your Vercel project settings.", error: message }, { status: 500 });
     }
