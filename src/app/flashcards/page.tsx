@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -32,7 +31,10 @@ import {
   Check,
   X,
   FileText,
-  Puzzle
+  Puzzle,
+  Sparkles,
+  Upload,
+  BookOpen
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { 
@@ -40,6 +42,7 @@ import {
   useFirestore, 
   useAuth, 
   useCollection, 
+  useDoc,
   useMemoFirebase,
   setDocumentNonBlocking,
   deleteDocumentNonBlocking,
@@ -72,6 +75,8 @@ import {
 } from "@/components/ui/tooltip"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Textarea } from "@/components/ui/textarea"
 
 // Tiptap imports
 import { useEditor, EditorContent } from '@tiptap/react'
@@ -80,6 +85,8 @@ import Placeholder from '@tiptap/extension-placeholder'
 
 // AI Flow imports
 import { generateQuiz, evaluateAnswer, type QuizQuestion } from "@/ai/flows/quiz-flow"
+import { generateFlashcardsFromFile, type GeneratedCard } from "@/ai/flows/generate-flashcards-flow"
+import { generateCardImage } from "@/ai/flows/generate-card-image-flow"
 import { Progress } from "@/components/ui/progress"
 
 type StudyMode = 'classic' | 'tracking' | 'quiz' | 'matching' | null
@@ -94,6 +101,7 @@ export default function FlashcardsPage() {
   const [isModeSelectorOpen, setIsModeSelectorOpen] = React.useState(false)
   const [isCreateDeckOpen, setIsCreateDeckOpen] = React.useState(false)
   const [isCreateCardOpen, setIsCreateCardOpen] = React.useState(false)
+  const [isAiGeneratorOpen, setIsAiGeneratorOpen] = React.useState(false)
   const [newDeckName, setNewDeckName] = React.useState("")
   
   const [cardImageUrl, setCardImageUrl] = React.useState("")
@@ -101,10 +109,14 @@ export default function FlashcardsPage() {
   const [uploadProgress, setUploadProgress] = React.useState<number | null>(null);
   const [answerUploadProgress, setAnswerUploadProgress] = React.useState<number | null>(null);
 
+  const profileRef = useMemoFirebase(() => user ? doc(db, 'users', user.uid, 'profile', 'settings') : null, [user, db]);
+  const { data: profile } = useDoc(profileRef);
+  const isHighSchool = profile?.studentType === 'high-school';
+
   const questionEditor = useEditor({
     extensions: [
       StarterKit,
-      Placeholder.configure({ placeholder: 'Type your question here...' }),
+      Placeholder.configure({ placeholder: 'type your question here...' }),
     ],
     content: '',
   })
@@ -112,7 +124,7 @@ export default function FlashcardsPage() {
   const answerEditor = useEditor({
     extensions: [
       StarterKit,
-      Placeholder.configure({ placeholder: 'Type the answer here...' }),
+      Placeholder.configure({ placeholder: 'type the answer here...' }),
     ],
     content: '',
   })
@@ -165,8 +177,7 @@ export default function FlashcardsPage() {
       setUrl(newBlob.url);
 
     } catch (error) {
-        console.error("Image upload failed", error);
-        // TODO: Show an error toast to the user
+        console.error("image upload failed", error);
     } finally {
         setProgress(null);
     }
@@ -182,8 +193,8 @@ export default function FlashcardsPage() {
       const courseRef = doc(db, "users", user.uid, "courses", courseIdToUse)
       setDocumentNonBlocking(courseRef, {
         id: courseIdToUse,
-        name: "General Studies",
-        description: "Default course for your flashcards",
+        name: isHighSchool ? "general classes" : "general studies",
+        description: "default course for your flashcards",
       }, { merge: true })
     }
 
@@ -270,11 +281,11 @@ export default function FlashcardsPage() {
           <Layers className="h-12 w-12 text-primary" />
         </div>
         <div className="text-center">
-          <h2 className="text-3xl font-bold font-headline">Flashcard Central</h2>
-          <p className="text-muted-foreground mt-2 text-lg">Sign in to start creating your study decks.</p>
+          <h2 className="text-3xl font-bold font-headline">flashcard central</h2>
+          <p className="text-muted-foreground mt-2 text-lg">sign in to start creating your study decks.</p>
         </div>
         <Button onClick={() => initiateAnonymousSignIn(auth)} className="rounded-2xl py-6 px-8 font-bold gap-2">
-          <LogIn className="h-5 w-5" /> Start Studying (Guest)
+          <LogIn className="h-5 w-5" /> start studying (guest)
         </Button>
       </div>
     )
@@ -330,9 +341,9 @@ export default function FlashcardsPage() {
               <ChevronLeft className="h-6 w-6" />
             </Button>
             <div>
-              <h1 className="font-headline text-3xl font-bold tracking-tight text-foreground">{selectedDeck.name}</h1>
-              <p className="text-muted-foreground mt-1">
-                Editing {cards?.length || 0} cards in this deck
+              <h1 className="font-headline text-3xl font-bold tracking-tight text-foreground lowercase">{selectedDeck.name}</h1>
+              <p className="text-muted-foreground mt-1 lowercase">
+                editing {cards?.length || 0} cards in this deck
               </p>
             </div>
           </div>
@@ -342,13 +353,13 @@ export default function FlashcardsPage() {
                 <Button 
                   className="bg-primary text-primary-foreground font-bold py-6 px-8 rounded-2xl shadow-lg transition-all hover:scale-105"
                 >
-                  <Play className="h-5 w-5 mr-2" /> Study Now
+                  <Play className="h-5 w-5 mr-2" /> study now
                 </Button>
               </DialogTrigger>
               <DialogContent className="rounded-[32px] sm:max-w-md border-none bg-background shadow-2xl p-8">
                 <DialogHeader className="text-left mb-6">
-                  <DialogTitle className="font-headline text-2xl font-bold">Select Study Mode</DialogTitle>
-                  <DialogDescription>Choose how you want to learn today.</DialogDescription>
+                  <DialogTitle className="font-headline text-2xl font-bold lowercase">select study mode</DialogTitle>
+                  <DialogDescription className="lowercase">choose how you want to learn today.</DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4">
                   <Button 
@@ -361,8 +372,8 @@ export default function FlashcardsPage() {
                         <RotateCcw className="h-6 w-6 text-muted-foreground group-hover:text-primary" />
                       </div>
                       <div>
-                        <div className="font-bold text-lg">Classic Mode</div>
-                        <div className="text-sm text-muted-foreground">Standard flip and review.</div>
+                        <div className="font-bold text-lg lowercase">classic mode</div>
+                        <div className="text-sm text-muted-foreground lowercase">standard flip and review.</div>
                       </div>
                     </div>
                     <ChevronRight className="h-5 w-5 text-muted-foreground" />
@@ -378,8 +389,8 @@ export default function FlashcardsPage() {
                         <Activity className="h-6 w-6 text-muted-foreground group-hover:text-accent-foreground" />
                       </div>
                       <div>
-                        <div className="font-bold text-lg">Tracking Mode</div>
-                        <div className="text-sm text-muted-foreground">Track mastery with Got it/Need Review.</div>
+                        <div className="font-bold text-lg lowercase">tracking mode</div>
+                        <div className="text-sm text-muted-foreground lowercase">track mastery with got it/need review.</div>
                       </div>
                     </div>
                     <ChevronRight className="h-5 w-5 text-muted-foreground" />
@@ -395,8 +406,8 @@ export default function FlashcardsPage() {
                         <FileText className="h-6 w-6 text-muted-foreground group-hover:text-indigo-600" />
                       </div>
                       <div>
-                        <div className="font-bold text-lg">Quiz Mode</div>
-                        <div className="text-sm text-muted-foreground">Test yourself with questions.</div>
+                        <div className="font-bold text-lg lowercase">quiz mode</div>
+                        <div className="text-sm text-muted-foreground lowercase">test yourself with questions.</div>
                       </div>
                     </div>
                     <ChevronRight className="h-5 w-5 text-muted-foreground" />
@@ -412,8 +423,8 @@ export default function FlashcardsPage() {
                         <Puzzle className="h-6 w-6 text-muted-foreground group-hover:text-orange-600" />
                       </div>
                       <div>
-                        <div className="font-bold text-lg">Matching Mode</div>
-                        <div className="text-sm text-muted-foreground">Pair questions with answers.</div>
+                        <div className="font-bold text-lg lowercase">matching mode</div>
+                        <div className="text-sm text-muted-foreground lowercase">pair questions with answers.</div>
                       </div>
                     </div>
                     <ChevronRight className="h-5 w-5 text-muted-foreground" />
@@ -424,25 +435,25 @@ export default function FlashcardsPage() {
 
             <Dialog open={isCreateCardOpen} onOpenChange={setIsCreateCardOpen}>
               <DialogTrigger asChild>
-                <Button variant="outline" className="font-bold py-6 px-8 rounded-2xl shadow-sm transition-all hover:bg-muted">
-                  <Plus className="h-5 w-5 mr-2" /> Add Card
+                <Button variant="outline" className="font-bold py-6 px-8 rounded-2xl shadow-sm transition-all hover:bg-muted lowercase">
+                  <Plus className="h-5 w-5 mr-2" /> add card
                 </Button>
               </DialogTrigger>
               <DialogContent className="rounded-[32px] sm:max-w-2xl p-0 max-h-[90vh] overflow-hidden flex flex-col border-none bg-background shadow-2xl">
                 <DialogHeader className="p-8 pb-0 text-left shrink-0">
-                  <DialogTitle className="font-headline text-2xl font-bold">Create Flashcard</DialogTitle>
-                  <DialogDescription className="text-base">
-                    Type and format your card directly.
+                  <DialogTitle className="font-headline text-2xl font-bold lowercase">create flashcard</DialogTitle>
+                  <DialogDescription className="text-base lowercase">
+                    type and format your card directly.
                   </DialogDescription>
                 </DialogHeader>
                 
                 <div className="flex-1 overflow-y-auto px-8 py-4 custom-scrollbar">
                   <div className="space-y-8 pb-4">
                     <div className="space-y-3">
-                      <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Question / Front</Label>
+                      <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">question / front</Label>
                       {cardImageUrl && (
                         <div className="relative w-full rounded-2xl overflow-hidden border mb-3">
-                          <img src={cardImageUrl} alt="Front Visual" className="w-full h-auto max-h-[250px] object-contain block mx-auto" />
+                          <img src={cardImageUrl} alt="front visual" className="w-full h-auto max-h-[250px] object-contain block mx-auto" />
                           <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-8 w-8 rounded-full shadow-lg" onClick={() => setCardImageUrl("")}>
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -454,7 +465,7 @@ export default function FlashcardsPage() {
                           editor={questionEditor}
                           imageUrl={cardImageUrl}
                           onSetImageUrl={setCardImageUrl}
-                          label="Front Image"
+                          label="front image"
                           onFileUpload={(file) => handleImageUpload(file, 'question')}
                           uploadProgress={uploadProgress}
                         />
@@ -462,10 +473,10 @@ export default function FlashcardsPage() {
                     </div>
 
                     <div className="space-y-3">
-                      <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Answer / Back</Label>
+                      <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">answer / back</Label>
                       {cardAnswerImageUrl && (
                         <div className="relative w-full rounded-2xl overflow-hidden border mb-3">
-                          <img src={cardAnswerImageUrl} alt="Back Visual" className="w-full h-auto max-h-[250px] object-contain block mx-auto" />
+                          <img src={cardAnswerImageUrl} alt="back visual" className="w-full h-auto max-h-[250px] object-contain block mx-auto" />
                           <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-8 w-8 rounded-full shadow-lg" onClick={() => setCardAnswerImageUrl("")}>
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -477,7 +488,7 @@ export default function FlashcardsPage() {
                           editor={answerEditor}
                           imageUrl={cardAnswerImageUrl}
                           onSetImageUrl={setCardAnswerImageUrl}
-                          label="Back Image"
+                          label="back image"
                           onFileUpload={(file) => handleImageUpload(file, 'answer')}
                           uploadProgress={answerUploadProgress}
                         />
@@ -487,8 +498,8 @@ export default function FlashcardsPage() {
                 </div>
 
                 <DialogFooter className="p-8 pt-6 border-t shrink-0 gap-3 sm:justify-end bg-muted/5">
-                  <Button variant="ghost" onClick={() => setIsCreateCardOpen(false)} className="rounded-xl font-bold">Cancel</Button>
-                  <Button onClick={handleAddCard} disabled={questionEditor?.isEmpty || answerEditor?.isEmpty} className="rounded-xl bg-primary px-8 font-bold text-primary-foreground shadow-lg shadow-primary/20">Create Card</Button>
+                  <Button variant="ghost" onClick={() => setIsCreateCardOpen(false)} className="rounded-xl font-bold lowercase">cancel</Button>
+                  <Button onClick={handleAddCard} disabled={questionEditor?.isEmpty || answerEditor?.isEmpty} className="rounded-xl bg-primary px-8 font-bold text-primary-foreground shadow-lg shadow-primary/20 lowercase">create card</Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
@@ -508,11 +519,11 @@ export default function FlashcardsPage() {
                     <div className="border-r border-border/50 pr-6 flex gap-4 items-start">
                       {card.imageUrl && (
                         <div className="relative w-16 h-16 rounded-lg overflow-hidden shrink-0 border border-border bg-muted/10">
-                          <Image src={card.imageUrl} alt="Flashcard visual" fill unoptimized className="object-contain" />
+                          <Image src={card.imageUrl} alt="flashcard visual" fill unoptimized className="object-contain" />
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1 block">Question</span>
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1 block">question</span>
                         <div className="font-medium text-lg leading-tight line-clamp-2">
                           <HtmlContent html={card.question} />
                         </div>
@@ -521,11 +532,11 @@ export default function FlashcardsPage() {
                     <div className="flex gap-4 items-start">
                       {card.answerImageUrl && (
                         <div className="relative w-16 h-16 rounded-lg overflow-hidden shrink-0 border border-border bg-muted/10">
-                          <Image src={card.answerImageUrl} alt="Answer visual" fill unoptimized className="object-contain" />
+                          <Image src={card.answerImageUrl} alt="answer visual" fill unoptimized className="object-contain" />
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1 block">Answer</span>
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1 block">answer</span>
                         <div className="text-muted-foreground leading-snug line-clamp-2">
                           <HtmlContent html={card.answer} />
                         </div>
@@ -542,9 +553,9 @@ export default function FlashcardsPage() {
         ) : (
           <div className="flex flex-col items-center justify-center py-20 border-2 border-dashed rounded-3xl bg-muted/5">
             <Plus className="h-12 w-12 text-muted-foreground mb-4 opacity-20" />
-            <h3 className="text-xl font-bold font-headline">No cards yet</h3>
-            <p className="text-muted-foreground mt-2">Start adding cards to this deck to begin studying.</p>
-            <Button onClick={() => setIsCreateCardOpen(true)} className="mt-6 rounded-xl">Add First Card</Button>
+            <h3 className="text-xl font-bold font-headline lowercase">no cards yet</h3>
+            <p className="text-muted-foreground mt-2 lowercase">start adding cards to this deck to begin studying.</p>
+            <Button onClick={() => setIsCreateCardOpen(true)} className="mt-6 rounded-xl lowercase">add first card</Button>
           </div>
         )}
       </div>
@@ -555,40 +566,49 @@ export default function FlashcardsPage() {
     <div className="space-y-8 animate-smooth-slow">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="font-headline text-4xl font-bold tracking-tight text-foreground">Flashcard Decks</h1>
-          <p className="text-muted-foreground mt-2 text-lg">
-            {activeCourse ? `Course: ${activeCourse.name}` : "Master your subjects with active recall."}
+          <h1 className="font-headline text-4xl font-bold tracking-tight text-foreground lowercase">flashcard decks</h1>
+          <p className="text-muted-foreground mt-2 text-lg lowercase">
+            {activeCourse ? `${isHighSchool ? 'class' : 'course'}: ${activeCourse.name}` : "master your subjects with active recall."}
           </p>
         </div>
-        <div className="flex gap-4">
+        <div className="flex gap-3">
+          <AiGeneratorDialog 
+            isOpen={isAiGeneratorOpen} 
+            setIsOpen={setIsAiGeneratorOpen} 
+            isHighSchool={isHighSchool}
+            user={user}
+            activeCourse={activeCourse}
+            db={db}
+          />
+          
           <Dialog open={isCreateDeckOpen} onOpenChange={setIsCreateDeckOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-accent hover:bg-accent/90 text-accent-foreground font-bold py-6 px-8 rounded-2xl shadow-lg transition-all hover:scale-105">
-                <Plus className="h-5 w-5 mr-2" /> New Deck
+              <Button variant="outline" className="border-2 font-bold py-6 px-8 rounded-2xl shadow-sm transition-all hover:scale-105 lowercase">
+                <Plus className="h-5 w-5 mr-2" /> new deck
               </Button>
             </DialogTrigger>
             <DialogContent className="rounded-3xl border-none shadow-2xl">
               <DialogHeader>
-                <DialogTitle className="font-headline text-2xl">Create New Deck</DialogTitle>
-                <DialogDescription>
-                  Organize your cards into topics or chapters.
+                <DialogTitle className="font-headline text-2xl lowercase">create new deck</DialogTitle>
+                <DialogDescription className="lowercase">
+                  organize your cards into topics or chapters.
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Deck Name</Label>
+                  <Label htmlFor="name" className="lowercase">deck name</Label>
                   <Input 
                     id="name" 
-                    placeholder="e.g. History: The Industrial Revolution" 
+                    placeholder="e.g. history: the industrial revolution" 
                     value={newDeckName}
                     onChange={(e) => setNewDeckName(e.target.value)}
-                    className="rounded-xl no-focus-ring"
+                    className="rounded-xl no-focus-ring lowercase"
                   />
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setIsCreateDeckOpen(false)} className="rounded-xl">Cancel</Button>
-                <Button onClick={handleCreateDeck} className="rounded-xl">Create Deck</Button>
+                <Button variant="outline" onClick={() => setIsCreateDeckOpen(false)} className="rounded-xl lowercase">cancel</Button>
+                <Button onClick={handleCreateDeck} className="rounded-xl lowercase">create deck</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -625,24 +645,273 @@ export default function FlashcardsPage() {
             <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
               <Plus className="h-8 w-8 text-muted-foreground" />
             </div>
-            <p className="font-headline text-xl font-bold text-muted-foreground">Create New Deck</p>
+            <p className="font-headline text-xl font-bold text-muted-foreground lowercase">create new deck</p>
           </Card>
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center py-20 border-2 border-dashed rounded-3xl bg-muted/5">
           <Layers className="h-12 w-12 text-muted-foreground mb-4 opacity-20" />
-          <h3 className="text-xl font-bold font-headline">No decks yet</h3>
-          <p className="text-muted-foreground mt-2">Create your first flashcard deck to start studying.</p>
-          <Button 
-            onClick={() => setIsCreateDeckOpen(true)}
-            variant="outline" 
-            className="mt-6 rounded-xl border-primary text-primary"
-          >
-            <Plus className="h-4 w-4 mr-2" /> Create First Deck
-          </Button>
+          <h3 className="text-xl font-bold font-headline lowercase">no decks yet</h3>
+          <p className="text-muted-foreground mt-2 lowercase">create your first flashcard deck or use ai to generate one.</p>
+          <div className="flex gap-4 mt-6">
+            <Button 
+              onClick={() => setIsCreateDeckOpen(true)}
+              variant="outline" 
+              className="rounded-xl border-primary text-primary lowercase"
+            >
+              <Plus className="h-4 w-4 mr-2" /> create first deck
+            </Button>
+            <Button 
+              onClick={() => setIsAiGeneratorOpen(true)}
+              className="rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white lowercase"
+            >
+              <Sparkles className="h-4 w-4 mr-2" /> generate with ai
+            </Button>
+          </div>
         </div>
       )}
     </div>
+  )
+}
+
+function AiGeneratorDialog({ isOpen, setIsOpen, isHighSchool, user, activeCourse, db }: any) {
+  const [file, setFile] = React.useState<File | null>(null)
+  const [deckName, setDeckName] = React.useState("")
+  const [gradeLevel, setGradeLevel] = React.useState("")
+  const [instructions, setInstructions] = React.useState("")
+  const [includeImages, setIncludeImages] = React.useState(true)
+  const [isGenerating, setIsGenerating] = React.useState(false)
+  const [generationProgress, setGenerationProgress] = React.useState(0)
+  const [statusMessage, setStatusMessage] = React.useState("")
+
+  const handleGenerate = async () => {
+    if (!user || !db || (!file && !instructions)) return
+
+    setIsGenerating(true)
+    setGenerationProgress(10)
+    setStatusMessage("reading your materials...")
+
+    try {
+      let fileDataUri = ""
+      if (file) {
+        const reader = new FileReader()
+        fileDataUri = await new Promise((resolve) => {
+          reader.onload = (e) => resolve(e.target?.result as string)
+          reader.readAsDataURL(file)
+        })
+      }
+
+      setGenerationProgress(30)
+      setStatusMessage("ai is drafting your cards...")
+
+      const output = await generateFlashcardsFromFile({
+        fileDataUri: fileDataUri || undefined,
+        deckName,
+        educationLevel: gradeLevel || (isHighSchool ? "high school" : "college"),
+        instructions,
+      })
+
+      setGenerationProgress(60)
+      setStatusMessage(`generated ${output.cards.length} cards. creating deck...`)
+
+      // 1. Create Course if needed
+      let courseIdToUse = activeCourse?.id
+      if (!courseIdToUse) {
+        courseIdToUse = doc(collection(db, "temp")).id
+        const courseRef = doc(db, "users", user.uid, "courses", courseIdToUse)
+        setDocumentNonBlocking(courseRef, {
+          id: courseIdToUse,
+          name: isHighSchool ? "general classes" : "general studies",
+          description: "default course for your flashcards",
+        }, { merge: true })
+      }
+
+      // 2. Create Deck
+      const deckId = doc(collection(db, "temp")).id
+      const deckRef = doc(db, "users", user.uid, "courses", courseIdToUse, "flashcardSets", deckId)
+      setDocumentNonBlocking(deckRef, {
+        id: deckId,
+        name: deckName || `ai generated: ${new Date().toLocaleDateString()}`,
+        courseId: courseIdToUse,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }, { merge: true })
+
+      // 3. Create Cards (and generate images if requested)
+      setGenerationProgress(80)
+      if (includeImages) {
+        setStatusMessage("adding visual aids...")
+      }
+
+      for (let i = 0; i < output.cards.length; i++) {
+        const cardData = output.cards[i]
+        const cardId = doc(collection(db, "temp")).id
+        const cardRef = doc(db, "users", user.uid, "courses", courseIdToUse, "flashcardSets", deckId, "flashcards", cardId)
+        
+        let imageUrl = null
+        if (includeImages && cardData.imagePrompt) {
+          try {
+            const imgResult = await generateCardImage({ prompt: cardData.imagePrompt })
+            imageUrl = imgResult.imageUrl
+          } catch (e) {
+            console.error("failed to generate card image", e)
+          }
+        }
+
+        setDocumentNonBlocking(cardRef, {
+          id: cardId,
+          flashcardSetId: deckId,
+          question: `<p>${cardData.question}</p>`,
+          answer: `<p>${cardData.answer}</p>`,
+          imageUrl: imageUrl,
+          lastReviewedAt: new Date().toISOString(),
+          reviewCount: 0,
+          easeFactor: 2.5,
+          nextReviewAt: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }, { merge: true })
+      }
+
+      setGenerationProgress(100)
+      setStatusMessage("deck ready!")
+      setTimeout(() => {
+        setIsOpen(false)
+        setIsGenerating(false)
+        setGenerationProgress(0)
+        setFile(null)
+        setDeckName("")
+        setInstructions("")
+      }, 1000)
+
+    } catch (e) {
+      console.error("ai generation failed", e)
+      setStatusMessage("generation failed. try again?")
+      setIsGenerating(false)
+    }
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-6 px-8 rounded-2xl shadow-lg transition-all hover:scale-105 lowercase">
+          <Sparkles className="h-5 w-5 mr-2" /> generate with ai
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="rounded-[32px] sm:max-w-xl p-0 overflow-hidden border-none bg-background shadow-2xl">
+        <DialogHeader className="p-8 pb-4 text-left bg-indigo-50/50">
+          <DialogTitle className="font-headline text-2xl font-bold flex items-center gap-2 text-indigo-900 lowercase">
+            <Sparkles className="h-6 w-6" /> ai deck builder
+          </DialogTitle>
+          <DialogDescription className="text-indigo-700 lowercase">
+            upload notes or describe a topic to get a custom deck in seconds.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="p-8 space-y-6">
+          {isGenerating ? (
+            <div className="py-12 flex flex-col items-center gap-6 animate-in fade-in zoom-in duration-300">
+              <div className="relative">
+                <div className="h-24 w-24 rounded-full border-4 border-indigo-100 border-t-indigo-600 animate-spin" />
+                <Sparkles className="h-8 w-8 text-indigo-600 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse" />
+              </div>
+              <div className="text-center space-y-2">
+                <h3 className="font-bold text-lg text-indigo-900 lowercase">{statusMessage}</h3>
+                <Progress value={generationProgress} className="w-64 h-2 bg-indigo-100" />
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="space-y-4">
+                <div 
+                  className={cn(
+                    "border-2 border-dashed rounded-3xl p-8 flex flex-col items-center justify-center transition-all cursor-pointer hover:bg-indigo-50/50",
+                    file ? "border-indigo-600 bg-indigo-50/30" : "border-muted"
+                  )}
+                  onClick={() => document.getElementById('ai-file-upload')?.click()}
+                >
+                  <input 
+                    id="ai-file-upload" 
+                    type="file" 
+                    className="hidden" 
+                    accept="image/*,application/pdf"
+                    onChange={(e) => setFile(e.target.files?.[0] || null)}
+                  />
+                  {file ? (
+                    <div className="flex flex-col items-center gap-2">
+                      <FileText className="h-10 w-10 text-indigo-600" />
+                      <span className="font-bold text-sm text-indigo-900 truncate max-w-[200px] lowercase">{file.name}</span>
+                      <Button variant="ghost" size="sm" className="text-xs lowercase text-muted-foreground" onClick={(e) => { e.stopPropagation(); setFile(null); }}>remove</Button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                      <Upload className="h-10 w-10 opacity-20" />
+                      <span className="font-bold lowercase">drop your notes or click to upload</span>
+                      <span className="text-xs lowercase">supports images and pdfs</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">deck name</Label>
+                    <Input 
+                      placeholder="e.g. biology: mitosis" 
+                      value={deckName}
+                      onChange={(e) => setDeckName(e.target.value)}
+                      className="rounded-xl lowercase no-focus-ring"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">grade/level</Label>
+                    <Input 
+                      placeholder={isHighSchool ? "e.g. 10th grade" : "e.g. college intro"} 
+                      value={gradeLevel}
+                      onChange={(e) => setGradeLevel(e.target.value)}
+                      className="rounded-xl lowercase no-focus-ring"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">specific instructions (optional)</Label>
+                  <Textarea 
+                    placeholder="e.g. focus on key dates and events" 
+                    value={instructions}
+                    onChange={(e) => setInstructions(e.target.value)}
+                    className="rounded-2xl min-h-[80px] lowercase no-focus-ring"
+                  />
+                </div>
+
+                <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-2xl">
+                  <Checkbox 
+                    id="include-images" 
+                    checked={includeImages} 
+                    onCheckedChange={(v: any) => setIncludeImages(v)}
+                    className="h-5 w-5 rounded-md"
+                  />
+                  <div className="flex-1">
+                    <Label htmlFor="include-images" className="font-bold text-sm lowercase">generate visual aids with ai</Label>
+                    <p className="text-[10px] text-muted-foreground lowercase">we'll use imagen to create helpful illustrations for your cards.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <Button variant="ghost" onClick={() => setIsOpen(false)} className="flex-1 rounded-2xl py-6 font-bold lowercase">cancel</Button>
+                <Button 
+                  disabled={!file && !instructions} 
+                  onClick={handleGenerate}
+                  className="flex-[2] rounded-2xl py-6 font-bold bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-200 lowercase"
+                >
+                  generate deck
+                </Button>
+              </div>
+            </>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   )
 }
 
@@ -699,7 +968,7 @@ function RichFormattingToolbar({
                 <Bold className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Bold</TooltipContent>
+            <TooltipContent>bold</TooltipContent>
           </Tooltip>
 
           <Tooltip>
@@ -713,7 +982,7 @@ function RichFormattingToolbar({
                 <Italic className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Italic</TooltipContent>
+            <TooltipContent>italic</TooltipContent>
           </Tooltip>
 
           <Tooltip>
@@ -727,7 +996,7 @@ function RichFormattingToolbar({
                 <Heading1 className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Heading 1</TooltipContent>
+            <TooltipContent>heading 1</TooltipContent>
           </Tooltip>
 
           <Tooltip>
@@ -741,7 +1010,7 @@ function RichFormattingToolbar({
                 <Heading2 className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Heading 2</TooltipContent>
+            <TooltipContent>heading 2</TooltipContent>
           </Tooltip>
 
           <div className="w-px h-4 bg-border mx-1" />
@@ -758,7 +1027,7 @@ function RichFormattingToolbar({
                 <ImageIcon className={cn("h-4 w-4", imageUrl && "text-primary", uploadProgress !== null && "animate-pulse")} />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>{uploadProgress !== null ? 'Uploading...' : label}</TooltipContent>
+            <TooltipContent>{uploadProgress !== null ? 'uploading...' : label}</TooltipContent>
           </Tooltip>
 
           <Tooltip>
@@ -767,7 +1036,7 @@ function RichFormattingToolbar({
                 <Smile className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Emoji</TooltipContent>
+            <TooltipContent>emoji</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       </div>
@@ -799,7 +1068,7 @@ function MatchingView({ deckName, cards, onExit }: { deckName: string, cards: an
   const [endTime, setEndTime] = React.useState<number | null>(null)
 
   React.useEffect(() => {
-    // Select a subset of cards if many, but for simplicity let's use up to 8 cards (16 tiles)
+    // select a subset of cards if many, but for simplicity let's use up to 8 cards (16 tiles)
     const sessionCards = [...cards].sort(() => 0.5 - Math.random()).slice(0, 8)
     
     const tileList: any[] = []
@@ -823,7 +1092,7 @@ function MatchingView({ deckName, cards, onExit }: { deckName: string, cards: an
     const currentTile = tiles.find(t => t.id === tileId)
 
     if (selectedTile.cardId === currentTile.cardId && selectedTile.type !== currentTile.type) {
-      // Match!
+      // match!
       setMatched(prev => new Set(prev).add(selected).add(tileId))
       setSelected(null)
       
@@ -831,7 +1100,7 @@ function MatchingView({ deckName, cards, onExit }: { deckName: string, cards: an
         setEndTime(Date.now())
       }
     } else {
-      // Mismatch
+      // mismatch
       setIncorrect(new Set([selected, tileId]))
       setSelected(null)
       setTimeout(() => {
@@ -848,13 +1117,13 @@ function MatchingView({ deckName, cards, onExit }: { deckName: string, cards: an
           <Trophy className="h-16 w-16 text-orange-600" />
         </div>
         <div className="space-y-2">
-          <h2 className="text-4xl font-bold font-headline">Deck Matched!</h2>
-          <p className="text-muted-foreground text-lg">
-            You completed the matching set in {totalTime} seconds.
+          <h2 className="text-4xl font-bold font-headline lowercase">deck matched!</h2>
+          <p className="text-muted-foreground text-lg lowercase">
+            you completed the matching set in {totalTime} seconds.
           </p>
         </div>
-        <Button onClick={onExit} className="rounded-2xl py-6 px-12 font-bold bg-orange-600 hover:bg-orange-700 text-white shadow-xl shadow-orange-200">
-          Back to Decks
+        <Button onClick={onExit} className="rounded-2xl py-6 px-12 font-bold bg-orange-600 hover:bg-orange-700 text-white shadow-xl shadow-orange-200 lowercase">
+          back to decks
         </Button>
       </div>
     )
@@ -863,13 +1132,13 @@ function MatchingView({ deckName, cards, onExit }: { deckName: string, cards: an
   return (
     <div className="max-w-6xl w-full mx-auto space-y-8 animate-smooth-slow px-4 py-8">
       <div className="flex items-center justify-between">
-        <Button variant="ghost" size="sm" onClick={onExit} className="rounded-xl gap-2 font-bold text-muted-foreground">
-          <ChevronLeft className="h-4 w-4" /> Exit Matching
+        <Button variant="ghost" size="sm" onClick={onExit} className="rounded-xl gap-2 font-bold text-muted-foreground lowercase">
+          <ChevronLeft className="h-4 w-4" /> exit matching
         </Button>
         <div className="text-center">
-          <h2 className="font-headline text-xl font-bold">Matching: {deckName}</h2>
+          <h2 className="font-headline text-xl font-bold lowercase">matching: {deckName}</h2>
           <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-            {matched.size / 2} / {tiles.length / 2} Paired
+            {matched.size / 2} / {tiles.length / 2} paired
           </p>
         </div>
         <div className="w-24" />
@@ -904,7 +1173,7 @@ function MatchingView({ deckName, cards, onExit }: { deckName: string, cards: an
                     <img src={tile.imageUrl} alt="tile visual" className="w-full h-full object-contain" />
                   </div>
                 )}
-                <div className={cn("font-medium line-clamp-4 leading-tight", tile.imageUrl ? "text-sm" : "text-base")}>
+                <div className={cn("font-medium line-clamp-4 leading-tight lowercase", tile.imageUrl ? "text-sm" : "text-base")}>
                   <HtmlContent html={tile.content} />
                 </div>
               </div>
@@ -945,7 +1214,7 @@ function QuizView({
         const output = await generateQuiz({ deckName, cards: simpleCards })
         setQuestions(output.questions)
       } catch (e) {
-        console.error("Quiz generation failed", e)
+        console.error("quiz generation failed", e)
       } finally {
         setIsGenerating(false)
       }
@@ -971,7 +1240,7 @@ function QuizView({
         feedback = evalResult.feedback
       } else {
         isCorrect = userAnswer.toLowerCase() === current.correctAnswer.toLowerCase()
-        feedback = isCorrect ? "Correct!" : `Incorrect. The correct answer was: ${current.correctAnswer}`
+        feedback = isCorrect ? "correct!" : `incorrect. the correct answer was: ${current.correctAnswer}`
       }
 
       setResults(prev => [...prev, { cardId: current.cardId, isCorrect, feedback }])
@@ -983,7 +1252,7 @@ function QuizView({
         setIsFinished(true)
       }
     } catch (e) {
-      console.error("Evaluation failed", e)
+      console.error("evaluation failed", e)
     } finally {
       setIsEvaluating(false)
     }
@@ -996,8 +1265,8 @@ function QuizView({
           <FileText className="h-16 w-16 text-indigo-600" />
         </div>
         <div className="text-center">
-          <h2 className="text-2xl font-bold font-headline">Creating quiz..</h2>
-          <p className="text-muted-foreground mt-2">Preparing your personal quiz from this deck.</p>
+          <h2 className="text-2xl font-bold font-headline lowercase">creating quiz..</h2>
+          <p className="text-muted-foreground mt-2 lowercase">preparing your personal quiz from this deck.</p>
         </div>
       </div>
     )
@@ -1013,9 +1282,9 @@ function QuizView({
           <Trophy className="h-16 w-16 text-primary" />
         </div>
         <div className="space-y-2">
-          <h2 className="text-4xl font-bold font-headline">{percent}% Quiz Score</h2>
-          <p className="text-muted-foreground text-lg">
-            You got {score} out of {questions.length} questions correct!
+          <h2 className="text-4xl font-bold font-headline lowercase">{percent}% quiz score</h2>
+          <p className="text-muted-foreground text-lg lowercase">
+            you got {score} out of {questions.length} questions correct!
           </p>
         </div>
 
@@ -1026,14 +1295,14 @@ function QuizView({
                 {res.isCorrect ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
               </div>
               <div>
-                <p className="text-sm font-medium">{res.feedback}</p>
+                <p className="text-sm font-medium lowercase">{res.feedback}</p>
               </div>
             </div>
           ))}
         </div>
 
         <div className="flex flex-col gap-3 w-full max-w-xs">
-          <Button onClick={onExit} className="rounded-2xl py-6 font-bold shadow-lg">Back to Decks</Button>
+          <Button onClick={onExit} className="rounded-2xl py-6 font-bold shadow-lg lowercase">back to decks</Button>
         </div>
       </div>
     )
@@ -1045,13 +1314,13 @@ function QuizView({
   return (
     <div className="max-w-3xl w-full mx-auto space-y-8 animate-smooth-slow px-4 py-8">
       <div className="flex items-center justify-between">
-        <Button variant="ghost" size="sm" onClick={onExit} className="rounded-xl gap-2 font-bold text-muted-foreground">
-          <ChevronLeft className="h-4 w-4" /> Exit Quiz
+        <Button variant="ghost" size="sm" onClick={onExit} className="rounded-xl gap-2 font-bold text-muted-foreground lowercase">
+          <ChevronLeft className="h-4 w-4" /> exit quiz
         </Button>
         <div className="text-center">
-          <h2 className="font-headline text-xl font-bold">Quiz: {deckName}</h2>
+          <h2 className="font-headline text-xl font-bold lowercase">quiz: {deckName}</h2>
           <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-            Question {currentIndex + 1} / {questions.length}
+            question {currentIndex + 1} / {questions.length}
           </p>
         </div>
         <div className="w-24" />
@@ -1067,10 +1336,10 @@ function QuizView({
             <div className="space-y-6">
               {current.type === 'image-selection' && card?.imageUrl && (
                 <div className="w-full h-48 md:h-64 relative rounded-3xl overflow-hidden border bg-muted/5">
-                  <img src={card.imageUrl} alt="Identify this" className="w-full h-full object-contain" />
+                  <img src={card.imageUrl} alt="identify this" className="w-full h-full object-contain" />
                 </div>
               )}
-              <h3 className="text-2xl md:text-3xl font-bold leading-tight">
+              <h3 className="text-2xl md:text-3xl font-bold leading-tight lowercase">
                 {current.prompt}
               </h3>
             </div>
@@ -1080,14 +1349,14 @@ function QuizView({
             {current.type === 'open-ended' ? (
               <div className="space-y-4">
                 <Input 
-                  placeholder="Type your answer here..."
+                  placeholder="type your answer here..."
                   value={userAnswer}
                   onChange={(e) => setUserAnswer(e.target.value)}
-                  className="rounded-2xl h-16 text-lg px-6 no-focus-ring border-2 border-muted hover:border-indigo-200 transition-all"
+                  className="rounded-2xl h-16 text-lg px-6 no-focus-ring border-2 border-muted hover:border-indigo-200 transition-all lowercase"
                   onKeyDown={(e) => e.key === 'Enter' && !isEvaluating && handleNext()}
                 />
-                <p className="text-xs text-muted-foreground text-center italic">
-                  Your answer will be evaluated based on the core concept.
+                <p className="text-xs text-muted-foreground text-center italic lowercase">
+                  your answer will be evaluated based on the core concept.
                 </p>
               </div>
             ) : (
@@ -1109,7 +1378,7 @@ function QuizView({
                       )}>
                         {String.fromCharCode(65 + i)}
                       </div>
-                      <span className="flex-1">{option}</span>
+                      <span className="flex-1 lowercase">{option}</span>
                     </div>
                   </Button>
                 ))}
@@ -1120,16 +1389,16 @@ function QuizView({
           <Button 
             disabled={!userAnswer || isEvaluating} 
             onClick={handleNext}
-            className="w-full rounded-2xl py-8 text-xl font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xl shadow-indigo-200 group"
+            className="w-full rounded-2xl py-8 text-xl font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xl shadow-indigo-200 group lowercase"
           >
             {isEvaluating ? (
               <>
                 <Loader2 className="h-6 w-6 mr-2 animate-spin" />
-                Checking...
+                checking...
               </>
             ) : (
               <>
-                Submit Answer
+                submit answer
                 <ChevronRight className="h-6 w-6 ml-2 transition-transform group-hover:translate-x-1" />
               </>
             )}
@@ -1143,7 +1412,7 @@ function QuizView({
             <div className="relative">
               <RefreshCw className="h-12 w-12 text-indigo-600 animate-spin" />
             </div>
-            <p className="font-bold text-indigo-900 tracking-tight">Calculating results</p>
+            <p className="font-bold text-indigo-900 tracking-tight lowercase">calculating results</p>
           </div>
         </div>
       )}
@@ -1185,7 +1454,7 @@ function StudyView({
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-muted-foreground font-medium">Loading cards...</p>
+        <p className="text-muted-foreground font-medium lowercase">loading cards...</p>
       </div>
     )
   }
@@ -1195,10 +1464,10 @@ function StudyView({
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 text-center">
         <HelpCircle className="h-16 w-16 text-muted-foreground opacity-20" />
         <div>
-          <h2 className="text-2xl font-bold font-headline">No cards to study</h2>
-          <p className="text-muted-foreground mt-2">Add some cards to this deck first.</p>
+          <h2 className="text-2xl font-bold font-headline lowercase">no cards to study</h2>
+          <p className="text-muted-foreground mt-2 lowercase">add some cards to this deck first.</p>
         </div>
-        <Button onClick={onExit} variant="outline" className="rounded-xl">Go Back</Button>
+        <Button onClick={onExit} variant="outline" className="rounded-xl lowercase">go back</Button>
       </div>
     )
   }
@@ -1215,11 +1484,11 @@ function StudyView({
           <Trophy className="h-16 w-16 text-primary" />
         </div>
         <div className="space-y-2">
-          <h2 className="text-4xl font-bold font-headline">{masteryPercent}% Mastered</h2>
-          <p className="text-muted-foreground text-lg">
+          <h2 className="text-4xl font-bold font-headline lowercase">{masteryPercent}% mastered</h2>
+          <p className="text-muted-foreground text-lg lowercase">
             {masteredInPass === totalInPass 
-              ? "Perfect! You've mastered all cards in this pass." 
-              : `You mastered ${masteredInPass} out of ${totalInPass} cards.`}
+              ? "perfect! you've mastered all cards in this pass." 
+              : `you mastered ${masteredInPass} out of ${totalInPass} cards.`}
           </p>
         </div>
         
@@ -1227,12 +1496,12 @@ function StudyView({
           <div className="flex justify-around items-center">
             <div>
               <div className="text-3xl font-bold text-primary">{masteredInPass}</div>
-              <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Mastered</div>
+              <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">mastered</div>
             </div>
             <div className="h-8 w-px bg-border" />
             <div>
               <div className="text-3xl font-bold text-destructive">{missedCards.length}</div>
-              <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Reviewing</div>
+              <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">reviewing</div>
             </div>
           </div>
         </Card>
@@ -1248,9 +1517,9 @@ function StudyView({
                 setMissedIds(new Set());
                 setIsFlipped(false);
               }} 
-              className="w-full rounded-2xl py-6 font-bold bg-accent text-accent-foreground"
+              className="w-full rounded-2xl py-6 font-bold bg-accent text-accent-foreground lowercase"
             >
-              <RefreshCw className="h-4 w-4 mr-2" /> Study Remaining ({missedCards.length})
+              <RefreshCw className="h-4 w-4 mr-2" /> study remaining ({missedCards.length})
             </Button>
           )}
           <Button 
@@ -1263,12 +1532,12 @@ function StudyView({
               setIsFlipped(false);
             }} 
             variant="outline"
-            className="w-full rounded-2xl py-6 font-bold"
+            className="w-full rounded-2xl py-6 font-bold lowercase"
           >
-            Restart Full Deck
+            restart full deck
           </Button>
-          <Button onClick={onExit} variant="ghost" className="w-full rounded-2xl py-6 font-bold text-muted-foreground">
-            Close Session
+          <Button onClick={onExit} variant="ghost" className="w-full rounded-2xl py-6 font-bold text-muted-foreground lowercase">
+            close session
           </Button>
         </div>
       </div>
@@ -1311,11 +1580,11 @@ function StudyView({
     <div className="relative min-h-[85vh] flex flex-col items-center justify-center">
       <div className="max-w-3xl w-full space-y-8 animate-smooth-slow relative z-10 px-4">
         <div className="flex items-center justify-between">
-          <Button variant="ghost" size="sm" onClick={onExit} className="rounded-xl gap-2 font-bold text-muted-foreground hover:text-foreground bg-white/50 backdrop-blur-sm">
-            <ChevronLeft className="h-4 w-4" /> Exit Study
+          <Button variant="ghost" size="sm" onClick={onExit} className="rounded-xl gap-2 font-bold text-muted-foreground hover:text-foreground bg-white/50 backdrop-blur-sm lowercase">
+            <ChevronLeft className="h-4 w-4" /> exit study
           </Button>
           <div className="text-center">
-            <h2 className="font-headline text-xl font-bold">{deckName}</h2>
+            <h2 className="font-headline text-xl font-bold lowercase">{deckName}</h2>
             <div className="flex items-center justify-center gap-2">
               <Badge variant="secondary" className="text-[10px] font-bold uppercase tracking-widest px-2 py-0">
                 {mode}
@@ -1338,7 +1607,7 @@ function StudyView({
                 <div className="w-full h-full flex flex-col items-center justify-center gap-6 overflow-hidden">
                   {currentCard?.imageUrl && (
                     <div className="w-full flex-1 min-h-0 relative">
-                      <img src={currentCard.imageUrl} alt="Card visual" className="w-full h-full object-contain block mx-auto" />
+                      <img src={currentCard.imageUrl} alt="card visual" className="w-full h-full object-contain block mx-auto" />
                     </div>
                   )}
                   <div className={cn("font-headline font-bold text-center leading-tight w-full", currentCard?.imageUrl ? "text-2xl" : "text-4xl")}>
@@ -1346,16 +1615,16 @@ function StudyView({
                   </div>
                 </div>
                 <p className="absolute bottom-6 text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-primary transition-colors">
-                  Click to reveal answer
+                  click to reveal answer
                 </p>
               </Card>
 
               <Card className={`absolute inset-0 backface-hidden border-none shadow-2xl rounded-[32px] flex flex-col items-center justify-center p-12 bg-primary/10 rotate-y-180 backdrop-blur-sm ${!isFlipped ? 'pointer-events-none opacity-0' : 'opacity-100'}`}>
                 <div className="w-full h-full flex flex-col items-center justify-center gap-6 overflow-hidden">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-primary block text-center">Answer</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-primary block text-center">answer</span>
                   {currentCard?.answerImageUrl && (
                     <div className="w-full flex-1 min-h-0 relative">
-                      <img src={currentCard.answerImageUrl} alt="Answer visual" className="w-full h-full object-contain block mx-auto" />
+                      <img src={currentCard.answerImageUrl} alt="answer visual" className="w-full h-full object-contain block mx-auto" />
                     </div>
                   )}
                   <div className={cn("font-medium text-center leading-relaxed w-full", currentCard?.answerImageUrl ? "text-xl" : "text-3xl")}>
@@ -1363,7 +1632,7 @@ function StudyView({
                   </div>
                 </div>
                 <p className="absolute bottom-6 text-[10px] font-bold uppercase tracking-widest text-primary">
-                  Click to flip back
+                  click to flip back
                 </p>
               </Card>
             </div>
@@ -1405,7 +1674,7 @@ function StudyView({
                 className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-bold rounded-2xl py-8 px-10 shadow-lg shadow-destructive/20 flex flex-col gap-1 transition-all hover:scale-105"
               >
                 <XCircle className="h-6 w-6" />
-                <span className="text-[10px] uppercase tracking-widest">Need Review</span>
+                <span className="text-[10px] uppercase tracking-widest">need review</span>
               </Button>
 
               <Button 
@@ -1422,7 +1691,7 @@ function StudyView({
                 className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-2xl py-8 px-10 shadow-lg shadow-primary/20 flex flex-col gap-1 transition-all hover:scale-105"
               >
                 <CheckCircle2 className="h-6 w-6" />
-                <span className="text-[10px] uppercase tracking-widest">Got it</span>
+                <span className="text-[10px] uppercase tracking-widest">got it</span>
               </Button>
             </div>
           )}
@@ -1458,19 +1727,19 @@ function DeckCard({ deck, onDelete, onEdit, onStudy }: { deck: any, onDelete: ()
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="rounded-xl">
-              <DropdownMenuItem className="gap-2 cursor-pointer" onClick={onEdit}>
-                <Settings2 className="h-4 w-4" /> Manage Cards
+              <DropdownMenuItem className="gap-2 cursor-pointer lowercase" onClick={onEdit}>
+                <Settings2 className="h-4 w-4" /> manage cards
               </DropdownMenuItem>
               <DropdownMenuItem 
-                className="gap-2 cursor-pointer text-destructive focus:text-destructive" 
+                className="gap-2 cursor-pointer text-destructive focus:text-destructive lowercase" 
                 onClick={onDelete}
               >
-                <Trash2 className="h-4 w-4" /> Delete Deck
+                <Trash2 className="h-4 w-4" /> delete deck
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        <CardTitle className="font-headline text-2xl mt-4 leading-tight truncate cursor-pointer hover:text-primary transition-colors" onClick={onStudy}>
+        <CardTitle className="font-headline text-2xl mt-4 leading-tight truncate cursor-pointer hover:text-primary transition-colors lowercase" onClick={onStudy}>
           {deck.name}
         </CardTitle>
       </CardHeader>
@@ -1478,7 +1747,7 @@ function DeckCard({ deck, onDelete, onEdit, onStudy }: { deck: any, onDelete: ()
         <div className="space-y-4">
           <div className="flex justify-between text-sm items-center">
             <div className="flex flex-col">
-              <span className="text-muted-foreground uppercase text-[10px] font-bold tracking-widest">Created</span>
+              <span className="text-muted-foreground uppercase text-[10px] font-bold tracking-widest">created</span>
               <span className="text-muted-foreground font-medium">
                 {new Date(deck.createdAt).toLocaleDateString()}
               </span>
@@ -1487,7 +1756,7 @@ function DeckCard({ deck, onDelete, onEdit, onStudy }: { deck: any, onDelete: ()
           
           <div className="space-y-2">
             <div className="flex justify-between text-xs font-bold uppercase tracking-tighter">
-              <span>Mastery</span>
+              <span>mastery</span>
               <span>{mastery}%</span>
             </div>
             <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
@@ -1500,11 +1769,11 @@ function DeckCard({ deck, onDelete, onEdit, onStudy }: { deck: any, onDelete: ()
         </div>
 
         <div className="flex flex-col gap-3 pt-2">
-          <Button onClick={onStudy} className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-2xl py-7 w-full shadow-lg shadow-primary/10 flex items-center justify-center gap-2 group/btn">
-            <Play className="h-5 w-5 fill-current transition-transform group-hover/btn:scale-110" /> Study Deck
+          <Button onClick={onStudy} className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-2xl py-7 w-full shadow-lg shadow-primary/10 flex items-center justify-center gap-2 group/btn lowercase">
+            <Play className="h-5 w-5 fill-current transition-transform group-hover/btn:scale-110" /> study deck
           </Button>
-          <Button variant="outline" onClick={onEdit} className="border-border hover:bg-muted font-bold rounded-2xl py-7 w-full flex items-center justify-center gap-2">
-            <Edit2 className="h-4 w-4" /> Edit Cards
+          <Button variant="outline" onClick={onEdit} className="border-border hover:bg-muted font-bold rounded-2xl py-7 w-full flex items-center justify-center gap-2 lowercase">
+            <Edit2 className="h-4 w-4" /> edit cards
           </Button>
         </div>
       </CardContent>
