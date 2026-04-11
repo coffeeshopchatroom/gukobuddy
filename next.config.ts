@@ -28,6 +28,12 @@ import type {NextConfig} from 'next';
               port: '',
               pathname: '/**',
             },
+            {
+              protocol: 'https',
+              hostname: 'loremflickr.com',
+              port: '',
+              pathname: '/**',
+            },
           ],
         },
       };

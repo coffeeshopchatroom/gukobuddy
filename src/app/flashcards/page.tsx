@@ -739,7 +739,7 @@ function AiGeneratorDialog({ isOpen, setIsOpen, isHighSchool, user, activeCourse
       // 3. Create Cards (and pull images if requested)
       setGenerationProgress(80)
       if (includeImages) {
-        setStatusMessage("finding relevant images...")
+        setStatusMessage("finding related photos...")
       }
 
       for (let i = 0; i < output.cards.length; i++) {
@@ -749,8 +749,8 @@ function AiGeneratorDialog({ isOpen, setIsOpen, isHighSchool, user, activeCourse
         
         let imageUrl = null
         if (includeImages && cardData.searchKeyword) {
-          // Use a placeholder service with the keyword to "search" the web
-          imageUrl = `https://picsum.photos/seed/${encodeURIComponent(cardData.searchKeyword)}/400/300`
+          // Using loremflickr for actual keyword-based photo retrieval
+          imageUrl = `https://loremflickr.com/400/300/${encodeURIComponent(cardData.searchKeyword.toLowerCase())}`
         }
 
         setDocumentNonBlocking(cardRef, {
@@ -886,7 +886,7 @@ function AiGeneratorDialog({ isOpen, setIsOpen, isHighSchool, user, activeCourse
                     className="h-5 w-5 rounded-md"
                   />
                   <div className="flex-1">
-                    <Label htmlFor="include-images" className="font-bold text-sm lowercase">find relevant images online</Label>
+                    <Label htmlFor="include-images" className="font-bold text-sm lowercase">find relevant photos online</Label>
                     <p className="text-[10px] text-muted-foreground lowercase">we'll search for clear visuals to help you remember each card.</p>
                   </div>
                 </div>
@@ -1428,7 +1428,7 @@ function StudyView({
   mode: StudyMode, 
   isLoading: boolean, 
   onExit: () => void,
-  onCardAction?: (cardId: string, correct: boolean) => void
+  onCardAction?: (cardId: string, correct) => void
 }) {
   const [sessionCards, setSessionCards] = React.useState<any[]>([])
   const [currentIndex, setCurrentIndex] = React.useState(0)
