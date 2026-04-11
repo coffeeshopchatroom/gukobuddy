@@ -80,6 +80,7 @@ import Placeholder from '@tiptap/extension-placeholder'
 
 // AI Flow imports
 import { generateQuiz, evaluateAnswer, type QuizQuestion } from "@/ai/flows/quiz-flow"
+import { Progress } from "@/components/ui/progress"
 
 type StudyMode = 'classic' | 'tracking' | 'quiz' | 'matching' | null
 
@@ -97,6 +98,8 @@ export default function FlashcardsPage() {
   
   const [cardImageUrl, setCardImageUrl] = React.useState("")
   const [cardAnswerImageUrl, setCardAnswerImageUrl] = React.useState("")
+  const [uploadProgress, setUploadProgress] = React.useState<number | null>(null);
+  const [answerUploadProgress, setAnswerUploadProgress] = React.useState<number | null>(null);
 
   const questionEditor = useEditor({
     extensions: [
@@ -142,6 +145,32 @@ export default function FlashcardsPage() {
   }, [db, user, activeCourse, selectedDeckId])
 
   const { data: cards, isLoading: isCardsLoading } = useCollection(cardsQuery)
+
+  const handleImageUpload = async (file: File, type: 'question' | 'answer') => {
+    if (!user || !selectedDeckId) return;
+
+    const setProgress = type === 'question' ? setUploadProgress : setAnswerUploadProgress;
+    const setUrl = type === 'question' ? setCardImageUrl : setCardAnswerImageUrl;
+    
+    setProgress(0);
+    const filename = `flashcard_images/${user.uid}/${selectedDeckId}/${Date.now()}-${file.name}`;
+
+    try {
+      const response = await fetch(`/api/upload?filename=${filename}`, {
+        method: 'POST',
+        body: file,
+      });
+
+      const newBlob = await response.json();
+      setUrl(newBlob.url);
+
+    } catch (error) {
+        console.error("Image upload failed", error);
+        // TODO: Show an error toast to the user
+    } finally {
+        setProgress(null);
+    }
+  };
 
   const handleCreateDeck = () => {
     if (!user || !db || !newDeckName.trim()) return
@@ -421,11 +450,13 @@ export default function FlashcardsPage() {
                       )}
                       <div className="border rounded-2xl bg-white p-6 shadow-sm transition-all">
                         <EditorContent editor={questionEditor} className="tiptap-editor min-h-[100px]" />
-                        <RichFormattingToolbar 
-                          editor={questionEditor} 
-                          imageUrl={cardImageUrl} 
-                          onSetImageUrl={setCardImageUrl} 
-                          label="Front Image" 
+                        <RichFormattingToolbar
+                          editor={questionEditor}
+                          imageUrl={cardImageUrl}
+                          onSetImageUrl={setCardImageUrl}
+                          label="Front Image"
+                          onFileUpload={(file) => handleImageUpload(file, 'question')}
+                          uploadProgress={uploadProgress}
                         />
                       </div>
                     </div>
@@ -442,11 +473,13 @@ export default function FlashcardsPage() {
                       )}
                       <div className="border rounded-2xl bg-white p-6 shadow-sm transition-all">
                         <EditorContent editor={answerEditor} className="tiptap-editor min-h-[100px]" />
-                        <RichFormattingToolbar 
-                          editor={answerEditor} 
-                          imageUrl={cardAnswerImageUrl} 
-                          onSetImageUrl={setCardAnswerImageUrl} 
-                          label="Back Image" 
+                        <RichFormattingToolbar
+                          editor={answerEditor}
+                          imageUrl={cardAnswerImageUrl}
+                          onSetImageUrl={setCardAnswerImageUrl}
+                          label="Back Image"
+                          onFileUpload={(file) => handleImageUpload(file, 'answer')}
+                          uploadProgress={answerUploadProgress}
                         />
                       </div>
                     </div>
@@ -625,17 +658,31 @@ function HtmlContent({ html, className }: { html: string, className?: string }) 
 function RichFormattingToolbar({ 
   editor, 
   imageUrl, 
-  onSetImageUrl, 
-  label 
+  onSetImageUrl,
+  label,
+  onFileUpload,
+  uploadProgress
 }: { 
   editor: any, 
   imageUrl: string, 
   onSetImageUrl: (url: string) => void,
-  label: string
+  label: string,
+  onFileUpload: (file: File) => void,
+  uploadProgress: number | null
 }) {
-  const [showImageUrl, setShowImageUrl] = React.useState(false)
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-  if (!editor) return null
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      onFileUpload(file);
+    }
+    if (event.target) {
+      event.target.value = '';
+    }
+  };
+
+  if (!editor) return null;
 
   return (
     <div className="mt-4 flex flex-col gap-3">
@@ -701,11 +748,17 @@ function RichFormattingToolbar({
 
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setShowImageUrl(!showImageUrl)}>
-                <ImageIcon className={cn("h-4 w-4", imageUrl && "text-primary")} />
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 rounded-full" 
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadProgress !== null}
+              >
+                <ImageIcon className={cn("h-4 w-4", imageUrl && "text-primary", uploadProgress !== null && "animate-pulse")} />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>{label}</TooltipContent>
+            <TooltipContent>{uploadProgress !== null ? 'Uploading...' : label}</TooltipContent>
           </Tooltip>
 
           <Tooltip>
@@ -719,17 +772,18 @@ function RichFormattingToolbar({
         </TooltipProvider>
       </div>
 
-      {showImageUrl && (
-        <div className="animate-in slide-in-from-top-1 fade-in duration-200 flex gap-2">
-          <Input 
-            placeholder={`Enter ${label.toLowerCase()} URL...`}
-            value={imageUrl}
-            onChange={(e) => onSetImageUrl(e.target.value)}
-            className="rounded-xl h-10 border-primary/20 focus:border-primary flex-1 no-focus-ring"
-          />
-          <Button size="icon" variant="ghost" className="rounded-xl" onClick={() => setShowImageUrl(false)}>
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        accept="image/*"
+        className="hidden"
+      />
+      
+      {uploadProgress !== null && (
+        <div className="animate-in slide-in-from-top-1 fade-in duration-200 flex items-center gap-2">
+          <Progress value={uploadProgress} className="w-full h-1.5" />
+          <span className="text-xs font-mono text-muted-foreground">{Math.round(uploadProgress)}%</span>
         </div>
       )}
     </div>
