@@ -19,7 +19,7 @@ import { cn } from '@/lib/utils';
 type Step = 'account' | 'profile' | 'preferences';
 
 export default function SignupPage() {
-  const { auth } = useAuth();
+  const auth = useAuth(); // fixed: useAuth returns the instance directly
   const db = useFirestore();
   const { user } = useUser();
   const router = useRouter();
@@ -202,7 +202,7 @@ export default function SignupPage() {
                     </div>
                     <div>
                       <div className="font-bold text-lg">smart assistance</div>
-                      <div className="text-sm text-muted-foreground lowercase">enable smart quiz and help tools.</div>
+                      <div className="text-sm text-muted-foreground lowercase">enable smart tools.</div>
                     </div>
                   </div>
                   <Switch checked={useAi} onCheckedChange={setUseAi} />
