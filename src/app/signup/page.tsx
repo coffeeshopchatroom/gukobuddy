@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -19,7 +18,7 @@ import { cn } from '@/lib/utils';
 type Step = 'account' | 'profile' | 'preferences';
 
 export default function SignupPage() {
-  const auth = useAuth(); // fixed: useAuth returns the instance directly
+  const auth = useAuth();
   const db = useFirestore();
   const { user } = useUser();
   const router = useRouter();
@@ -30,11 +29,12 @@ export default function SignupPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Profile data
+  // profile data
   const [studentType, setStudentType] = useState<'high-school' | 'college'>('college');
   const [useAi, setUseAi] = useState(true);
   const [focus, setFocus] = useState<'flashcards' | 'notebooks' | 'tasks' | 'all'>('all');
 
+  // if user is already signed in and on the account step, move them forward
   useEffect(() => {
     if (user && step === 'account') {
       setStep('profile');
@@ -43,13 +43,18 @@ export default function SignupPage() {
 
   const handleCreateAccount = async () => {
     if (!auth) return;
+    if (!email || !password) {
+      setError('please enter both email and password');
+      return;
+    }
     setIsProcessing(true);
     setError(null);
     try {
       await createUserWithEmailAndPassword(auth, email, password);
-      setStep('profile');
+      // step transition handled by useEffect once user state updates
     } catch (e: any) {
-      setError(e.message || 'could not create account');
+      console.error('signup error:', e);
+      setError(e.message || 'could not create account. please try again.');
     } finally {
       setIsProcessing(false);
     }
@@ -58,6 +63,7 @@ export default function SignupPage() {
   const handleSaveProfile = async () => {
     if (!user || !db) return;
     setIsProcessing(true);
+    setError(null);
     try {
       const profileRef = doc(db, 'users', user.uid, 'profile', 'settings');
       await setDoc(profileRef, {
@@ -65,10 +71,11 @@ export default function SignupPage() {
         studentType,
         useAi,
         focus,
-      });
+      }, { merge: true });
       router.push('/');
     } catch (e: any) {
-      setError('could not save profile');
+      console.error('profile save error:', e);
+      setError('could not save profile details');
     } finally {
       setIsProcessing(false);
     }
@@ -122,7 +129,11 @@ export default function SignupPage() {
                 </div>
               </div>
 
-              {error && <p className="text-destructive text-sm text-center font-medium lowercase">{error}</p>}
+              {error && (
+                <div className="p-4 rounded-xl bg-destructive/10 text-destructive text-sm text-center font-medium lowercase">
+                  {error}
+                </div>
+              )}
 
               <Button 
                 onClick={handleCreateAccount} 
@@ -220,6 +231,7 @@ export default function SignupPage() {
                       <Button
                         key={item.id}
                         variant="outline"
+                        type="button"
                         onClick={() => setFocus(item.id as any)}
                         className={cn(
                           "h-24 rounded-3xl flex flex-col gap-2 border-2",
@@ -233,6 +245,12 @@ export default function SignupPage() {
                   </div>
                 </div>
               </div>
+
+              {error && (
+                <div className="p-4 rounded-xl bg-destructive/10 text-destructive text-sm text-center font-medium lowercase">
+                  {error}
+                </div>
+              )}
 
               <div className="flex gap-4">
                 <Button variant="ghost" onClick={() => setStep('profile')} className="rounded-2xl h-16 font-bold flex-1">

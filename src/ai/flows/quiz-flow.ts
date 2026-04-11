@@ -1,9 +1,9 @@
 'use server';
 /**
- * @fileOverview AI flows for the Flashcard Quiz Mode.
+ * @fileOverview ai flows for the flashcard quiz mode.
  * 
- * - generateQuiz: Creates a balanced quiz using original flashcard questions.
- * - evaluateAnswer: Semantically evaluates open-ended answers.
+ * - generatequiz: creates a balanced quiz using original flashcard questions.
+ * - evaluateanswer: semantically evaluates open-ended answers.
  */
 
 import { ai } from '@/ai/genkit';
@@ -19,7 +19,7 @@ const FlashcardSchema = z.object({
 const QuizQuestionSchema = z.object({
   cardId: z.string(),
   type: z.enum(['multiple-choice', 'open-ended', 'image-selection']),
-  prompt: z.string().describe('The original flashcard question text.'),
+  prompt: z.string().describe('the original flashcard question text.'),
   options: z.array(z.string()).optional().describe('4-5 options including the correct answer and distractors'),
   correctAnswer: z.string(),
   explanation: z.string().optional(),
@@ -38,33 +38,41 @@ export type QuizQuestion = z.infer<typeof QuizQuestionSchema>;
 export type GenerateQuizOutput = z.infer<typeof GenerateQuizOutputSchema>;
 
 /**
- * Generates a full quiz based on the provided flashcards.
- * Uses the user's original questions and generates plausible distractors.
+ * generates a full quiz based on the provided flashcards.
+ * uses the user's original questions and generates plausible distractors.
  */
 export async function generateQuiz(input: z.infer<typeof GenerateQuizInputSchema>): Promise<GenerateQuizOutput> {
   const prompt = ai.definePrompt({
     name: 'generateQuizPrompt',
     input: { schema: GenerateQuizInputSchema },
     output: { schema: GenerateQuizOutputSchema },
-    prompt: `You are an expert educator. Your task is to generate a comprehensive quiz for the flashcard deck: "{{deckName}}".
+    prompt: `you are an expert educator. your task is to generate a comprehensive quiz for the flashcard deck: "{{deckName}}".
     
-    For each card provided in the input, create exactly ONE question.
+    for each card provided in the input, create exactly one question.
     
-    CRITICAL RULES:
-    1. PROMPT CONSISTENCY: For EVERY question, the "prompt" field MUST be the exact original flashcard question provided in the input. Do not rewrite it.
-    2. DISTRACTORS: For 'multiple-choice' and 'image-selection', generate 4 plausible but incorrect distractors. These should be related to the same topic and match the tone of the correct answer. The "options" list MUST include the correct answer.
-    3. IMAGE SELECTION: Only use 'image-selection' if the card has an 'imageUrl'.
-    4. VARIETY: Try to provide a mix of 'multiple-choice' and 'open-ended' types across the deck.
+    critical rules:
+    1. prompt consistency: for every question, the "prompt" field must be the exact original flashcard question provided in the input. do not rewrite it.
+    2. distractors: for 'multiple-choice' and 'image-selection', generate 4 plausible but incorrect distractors. these should be related to the same topic and match the tone of the correct answer. the "options" list must include the correct answer.
+    3. image selection: only use 'image-selection' if the card has an 'imageUrl'.
+    4. variety: try to provide a mix of 'multiple-choice' and 'open-ended' types across the deck.
+    5. strictly lowercase: generate all text content in lowercase.
     
-    Cards:
+    cards:
     {{#each cards}}
-    - ID: {{id}}, Q: {{question}}, A: {{answer}}, Image: {{imageUrl}}
+    - id: {{id}}, q: {{question}}, a: {{answer}}, image: {{imageUrl}}
     {{/each}}`,
   });
 
-  const { output } = await prompt(input);
-  if (!output) throw new Error('Failed to generate quiz');
-  return output;
+  try {
+    const { output } = await prompt(input);
+    if (!output) throw new Error('failed to generate quiz');
+    return output;
+  } catch (error: any) {
+    if (error.message?.includes('403') || error.message?.includes('leaked')) {
+      throw new Error('your gemini api key was reported as leaked and has been disabled. please rotate your GEMINI_API_KEY in your environment settings.');
+    }
+    throw error;
+  }
 }
 
 const EvaluateAnswerInputSchema = z.object({
@@ -75,34 +83,42 @@ const EvaluateAnswerInputSchema = z.object({
 
 const EvaluateAnswerOutputSchema = z.object({
   isCorrect: z.boolean(),
-  feedback: z.string().describe('A short explanation if incorrect. If correct, keep it very brief like "Correct!"'),
+  feedback: z.string().describe('a short explanation if incorrect. if correct, keep it very brief like "correct!"'),
   confidence: z.number().min(0).max(1),
 });
 
 /**
- * Evaluates an open-ended answer semantically.
+ * evaluates an open-ended answer semantically.
  */
 export async function evaluateAnswer(input: z.infer<typeof EvaluateAnswerInputSchema>): Promise<z.infer<typeof EvaluateAnswerOutputSchema>> {
   const prompt = ai.definePrompt({
     name: 'evaluateAnswerPrompt',
     input: { schema: EvaluateAnswerInputSchema },
     output: { schema: EvaluateAnswerOutputSchema },
-    prompt: `You are a helpful tutor evaluating a student's answer.
+    prompt: `you are a helpful tutor evaluating a student's answer.
     
-    Question: "{{contextQuestion}}"
-    Correct Answer Reference: "{{correctAnswer}}"
-    Student's Answer: "{{userAnswer}}"
+    question: "{{contextQuestion}}"
+    correct answer reference: "{{correctAnswer}}"
+    student's answer: "{{userAnswer}}"
     
-    Determine if the student's answer is semantically correct. 
-    - Be lenient with minor typos or grammatical errors.
-    - If the student describes the core concept accurately even with different wording, mark it as correct.
+    determine if the student's answer is semantically correct. 
+    - be lenient with minor typos or grammatical errors.
+    - if the student describes the core concept accurately even with different wording, mark it as correct.
     
-    FEEDBACK RULES:
-    - If correct, set feedback to "Correct!".
-    - If incorrect, provide a very short, helpful explanation of what was missing.`,
+    feedback rules:
+    - if correct, set feedback to "correct!".
+    - if incorrect, provide a very short, helpful explanation of what was missing.
+    - strictly lowercase: generate all text content in lowercase.`,
   });
 
-  const { output } = await prompt(input);
-  if (!output) throw new Error('Failed to evaluate answer');
-  return output;
+  try {
+    const { output } = await prompt(input);
+    if (!output) throw new Error('failed to evaluate answer');
+    return output;
+  } catch (error: any) {
+    if (error.message?.includes('403') || error.message?.includes('leaked')) {
+      throw new Error('your gemini api key was reported as leaked and has been disabled. please rotate your GEMINI_API_KEY in your environment settings.');
+    }
+    throw error;
+  }
 }
