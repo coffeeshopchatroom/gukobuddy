@@ -17,6 +17,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     // Pass the ReadableStream directly to put.
     const blob = await put(filename, request.body, {
       access: 'public',
+      token: process.env.BLOB_READ_WRITE_TOKEN,
     });
     return NextResponse.json(blob);
   } catch (error) {
@@ -24,6 +25,9 @@ export async function POST(request: Request): Promise<NextResponse> {
     const message = (error instanceof Error) ? error.message : 'An unknown error occurred';
     if (message.includes('No store found')) {
         return NextResponse.json({ message: "Vercel Blob store not connected. Please connect a store in your Vercel project settings.", error: message }, { status: 500 });
+    }
+    if (message.includes('No token found')) {
+        return NextResponse.json({ message: "Vercel Blob: No token found. Please configure the `BLOB_READ_WRITE_TOKEN` environment variable.", error: message }, { status: 500 });
     }
     return NextResponse.json({ message: 'Upload failed', error: message }, { status: 500 });
   }
