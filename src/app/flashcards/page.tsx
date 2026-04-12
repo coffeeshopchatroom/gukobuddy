@@ -1405,7 +1405,7 @@ function StudyView({
   mode: StudyMode, 
   isLoading: boolean, 
   onExit: () => void,
-  onCardAction?: (cardId: string, correct) => void
+  onCardAction?: (cardId: string, correct: boolean) => void
 }) {
   const [sessionCards, setSessionCards] = React.useState<any[]>([])
   const [currentIndex, setCurrentIndex] = React.useState(0)
