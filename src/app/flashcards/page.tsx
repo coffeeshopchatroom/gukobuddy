@@ -678,7 +678,6 @@ function AiGeneratorDialog({ isOpen, setIsOpen, isHighSchool, user, activeCourse
   const [deckName, setDeckName] = React.useState("")
   const [gradeLevel, setGradeLevel] = React.useState("")
   const [instructions, setInstructions] = React.useState("")
-  const [includeImages, setIncludeImages] = React.useState(true)
   const [isGenerating, setIsGenerating] = React.useState(false)
   const [generationProgress, setGenerationProgress] = React.useState(0)
   const [statusMessage, setStatusMessage] = React.useState("")
@@ -736,29 +735,20 @@ function AiGeneratorDialog({ isOpen, setIsOpen, isHighSchool, user, activeCourse
         updatedAt: new Date().toISOString(),
       }, { merge: true })
 
-      // 3. Create Cards (and pull images if requested)
+      // 3. Create Cards
       setGenerationProgress(80)
-      if (includeImages) {
-        setStatusMessage("finding related photos...")
-      }
 
       for (let i = 0; i < output.cards.length; i++) {
         const cardData = output.cards[i]
         const cardId = doc(collection(db, "temp")).id
         const cardRef = doc(db, "users", user.uid, "courses", courseIdToUse, "flashcardSets", deckId, "flashcards", cardId)
         
-        let imageUrl = null
-        if (includeImages && cardData.searchKeyword) {
-          // Using loremflickr for actual keyword-based photo retrieval
-          imageUrl = `https://source.unsplash.com/400x300/?${encodeURIComponent(cardData.searchKeyword.toLowerCase())}`
-        }
-
         setDocumentNonBlocking(cardRef, {
           id: cardId,
           flashcardSetId: deckId,
           question: `<p>${cardData.question}</p>`,
           answer: `<p>${cardData.answer}</p>`,
-          imageUrl: imageUrl,
+          imageUrl: null,
           lastReviewedAt: new Date().toISOString(),
           reviewCount: 0,
           easeFactor: 2.5,
@@ -876,19 +866,6 @@ function AiGeneratorDialog({ isOpen, setIsOpen, isHighSchool, user, activeCourse
                     onChange={(e) => setInstructions(e.target.value)}
                     className="rounded-2xl min-h-[80px] lowercase no-focus-ring"
                   />
-                </div>
-
-                <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-2xl">
-                  <Checkbox 
-                    id="include-images" 
-                    checked={includeImages} 
-                    onCheckedChange={(v: any) => setIncludeImages(v)}
-                    className="h-5 w-5 rounded-md"
-                  />
-                  <div className="flex-1">
-                    <Label htmlFor="include-images" className="font-bold text-sm lowercase">find relevant photos online</Label>
-                    <p className="text-[10px] text-muted-foreground lowercase">we'll search for clear visuals to help you remember each card.</p>
-                  </div>
                 </div>
               </div>
 
