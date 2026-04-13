@@ -1,11 +1,10 @@
+
 'use client';
 
 import * as React from 'react';
 import { 
   Dialog, 
   DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
   DialogTrigger 
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -20,7 +19,7 @@ import {
   setDocumentNonBlocking 
 } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import { Loader2, Camera, X, Plus, Trash2, Palette, Layers } from 'lucide-react';
+import { Loader2, Camera, X, Plus, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { 
   Select, 
@@ -29,7 +28,6 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Slider } from '@/components/ui/slider';
 
 interface ProfileCustomizerProps {
@@ -39,17 +37,15 @@ interface ProfileCustomizerProps {
 }
 
 const FONT_OPTIONS = [
-  'system-ui',
+  'Arial',
   'Plus Jakarta Sans',
   'IBM Plex Sans Devanagari',
   'monospace',
   'serif',
-  'cursive',
-  'fantasy',
-  'Arial',
+  'Georgia',
   'Times New Roman',
-  'Courier New',
-  'Georgia'
+  'Verdana',
+  'Courier New'
 ];
 
 type GradientStop = {
@@ -77,10 +73,10 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
     bannerUrl: '',
     theme: {
       body: { type: 'solid', solid: '#8b6b61', gradient: [{ color: '#8b6b61', offset: 0 }, { color: '#5d4037', offset: 100 }] } as ColorValue,
-      text: { type: 'solid', solid: '#000000', gradient: [{ color: '#000000', offset: 0 }, { color: '#333333', offset: 100 }] } as ColorValue,
-      buttons: { type: 'solid', solid: '#3b82f6', gradient: [{ color: '#60a5fa', offset: 0 }, { color: '#2563eb', offset: 100 }] } as ColorValue
+      text: { type: 'solid', solid: '#ffffff', gradient: [{ color: '#ffffff', offset: 0 }, { color: '#cccccc', offset: 100 }] } as ColorValue,
+      buttons: { type: 'gradient', solid: '#3b82f6', gradient: [{ color: '#60a5fa', offset: 0 }, { color: '#2563eb', offset: 100 }] } as ColorValue
     },
-    font: 'system-ui',
+    font: 'Arial',
     cornerRounding: 0
   });
 
@@ -88,17 +84,11 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
 
   React.useEffect(() => {
     if (profile) {
-      // Helper to parse stored theme strings if they exist, otherwise use defaults
       const parseColor = (val: any, fallback: ColorValue): ColorValue => {
         if (!val) return fallback;
-        if (typeof val === 'string') {
-          if (val.startsWith('linear-gradient')) {
-            // Very basic parser for the stored string - in a real app this would be more robust
-            return { type: 'gradient', solid: fallback.solid, gradient: fallback.gradient };
-          }
-          return { type: 'solid', solid: val, gradient: fallback.gradient };
-        }
-        return val;
+        if (typeof val === 'object' && val.type) return val;
+        // Fallback for string-only stored colors
+        return { type: 'solid', solid: typeof val === 'string' ? val : fallback.solid, gradient: fallback.gradient };
       };
 
       setFormData({
@@ -112,7 +102,7 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
           text: parseColor(profile.theme?.text, formData.theme.text),
           buttons: parseColor(profile.theme?.buttons, formData.theme.buttons)
         },
-        font: profile.font || 'system-ui',
+        font: profile.font || 'Arial',
         cornerRounding: profile.cornerRounding ?? 0
       });
     }
@@ -145,63 +135,59 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
 
   const handleSave = () => {
     if (!profileRef) return;
-    
-    // Convert complex color objects to CSS strings for storage to keep backend.json simple
-    const serializedTheme = {
-      body: getColorStyle(formData.theme.body),
-      text: getColorStyle(formData.theme.text),
-      buttons: getColorStyle(formData.theme.buttons)
-    };
-
     setDocumentNonBlocking(profileRef, {
       ...formData,
-      theme: serializedTheme,
       updatedAt: new Date().toISOString()
     }, { merge: true });
     onOpenChange?.(false);
   };
 
   const previewRounding = `${formData.cornerRounding}px`;
+  const bodyStyle = getColorStyle(formData.theme.body);
+  const textStyle = getColorStyle(formData.theme.text);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="max-w-[1100px] p-0 border-none bg-transparent shadow-none gap-0 overflow-hidden sm:rounded-[48px]">
+      <DialogContent className="max-w-[1000px] p-0 border-none bg-transparent shadow-none gap-0 overflow-hidden sm:rounded-[48px]">
         <div 
-          className="flex flex-col md:flex-row h-full max-h-[92vh] overflow-hidden"
+          className="relative flex flex-col md:flex-row h-full max-h-[92vh] overflow-hidden"
           style={{ 
-            backgroundColor: formData.theme.body.type === 'solid' ? formData.theme.body.solid : 'transparent', 
-            backgroundImage: formData.theme.body.type === 'gradient' ? getColorStyle(formData.theme.body) : 'none',
-            color: '#ffffff',
-            borderRadius: previewRounding 
+            background: bodyStyle,
+            color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : '#ffffff',
+            borderRadius: '48px'
           }}
         >
-          {/* Header */}
-          <div className="absolute top-6 left-10 flex items-center justify-between w-[calc(100%-5rem)] z-10">
-            <h2 className="text-2xl font-bold font-headline lowercase tracking-tight">customize profile</h2>
+          {/* Header Controls */}
+          <div className="absolute top-6 right-6 z-50">
             <Button variant="ghost" size="icon" onClick={() => onOpenChange?.(false)} className="text-white hover:bg-white/10 rounded-full">
-              <X className="h-6 w-6" />
+              <X className="h-8 w-8" />
             </Button>
           </div>
 
-          {/* Left Column: Form & Color Customizer */}
-          <div className="flex-1 p-10 pt-24 space-y-10 overflow-y-auto custom-scrollbar border-r border-white/10">
+          <div className="absolute top-8 left-10">
+            <h2 className="text-2xl font-bold font-headline lowercase tracking-tight">customize your account</h2>
+          </div>
+
+          {/* Left Side: Inputs */}
+          <div className="flex-[1.2] p-10 pt-24 space-y-8 overflow-y-auto custom-scrollbar border-r border-white/10">
             <div className="flex flex-col items-center gap-4">
-              <div className="relative">
+              <Label className="text-xl font-bold lowercase">profile picture</Label>
+              <div className="relative group">
                 <div 
-                  className="h-32 w-32 overflow-hidden flex items-center justify-center bg-white/10"
+                  className="h-40 w-40 overflow-hidden flex items-center justify-center bg-white/10 border-none"
                   style={{ borderRadius: previewRounding }}
                 >
                   {formData.photoUrl ? (
                     <img src={formData.photoUrl} className="w-full h-full object-cover" alt="pfp" />
                   ) : (
-                    <span className="text-3xl font-bold text-white/30">{formData.displayName?.[0] || '?'}</span>
+                    <span className="text-4xl font-bold text-white/30">{formData.displayName?.[0] || '?'}</span>
                   )}
                 </div>
-                <label className="absolute bottom-0 right-0 p-2.5 bg-white text-black rounded-full cursor-pointer shadow-lg hover:scale-110 transition-transform">
-                  {uploading === 'photo' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+                <label className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer rounded-full">
+                  {uploading === 'photo' ? <Loader2 className="h-6 w-6 animate-spin text-white" /> : <Camera className="h-6 w-6 text-white" />}
                   <input type="file" className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'photo')} />
                 </label>
               </div>
@@ -209,178 +195,159 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
 
             <div className="space-y-6">
               <div className="space-y-2">
-                <Label className="text-[10px] font-bold uppercase tracking-widest text-white/40 lowercase ml-1">name</Label>
+                <Label className="text-lg font-bold lowercase ml-1">name</Label>
                 <Input 
                   value={formData.displayName} 
                   onChange={(e) => setFormData(prev => ({ ...prev, displayName: e.target.value }))}
-                  className="bg-white/10 border-white/10 text-white rounded-2xl h-14 no-focus-ring placeholder:text-white/20"
-                  placeholder="name"
+                  className="bg-transparent border-white border-2 text-white rounded-[20px] h-14 no-focus-ring placeholder:text-white/30"
+                  placeholder="olivia"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-[10px] font-bold uppercase tracking-widest text-white/40 lowercase ml-1">username</Label>
+                <Label className="text-lg font-bold lowercase ml-1">username</Label>
                 <Input 
                   value={formData.username} 
                   onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
-                  className="bg-white/10 border-white/10 text-white rounded-2xl h-14 no-focus-ring placeholder:text-white/20"
-                  placeholder="username"
+                  className="bg-transparent border-white border-2 text-white rounded-[20px] h-14 no-focus-ring placeholder:text-white/30"
+                  placeholder="via"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-[10px] font-bold uppercase tracking-widest text-white/40 lowercase ml-1">bio</Label>
+                <Label className="text-lg font-bold lowercase ml-1">bio</Label>
                 <Textarea 
                   value={formData.bio} 
                   onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
-                  className="bg-white/10 border-white/10 text-white rounded-[28px] min-h-[120px] no-focus-ring placeholder:text-white/20 resize-none"
-                  placeholder="about you..."
+                  className="bg-transparent border-white border-2 text-white rounded-[24px] min-h-[140px] no-focus-ring placeholder:text-white/30 resize-none p-4"
+                  placeholder="sorta like made this app.. or whatever.."
                 />
               </div>
             </div>
 
-            <div className="space-y-8 pt-4">
-              <Label className="text-xs font-bold uppercase tracking-widest text-white/40 lowercase">aesthetic theme</Label>
-              <div className="space-y-10">
-                <AestheticColorPicker 
-                  label="profile background" 
-                  value={formData.theme.body} 
-                  onChange={(val) => setFormData(prev => ({ ...prev, theme: { ...prev.theme, body: val } }))} 
-                />
-                <AestheticColorPicker 
-                  label="profile text" 
-                  value={formData.theme.text} 
-                  onChange={(val) => setFormData(prev => ({ ...prev, theme: { ...prev.theme, text: val } }))} 
-                />
-                <AestheticColorPicker 
-                  label="add friend button" 
-                  value={formData.theme.buttons} 
-                  onChange={(val) => setFormData(prev => ({ ...prev, theme: { ...prev.theme, buttons: val } }))} 
-                />
-              </div>
-            </div>
-
-            <Button onClick={handleSave} className="w-full h-16 rounded-2xl bg-white text-black hover:bg-white/90 font-bold text-lg shadow-xl lowercase transition-all active:scale-95">
+            <Button onClick={handleSave} className="w-full h-14 rounded-2xl bg-white text-black hover:bg-white/90 font-bold lowercase">
               save profile
             </Button>
           </div>
 
-          {/* Right Column: Style & Preview */}
-          <div className="flex-1 p-10 pt-24 space-y-10 overflow-y-auto custom-scrollbar bg-black/5">
+          {/* Right Side: Options & Preview */}
+          <div className="flex-1 p-10 pt-24 space-y-8 overflow-y-auto custom-scrollbar">
             <div className="space-y-4">
-              <Label className="text-xs font-bold uppercase tracking-widest text-white/40 lowercase">banner image</Label>
+              <Label className="text-lg font-bold lowercase">account banner</Label>
               <div 
-                className="relative w-full h-36 rounded-[24px] overflow-hidden border-2 border-white/10 group bg-white/5"
+                className="relative w-full h-24 rounded-[12px] overflow-hidden border-2 border-white/20 group bg-white/5"
               >
                 {formData.bannerUrl ? (
                   <img src={formData.bannerUrl} className="w-full h-full object-cover" alt="banner" />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <span className="text-white/10 text-xs lowercase">no banner</span>
-                  </div>
+                  <div className="w-full h-full flex items-center justify-center text-white/20 lowercase text-xs">no banner</div>
                 )}
                 <label className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                  <div className="flex flex-col items-center gap-1">
-                    {uploading === 'banner' ? <Loader2 className="h-5 w-5 animate-spin text-white" /> : <Plus className="h-5 w-5 text-white" />}
-                    <span className="text-[10px] font-bold text-white lowercase">upload banner</span>
-                  </div>
+                  {uploading === 'banner' ? <Loader2 className="h-4 w-4 animate-spin text-white" /> : <Plus className="h-4 w-4 text-white" />}
                   <input type="file" className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'banner')} />
                 </label>
               </div>
             </div>
 
             <div className="space-y-6">
-              <div className="space-y-4">
-                <Label className="text-xs font-bold uppercase tracking-widest text-white/40 lowercase">typography</Label>
-                <Select value={formData.font} onValueChange={(v) => setFormData(prev => ({ ...prev, font: v }))}>
-                  <SelectTrigger className="bg-white/10 border-white/10 text-white rounded-2xl h-14 no-focus-ring">
-                    <SelectValue placeholder="font" />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-2xl border-none shadow-2xl">
-                    {FONT_OPTIONS.map(f => (
-                      <SelectItem key={f} value={f} className="lowercase" style={{ fontFamily: f }}>{f}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs font-bold uppercase tracking-widest text-white/40 lowercase">corner rounding</Label>
-                  <span className="text-[10px] font-mono text-white/30">{formData.cornerRounding}px</span>
-                </div>
-                <Slider 
-                  min={0} 
-                  max={48} 
-                  step={1}
-                  value={[formData.cornerRounding]}
-                  onValueChange={([v]) => setFormData(prev => ({ ...prev, cornerRounding: v }))}
-                  className="w-full"
+              <Label className="text-lg font-bold lowercase">profile theme</Label>
+              <div className="flex items-center gap-6">
+                <AestheticColorPickerMini 
+                  label="body" 
+                  value={formData.theme.body} 
+                  onChange={(v) => setFormData(p => ({ ...p, theme: { ...p.theme, body: v } }))} 
+                />
+                <AestheticColorPickerMini 
+                  label="text" 
+                  value={formData.theme.text} 
+                  onChange={(v) => setFormData(p => ({ ...p, theme: { ...p.theme, text: v } }))} 
+                />
+                <AestheticColorPickerMini 
+                  label="buttons" 
+                  value={formData.theme.buttons} 
+                  onChange={(v) => setFormData(p => ({ ...p, theme: { ...p.theme, buttons: v } }))} 
                 />
               </div>
             </div>
 
-            {/* LIVE PREVIEW */}
-            <div className="space-y-4 pt-6">
-              <Label className="text-xs font-bold uppercase tracking-widest text-white/40 lowercase">live preview</Label>
+            <div className="flex items-center gap-4">
+              <Label className="text-lg font-bold lowercase">font</Label>
+              <Select value={formData.font} onValueChange={(v) => setFormData(p => ({ ...p, font: v }))}>
+                <SelectTrigger className="bg-white/20 border-none text-white rounded-md h-12 w-40 lowercase">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {FONT_OPTIONS.map(f => (
+                    <SelectItem key={f} value={f} style={{ fontFamily: f }}>{f}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <Label className="text-lg font-bold lowercase">corner rounding:</Label>
+              <Input 
+                type="number" 
+                value={formData.cornerRounding} 
+                onChange={(e) => setFormData(p => ({ ...p, cornerRounding: parseInt(e.target.value) || 0 }))}
+                className="w-12 h-10 bg-white/20 border-none text-white text-center rounded-md"
+              />
               <div 
-                className="w-full min-h-[400px] overflow-hidden flex flex-col transition-all duration-300 shadow-2xl"
+                className="h-10 w-10 bg-white border-none transition-all" 
+                style={{ borderRadius: previewRounding }}
+              />
+            </div>
+
+            <div className="space-y-4 pt-4">
+              <Label className="text-lg font-bold lowercase">preview</Label>
+              <div 
+                className="w-full h-64 overflow-hidden relative shadow-2xl transition-all duration-300"
                 style={{ 
-                  borderRadius: previewRounding, 
+                  borderRadius: previewRounding,
                   fontFamily: formData.font,
-                  backgroundColor: formData.theme.body.type === 'solid' ? formData.theme.body.solid : 'transparent',
-                  backgroundImage: formData.theme.body.type === 'gradient' ? getColorStyle(formData.theme.body) : 'none',
+                  background: getColorStyle(formData.theme.body),
                   color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'inherit'
                 }}
               >
                 {/* Banner */}
-                <div className="h-32 w-full relative bg-muted/20">
+                <div className="h-24 w-full relative bg-white/10">
                   {formData.bannerUrl && (
                     <img src={formData.bannerUrl} className="w-full h-full object-cover" alt="banner" />
                   )}
-                  {/* PFP and Header Section - LOWERED */}
-                  <div className="absolute -bottom-16 left-6 flex items-end gap-6">
-                    <div 
-                      className="h-32 w-32 bg-white/20 overflow-hidden flex items-center justify-center shrink-0 shadow-none"
-                      style={{ borderRadius: previewRounding }}
+                </div>
+                
+                {/* Profile Section - Lowered PFP */}
+                <div className="absolute top-16 left-4 flex items-end gap-3">
+                  <div 
+                    className="h-20 w-20 overflow-hidden flex items-center justify-center bg-white/20 border-none"
+                    style={{ borderRadius: previewRounding }}
+                  >
+                    {formData.photoUrl && (
+                      <img src={formData.photoUrl} className="w-full h-full object-cover" alt="pfp" />
+                    )}
+                  </div>
+                  <div className="pb-1">
+                    <h4 className="font-bold text-lg leading-tight lowercase">{formData.displayName || 'name'}</h4>
+                    <p className="text-[10px] opacity-70 lowercase">{formData.username ? `@${formData.username}` : 'username'}</p>
+                  </div>
+                  
+                  {/* Button positioned precisely */}
+                  <div className="pb-1 ml-4">
+                    <Button 
+                      className="h-8 px-6 rounded-md text-[10px] font-bold lowercase border-none shadow-md"
+                      style={{ 
+                        background: getColorStyle(formData.theme.buttons),
+                        color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : '#ffffff'
+                      }}
                     >
-                      {formData.photoUrl ? (
-                        <img src={formData.photoUrl} className="w-full h-full object-cover" alt="pfp" />
-                      ) : (
-                        <span className="text-2xl font-bold text-black/10">{formData.displayName?.[0] || '?'}</span>
-                      )}
-                    </div>
-                    {/* Text aligned with center of lowered PFP */}
-                    <div className="pb-4 flex flex-col">
-                      <h4 className="text-3xl font-bold lowercase leading-tight">
-                        {formData.displayName || 'student'}
-                      </h4>
-                      <p className="text-sm lowercase opacity-70">
-                        {formData.username ? `via @${formData.username}` : 'via student'}
-                      </p>
-                    </div>
+                      add friend
+                    </Button>
                   </div>
                 </div>
 
-                {/* Content Section */}
-                <div className="p-8 pt-20 flex flex-col items-start gap-8">
-                  {/* Add Friend Button - Precise position */}
-                  <Button 
-                    className="px-10 h-11 font-bold shadow-lg transition-transform active:scale-95 border-none"
-                    style={{ 
-                      borderRadius: `${Math.min(formData.cornerRounding, 8)}px`,
-                      backgroundColor: formData.theme.buttons.type === 'solid' ? formData.theme.buttons.solid : 'transparent',
-                      backgroundImage: formData.theme.buttons.type === 'gradient' ? getColorStyle(formData.theme.buttons) : 'none',
-                      color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : '#ffffff'
-                    }}
-                  >
-                    add friend
-                  </Button>
-
-                  <div className="space-y-3 w-full">
-                    <span className="text-xs font-bold uppercase tracking-widest opacity-40 lowercase">about me:</span>
-                    <p className="text-2xl font-normal lowercase leading-snug max-w-lg">
-                      {formData.bio || 'tell the world about your study habits...'}
-                    </p>
-                  </div>
+                <div className="p-4 pt-16 space-y-1">
+                  <span className="text-[8px] font-bold uppercase opacity-50">about me:</span>
+                  <p className="text-xs leading-tight lowercase">
+                    {formData.bio || 'i sorta like made this app.. or whatever..'}
+                  </p>
                 </div>
               </div>
             </div>
@@ -391,98 +358,104 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
   );
 }
 
-function AestheticColorPicker({ label, value, onChange }: { label: string, value: ColorValue, onChange: (val: ColorValue) => void }) {
-  const addStop = () => {
-    const newStops = [...value.gradient, { color: '#ffffff', offset: 100 }];
-    onChange({ ...value, gradient: newStops });
-  };
-
-  const removeStop = (index: number) => {
-    if (value.gradient.length <= 2) return;
-    const newStops = value.gradient.filter((_, i) => i !== index);
-    onChange({ ...value, gradient: newStops });
-  };
-
-  const updateStop = (index: number, updates: Partial<GradientStop>) => {
-    const newStops = value.gradient.map((s, i) => i === index ? { ...s, ...updates } : s);
-    onChange({ ...value, gradient: newStops });
-  };
+function AestheticColorPickerMini({ label, value, onChange }: { label: string, value: ColorValue, onChange: (v: ColorValue) => void }) {
+  const [isOpen, setIsOpen] = React.useState(false);
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between px-1">
-        <Label className="text-[10px] font-bold uppercase tracking-widest text-white/40 lowercase">{label}</Label>
-        <div className="flex bg-white/5 rounded-full p-0.5 border border-white/10">
-          <button 
-            onClick={() => onChange({ ...value, type: 'solid' })}
-            className={cn("px-3 py-1 text-[9px] font-bold uppercase rounded-full transition-all", value.type === 'solid' ? "bg-white text-black" : "text-white/40 hover:text-white")}
-          >
-            solid
-          </button>
-          <button 
-            onClick={() => onChange({ ...value, type: 'gradient' })}
-            className={cn("px-3 py-1 text-[9px] font-bold uppercase rounded-full transition-all", value.type === 'gradient' ? "bg-white text-black" : "text-white/40 hover:text-white")}
-          >
-            gradient
-          </button>
-        </div>
-      </div>
-
-      {value.type === 'solid' ? (
-        <div className="flex items-center gap-4 bg-white/5 p-4 rounded-2xl border border-white/5">
-          <div className="relative h-10 w-10 rounded-xl overflow-hidden border border-white/20">
-            <input 
-              type="color" 
-              value={value.solid}
-              onChange={(e) => onChange({ ...value, solid: e.target.value })}
-              className="absolute inset-0 w-[200%] h-[200%] -translate-x-1/4 -translate-y-1/4 cursor-pointer"
+    <div className="flex items-center gap-2">
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogTrigger asChild>
+          <div className="flex flex-col items-center gap-1 cursor-pointer group">
+            <div 
+              className="h-10 w-10 rounded-full border-2 border-white/20 transition-transform group-hover:scale-110" 
+              style={{ background: value.type === 'solid' ? value.solid : `linear-gradient(90deg, ${value.gradient.map(s => `${s.color} ${s.offset}%`).join(', ')})` }}
             />
+            <span className="text-[10px] font-bold lowercase opacity-70">{label}</span>
           </div>
-          <span className="text-xs font-mono text-white/50">{value.solid}</span>
-        </div>
-      ) : (
-        <div className="space-y-4 bg-white/5 p-5 rounded-[28px] border border-white/5">
-          <div className="flex flex-wrap gap-4">
-            {value.gradient.map((stop, i) => (
-              <div key={i} className="flex items-center gap-2 bg-white/5 pr-3 pl-1.5 py-1.5 rounded-2xl border border-white/10">
-                <div className="relative h-7 w-7 rounded-lg overflow-hidden border border-white/20">
+        </DialogTrigger>
+        <DialogContent className="sm:rounded-[32px] p-6 bg-[#2a2a2a] text-white border-none shadow-2xl">
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold lowercase">customize {label}</h3>
+              <div className="flex gap-2 bg-white/5 rounded-full p-1 border border-white/10">
+                <button 
+                  onClick={() => onChange({ ...value, type: 'solid' })}
+                  className={cn("px-4 py-1.5 text-xs font-bold rounded-full", value.type === 'solid' ? "bg-white text-black" : "opacity-40")}
+                >
+                  solid
+                </button>
+                <button 
+                  onClick={() => onChange({ ...value, type: 'gradient' })}
+                  className={cn("px-4 py-1.5 text-xs font-bold rounded-full", value.type === 'gradient' ? "bg-white text-black" : "opacity-40")}
+                >
+                  gradient
+                </button>
+              </div>
+            </div>
+
+            {value.type === 'solid' ? (
+              <div className="flex items-center gap-4">
+                <div className="relative h-12 w-12 rounded-xl overflow-hidden">
                   <input 
                     type="color" 
-                    value={stop.color}
-                    onChange={(e) => updateStop(i, { color: e.target.value })}
-                    className="absolute inset-0 w-[200%] h-[200%] -translate-x-1/4 -translate-y-1/4 cursor-pointer"
+                    value={value.solid} 
+                    onChange={(e) => onChange({ ...value, solid: e.target.value })} 
+                    className="absolute inset-0 w-[150%] h-[150%] -translate-x-1/4 -translate-y-1/4 cursor-pointer"
                   />
                 </div>
-                <input 
-                  type="number" 
-                  min="0" 
-                  max="100" 
-                  value={stop.offset}
-                  onChange={(e) => updateStop(i, { offset: parseInt(e.target.value) || 0 })}
-                  className="w-10 bg-transparent text-[10px] font-mono text-white focus:outline-none"
-                />
-                {value.gradient.length > 2 && (
-                  <button onClick={() => removeStop(i)} className="text-white/20 hover:text-destructive transition-colors">
-                    <Trash2 className="h-3 w-3" />
-                  </button>
-                )}
+                <span className="font-mono text-sm opacity-50 uppercase">{value.solid}</span>
               </div>
-            ))}
-            <button 
-              onClick={addStop}
-              className="flex items-center justify-center h-10 w-10 rounded-2xl bg-white/10 text-white/40 hover:text-white hover:bg-white/20 transition-all"
-            >
-              <Plus className="h-4 w-4" />
-            </button>
+            ) : (
+              <div className="space-y-6">
+                <div className="flex flex-wrap gap-3">
+                  {value.gradient.map((stop, i) => (
+                    <div key={i} className="flex items-center gap-2 bg-white/5 p-2 rounded-xl border border-white/10">
+                      <div className="relative h-6 w-6 rounded-md overflow-hidden">
+                        <input 
+                          type="color" 
+                          value={stop.color} 
+                          onChange={(e) => {
+                            const newStops = [...value.gradient];
+                            newStops[i].color = e.target.value;
+                            onChange({ ...value, gradient: newStops });
+                          }} 
+                          className="absolute inset-0 w-[200%] h-[200%] -translate-x-1/4 -translate-y-1/4 cursor-pointer"
+                        />
+                      </div>
+                      <input 
+                        type="number" 
+                        value={stop.offset} 
+                        onChange={(e) => {
+                          const newStops = [...value.gradient];
+                          newStops[i].offset = parseInt(e.target.value) || 0;
+                          onChange({ ...value, gradient: newStops });
+                        }}
+                        className="w-10 bg-transparent text-xs font-mono border-none focus:outline-none"
+                      />
+                      {value.gradient.length > 2 && (
+                        <Trash2 className="h-3 w-3 opacity-30 hover:opacity-100 cursor-pointer" onClick={() => {
+                          onChange({ ...value, gradient: value.gradient.filter((_, idx) => idx !== i) });
+                        }} />
+                      )}
+                    </div>
+                  ))}
+                  <button 
+                    onClick={() => onChange({ ...value, gradient: [...value.gradient, { color: '#ffffff', offset: 100 }] })}
+                    className="h-10 w-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </button>
+                </div>
+                <div 
+                  className="h-4 w-full rounded-full border border-white/10" 
+                  style={{ background: `linear-gradient(90deg, ${value.gradient.map(s => `${s.color} ${s.offset}%`).join(', ')})` }}
+                />
+              </div>
+            )}
+            <Button onClick={() => setIsOpen(false)} className="w-full h-12 rounded-xl bg-white text-black font-bold lowercase">done</Button>
           </div>
-          <div 
-            className="h-2 w-full rounded-full border border-white/10" 
-            style={{ 
-              background: `linear-gradient(90deg, ${[...value.gradient].sort((a,b)=>a.offset-b.offset).map(s => `${s.color} ${s.offset}%`).join(', ')})`
-            }} 
-          />
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
