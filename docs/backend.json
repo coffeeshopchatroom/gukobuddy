@@ -15,9 +15,21 @@
           "type": "string",
           "description": "The user's chosen display name."
         },
+        "username": {
+          "type": "string",
+          "description": "Unique username for the user."
+        },
+        "bio": {
+          "type": "string",
+          "description": "A short description about the user."
+        },
         "photoUrl": {
           "type": "string",
           "description": "URL to the user's profile picture."
+        },
+        "bannerUrl": {
+          "type": "string",
+          "description": "URL to the user's account banner."
         },
         "studentType": {
           "type": "string",
@@ -32,6 +44,20 @@
           "type": "string",
           "enum": ["flashcards", "notebooks", "tasks", "all"],
           "description": "The primary tool the user wants to focus on."
+        },
+        "theme": {
+          "type": "object",
+          "properties": {
+            "body": { "type": "string" },
+            "text": { "type": "string" },
+            "buttons": { "type": "string" }
+          }
+        },
+        "font": {
+          "type": "string"
+        },
+        "cornerRounding": {
+          "type": "number"
         }
       },
       "required": [

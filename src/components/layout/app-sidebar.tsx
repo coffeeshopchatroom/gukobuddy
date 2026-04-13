@@ -35,6 +35,7 @@ import { useFirebase, useUser, useDoc, useMemoFirebase } from "@/firebase"
 import { signOut } from "firebase/auth"
 import { doc } from 'firebase/firestore'
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { ProfileCustomizer } from "@/components/profile/ProfileCustomizer"
 
 export function AppSidebar() {
   const pathname = usePathname()
@@ -42,6 +43,8 @@ export function AppSidebar() {
   const { user } = useUser();
   const profileRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid, 'profile', 'settings') : null, [user, firestore]);
   const { data: profile } = useDoc(profileRef);
+
+  const [isProfileOpen, setIsProfileOpen] = React.useState(false);
 
   const handleSignOut = () => {
     if(auth) {
@@ -86,8 +89,8 @@ export function AppSidebar() {
     },
   ]
 
-  const userName = user?.isAnonymous ? "guest" : (user?.displayName || user?.email?.split('@')[0] || "student");
-  const userPhoto = user?.photoURL || "";
+  const userName = user?.isAnonymous ? "guest" : (profile?.displayName || user?.displayName || user?.email?.split('@')[0] || "student");
+  const userPhoto = profile?.photoUrl || user?.photoURL || "";
   const userRole = user?.isAnonymous ? "guest session" : (isHighSchool ? "high school" : "college member");
 
   return (
@@ -159,18 +162,23 @@ export function AppSidebar() {
 
         {user ? (
           <div className="flex flex-col gap-2 p-1">
-            <Link href="/profile" className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-secondary/50 backdrop-blur-sm border border-border/30 hover:bg-secondary/70 transition-all group">
-              <Avatar className="h-9 w-9 border border-primary/20 shadow-sm transition-transform group-hover:scale-105">
-                <AvatarImage src={userPhoto} className="object-cover" />
-                <AvatarFallback className="bg-primary/20 text-primary font-bold">
-                  {userName[0]}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex flex-col min-w-0">
-                <span className="text-sm font-semibold truncate lowercase">{userName}</span>
-                <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-tighter truncate lowercase">{userRole}</span>
+            <ProfileCustomizer open={isProfileOpen} onOpenChange={setIsProfileOpen}>
+              <div 
+                onClick={() => setIsProfileOpen(true)}
+                className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-secondary/50 backdrop-blur-sm border border-border/30 hover:bg-secondary/70 transition-all group cursor-pointer"
+              >
+                <Avatar className="h-9 w-9 border border-primary/20 shadow-sm transition-transform group-hover:scale-105">
+                  <AvatarImage src={userPhoto} className="object-cover" />
+                  <AvatarFallback className="bg-primary/20 text-primary font-bold">
+                    {userName[0]}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-sm font-semibold truncate lowercase">{userName}</span>
+                  <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-tighter truncate lowercase">{userRole}</span>
+                </div>
               </div>
-            </Link>
+            </ProfileCustomizer>
             {profile?.useAi && (
               <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-50 border border-indigo-100">
                 <Sparkles className="h-3 w-3 text-indigo-500" />
