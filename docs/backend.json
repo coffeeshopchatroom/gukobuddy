@@ -11,6 +11,14 @@
           "type": "string",
           "description": "Matches the User UID."
         },
+        "displayName": {
+          "type": "string",
+          "description": "The user's chosen display name."
+        },
+        "photoUrl": {
+          "type": "string",
+          "description": "URL to the user's profile picture."
+        },
         "studentType": {
           "type": "string",
           "enum": ["high-school", "college"],

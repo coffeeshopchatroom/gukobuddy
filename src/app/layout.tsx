@@ -1,8 +1,10 @@
+
 import type {Metadata} from 'next';
 import './globals.css';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layout/app-sidebar';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
+import { Toaster } from '@/components/ui/toaster';
 
 export const metadata: Metadata = {
   title: 'guko buddy',
@@ -33,6 +35,7 @@ export default function RootLayout({
               </main>
             </div>
           </SidebarProvider>
+          <Toaster />
         </FirebaseClientProvider>
       </body>
     </html>
