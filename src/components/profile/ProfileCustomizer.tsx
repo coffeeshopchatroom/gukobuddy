@@ -19,7 +19,7 @@ import {
   setDocumentNonBlocking 
 } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import { Loader2, Camera, X, Plus, Trash2 } from 'lucide-react';
+import { Loader2, Camera, X, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { 
   Select, 
@@ -28,6 +28,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
+import { GradientPicker } from '@/components/ui/gradient-picker';
 
 interface ProfileCustomizerProps {
   children?: React.ReactNode;
@@ -414,60 +415,10 @@ function AestheticColorPickerMini({ label, value, onChange }: { label: string, v
                 </div>
               </div>
             ) : (
-              <div className="space-y-8">
-                <div className="flex flex-wrap gap-4">
-                  {value.gradient.map((stop, i) => (
-                    <div key={i} className="flex items-center gap-3 bg-white/5 p-3 rounded-2xl border border-white/5">
-                      <div className="relative h-8 w-8 rounded-lg overflow-hidden border border-white/10">
-                        <input 
-                          type="color" 
-                          value={stop.color} 
-                          onChange={(e) => {
-                            const newStops = [...value.gradient];
-                            newStops[i].color = e.target.value;
-                            onChange({ ...value, gradient: newStops });
-                          }} 
-                          className="absolute inset-0 w-[200%] h-[200%] -translate-x-1/4 -translate-y-1/4 cursor-pointer"
-                        />
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-[8px] opacity-40 uppercase">offset</span>
-                        <input 
-                          type="number" 
-                          value={stop.offset} 
-                          onChange={(e) => {
-                            const newStops = [...value.gradient];
-                            newStops[i].offset = parseInt(e.target.value) || 0;
-                            onChange({ ...value, gradient: newStops });
-                          }}
-                          className="w-10 bg-transparent text-xs font-mono border-none focus:outline-none"
-                        />
-                      </div>
-                      {value.gradient.length > 2 && (
-                        <Button variant="ghost" size="icon" className="h-6 w-6 opacity-30 hover:opacity-100 hover:text-destructive" onClick={() => {
-                          onChange({ ...value, gradient: value.gradient.filter((_, idx) => idx !== i) });
-                        }}>
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      )}
-                    </div>
-                  ))}
-                  <Button 
-                    variant="outline"
-                    onClick={() => {
-                      const maxOffset = Math.max(...value.gradient.map(s => s.offset));
-                      onChange({ ...value, gradient: [...value.gradient, { color: '#ffffff', offset: Math.min(100, maxOffset + 10) }] });
-                    }}
-                    className="h-16 w-16 flex items-center justify-center bg-white/5 border-white/10 rounded-2xl hover:bg-white/10"
-                  >
-                    <Plus className="h-5 w-5" />
-                  </Button>
-                </div>
-                <div 
-                  className="h-6 w-full rounded-full border border-white/10 shadow-inner" 
-                  style={{ background: `linear-gradient(90deg, ${value.gradient.map(s => `${s.color} ${s.offset}%`).join(', ')})` }}
-                />
-              </div>
+              <GradientPicker 
+                gradient={value.gradient}
+                setGradient={(newGradient) => onChange({ ...value, gradient: newGradient })}
+              />
             )}
             <Button onClick={() => setIsOpen(false)} className="w-full h-16 rounded-2xl bg-white text-black font-bold text-lg lowercase hover:bg-white/90">done</Button>
           </div>
@@ -476,4 +427,3 @@ function AestheticColorPickerMini({ label, value, onChange }: { label: string, v
     </div>
   );
 }
-
