@@ -68,9 +68,6 @@ export async function generateQuiz(input: z.infer<typeof GenerateQuizInputSchema
     if (!output) throw new Error('failed to generate quiz');
     return output;
   } catch (error: any) {
-    if (error.message?.includes('403') || error.message?.includes('leaked')) {
-      throw new Error('your gemini api key was reported as leaked and has been disabled. please rotate your GEMINI_API_KEY in your environment settings.');
-    }
     throw error;
   }
 }
@@ -116,9 +113,6 @@ export async function evaluateAnswer(input: z.infer<typeof EvaluateAnswerInputSc
     if (!output) throw new Error('failed to evaluate answer');
     return output;
   } catch (error: any) {
-    if (error.message?.includes('403') || error.message?.includes('leaked')) {
-      throw new Error('your gemini api key was reported as leaked and has been disabled. please rotate your GEMINI_API_KEY in your environment settings.');
-    }
     throw error;
   }
 }

@@ -76,7 +76,6 @@ export async function generateFlashcardsFromFile(input: z.infer<typeof GenerateF
     if (!output) throw new Error('failed to generate flashcards');
     return output;
   } catch (error: any) {
-    console.error("ai flashcard generation failed:", error);
     throw error;
   }
 }
