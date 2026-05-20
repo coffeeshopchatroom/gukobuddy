@@ -81,9 +81,25 @@
           "type": "string",
           "description": "The name of the course or subject (e.g., 'Calculus I', 'World History')."
         },
+        "code": {
+          "type": "string",
+          "description": "The course code (e.g., 'MATH 101')."
+        },
         "description": {
           "type": "string",
           "description": "An optional detailed description of the course or subject."
+        },
+        "grade": {
+          "type": "number",
+          "description": "The current numeric grade percentage (0-100)."
+        },
+        "letterGrade": {
+          "type": "string",
+          "description": "The letter grade equivalent (e.g., 'A-', 'B+')."
+        },
+        "credits": {
+          "type": "number",
+          "description": "The number of credit hours for this course."
         }
       },
       "required": [
