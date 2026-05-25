@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -14,7 +15,10 @@ import {
   LogOut,
   LogIn,
   Sparkles,
-  Bell
+  Bell,
+  Shield,
+  Settings,
+  Terminal
 } from "lucide-react"
 
 import {
@@ -40,8 +44,17 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 import { addDays, isPast, parseISO } from "date-fns"
 import { cn } from "@/lib/utils"
+import { useToast } from "@/hooks/use-toast"
 
 export function AppSidebar() {
   const pathname = usePathname()
@@ -51,6 +64,7 @@ export function AppSidebar() {
   const { data: profile } = useDoc(profileRef);
 
   const [isProfileOpen, setIsProfileOpen] = React.useState(false);
+  const [isAdminPanelOpen, setIsAdminPanelOpen] = React.useState(false);
 
   const handleSignOut = () => {
     if(auth) {
@@ -73,6 +87,7 @@ export function AppSidebar() {
   const userName = user?.isAnonymous ? "guest" : (profile?.displayName || user?.displayName || user?.email?.split('@')[0] || "student");
   const userPhoto = profile?.photoUrl || user?.photoURL || "";
   const userRole = user?.isAnonymous ? "guest session" : (isHighSchool ? "high school" : "college member");
+  const isAdmin = profile?.isAdmin === true;
 
   return (
     <Sidebar className="border-r border-sidebar-border">
@@ -130,23 +145,40 @@ export function AppSidebar() {
 
         {user ? (
           <div className="flex flex-col gap-2 p-1">
-            <ProfileCustomizer open={isProfileOpen} onOpenChange={setIsProfileOpen}>
-              <div 
-                onClick={() => setIsProfileOpen(true)}
-                className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-secondary/50 backdrop-blur-sm border border-border/30 hover:bg-secondary/70 transition-all group cursor-pointer"
-              >
-                <Avatar className="h-9 w-9 border border-primary/20 shadow-sm transition-transform group-hover:scale-105">
-                  <AvatarImage src={userPhoto} className="object-cover" />
-                  <AvatarFallback className="bg-primary/20 text-primary font-bold">
-                    {userName[0]}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex flex-col min-w-0">
-                  <span className="text-sm font-semibold truncate lowercase">{userName}</span>
-                  <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-tighter truncate lowercase">{userRole}</span>
-                </div>
+            <div className="flex items-center gap-2">
+              <div className="flex-1">
+                <ProfileCustomizer open={isProfileOpen} onOpenChange={setIsProfileOpen}>
+                  <div 
+                    onClick={() => setIsProfileOpen(true)}
+                    className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-secondary/50 backdrop-blur-sm border border-border/30 hover:bg-secondary/70 transition-all group cursor-pointer"
+                  >
+                    <Avatar className="h-9 w-9 border border-primary/20 shadow-sm transition-transform group-hover:scale-105">
+                      <AvatarImage src={userPhoto} className="object-cover" />
+                      <AvatarFallback className="bg-primary/20 text-primary font-bold">
+                        {userName[0]}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-sm font-semibold truncate lowercase">{userName}</span>
+                      <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-tighter truncate lowercase">{userRole}</span>
+                    </div>
+                  </div>
+                </ProfileCustomizer>
               </div>
-            </ProfileCustomizer>
+
+              {isAdmin && (
+                <AdminPanelDialog open={isAdminPanelOpen} onOpenChange={setIsAdminPanelOpen}>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={() => setIsAdminPanelOpen(true)}
+                    className="h-10 w-10 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-all"
+                  >
+                    <Shield className="h-5 w-5" />
+                  </Button>
+                </AdminPanelDialog>
+              )}
+            </div>
           </div>
         ) : (
           <Button asChild className="w-full rounded-2xl py-6 font-bold gap-2 lowercase">
@@ -155,6 +187,70 @@ export function AppSidebar() {
         )}
       </SidebarFooter>
     </Sidebar>
+  )
+}
+
+function AdminPanelDialog({ children, open, onOpenChange }: { children: React.ReactNode, open: boolean, onOpenChange: (o: boolean) => void }) {
+  const { toast } = useToast()
+
+  const handleTestNotification = () => {
+    if (!("Notification" in window)) {
+      toast({
+        variant: "destructive",
+        title: "unsupported",
+        description: "browser doesn't support notifications."
+      })
+      return
+    }
+
+    if (Notification.permission === "granted") {
+      new Notification("guko admin: test alert", {
+        body: "this is a test notification to verify your system is working. good job!",
+        icon: "/devmade-icons/gukologo.png",
+      })
+      toast({
+        title: "test sent",
+        description: "check your desktop for the notification."
+      })
+    } else {
+      toast({
+        variant: "destructive",
+        title: "permission required",
+        description: "please enable notifications in task settings first."
+      })
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogTrigger asChild>
+        {children}
+      </DialogTrigger>
+      <DialogContent className="rounded-[32px] border-none shadow-2xl sm:max-w-md">
+        <DialogHeader className="text-left">
+          <DialogTitle className="font-headline text-2xl font-bold flex items-center gap-2 lowercase">
+            <Shield className="h-6 w-6 text-primary" /> admin controls
+          </DialogTitle>
+          <DialogDescription className="lowercase">
+            internal tools for guko buddy developers.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          <div className="space-y-4">
+            <h4 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">system diagnostics</h4>
+            <Button 
+              onClick={handleTestNotification}
+              className="w-full h-14 rounded-2xl font-bold gap-2 shadow-lg shadow-primary/10 lowercase"
+            >
+              <Terminal className="h-5 w-5" /> test task notification
+            </Button>
+            <p className="text-xs text-muted-foreground text-center lowercase px-4">
+              this will trigger an immediate native browser notification if permissions are granted.
+            </p>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   )
 }
 

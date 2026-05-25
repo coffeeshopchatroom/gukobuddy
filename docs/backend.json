@@ -32,6 +32,10 @@
           "type": "string",
           "enum": ["flashcards", "notebooks", "tasks", "all"],
           "description": "The primary tool the user wants to focus on."
+        },
+        "isAdmin": {
+          "type": "boolean",
+          "description": "Whether the user has administrative privileges."
         }
       },
       "required": [
