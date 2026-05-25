@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Camera, Loader2, Check, ArrowLeft, Sparkles, School, GraduationCap, Layers, BookOpen, CheckSquare } from 'lucide-react';
+import { Camera, Loader2, Check, ArrowLeft, Sparkles, School, GraduationCap, Layers, BookOpen, CheckSquare, ShieldCheck } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
@@ -132,6 +132,8 @@ export default function ProfilePage() {
     return null;
   }
 
+  const isAdmin = profile?.isAdmin === true;
+
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-smooth-slow pb-20">
       <div className="flex items-center gap-4">
@@ -160,12 +162,22 @@ export default function ProfilePage() {
               </label>
             </div>
             <div className="space-y-1">
-              <h3 className="text-xl font-bold font-headline lowercase">{displayName || 'student'}</h3>
+              <div className="flex items-center justify-center gap-2">
+                <h3 className="text-xl font-bold font-headline lowercase">{displayName || 'student'}</h3>
+                {isAdmin && <ShieldCheck className="h-5 w-5 text-primary" />}
+              </div>
               <p className="text-xs text-muted-foreground lowercase truncate max-w-full">{user.email}</p>
             </div>
-            <Badge variant="secondary" className="rounded-full px-4 py-1 lowercase">
-              {studentType === 'high-school' ? 'high school' : 'college'}
-            </Badge>
+            <div className="flex flex-col gap-2">
+              <Badge variant="secondary" className="rounded-full px-4 py-1 lowercase">
+                {studentType === 'high-school' ? 'high school' : 'college'}
+              </Badge>
+              {isAdmin && (
+                <Badge variant="outline" className="rounded-full px-4 py-1 lowercase border-primary text-primary bg-primary/5">
+                  system admin
+                </Badge>
+              )}
+            </div>
           </CardContent>
         </Card>
 
