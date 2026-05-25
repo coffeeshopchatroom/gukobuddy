@@ -33,7 +33,8 @@ export function NotificationManager() {
   }, []);
 
   const tasksQuery = useMemoFirebase(() => {
-    if (!user || !db) return null;
+    // DO NOT monitor for anonymous users or if services aren't ready
+    if (!user || user.isAnonymous || !db) return null;
     return query(
       collection(db, "users", user.uid, "tasks"),
       where("completed", "==", false),
@@ -44,8 +45,8 @@ export function NotificationManager() {
   const { data: tasks } = useCollection(tasksQuery);
 
   useEffect(() => {
-    // Only proceed if permission is granted and we have active tasks
-    if (permission === 'granted' && tasks && tasks.length > 0) {
+    // Only proceed if permission is granted, we have active tasks, and user is not a guest
+    if (permission === 'granted' && tasks && tasks.length > 0 && user && !user.isAnonymous) {
       const now = new Date();
       const next24Hours = addDays(now, 1);
       
@@ -67,7 +68,7 @@ export function NotificationManager() {
         }
       });
     }
-  }, [tasks, permission]);
+  }, [tasks, permission, user]);
 
   return null;
 }

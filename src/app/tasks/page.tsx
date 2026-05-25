@@ -128,7 +128,7 @@ export default function TasksPage() {
           <p className="text-muted-foreground mt-2 lowercase text-lg">manage and prioritize your academic to-dos.</p>
         </div>
         <div className="flex gap-3">
-          {notificationPermission !== 'granted' && (
+          {user && !user.isAnonymous && notificationPermission !== 'granted' && (
             <Button 
               variant="outline" 
               onClick={handleRequestPermission}

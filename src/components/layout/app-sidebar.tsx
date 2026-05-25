@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -91,7 +90,7 @@ export function AppSidebar() {
         <SidebarGroup>
           <div className="flex items-center justify-between px-6 mb-2">
             <SidebarGroupLabel className="p-0 text-[10px] uppercase tracking-widest font-bold opacity-30">menu</SidebarGroupLabel>
-            {user && <NotificationCenter user={user} firestore={firestore} />}
+            {user && !user.isAnonymous && <NotificationCenter user={user} firestore={firestore} />}
           </div>
           <SidebarGroupContent>
             <SidebarMenu className="px-4 py-2">
