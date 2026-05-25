@@ -13,7 +13,10 @@ import {
   Upload,
   Loader2,
   Trash2,
-  School
+  School,
+  Link as LinkIcon,
+  Info,
+  ExternalLink
 } from "lucide-react"
 import { 
   useUser, 
@@ -58,7 +61,6 @@ export default function TrackerPage() {
   const [isImportOpen, setIsImportOpen] = React.useState(false)
   const [isAddOpen, setIsAddOpen] = React.useState(false)
   
-  // Real-time calculations based on course data
   const totalCredits = React.useMemo(() => {
     return courses?.reduce((acc, c) => acc + (parseFloat(c.credits) || 0), 0) || 0
   }, [courses])
@@ -132,7 +134,7 @@ export default function TrackerPage() {
       <div className="grid gap-6 md:grid-cols-3">
         <Card className="border-none shadow-sm bg-primary/10 rounded-[32px]">
           <CardHeader className="pb-2">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-primary/70">cumulative gpa</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-primary-foreground/70">cumulative gpa</span>
           </CardHeader>
           <CardContent>
             <div className="flex items-baseline gap-2">
@@ -174,7 +176,48 @@ export default function TrackerPage() {
       </div>
 
       <div className="space-y-6">
-        <h2 className="font-headline text-2xl font-bold text-foreground px-2 lowercase">current {isHighSchool ? 'classes' : 'courses'}</h2>
+        <div className="flex items-center justify-between px-2">
+          <h2 className="font-headline text-2xl font-bold text-foreground lowercase">current {isHighSchool ? 'classes' : 'courses'}</h2>
+          
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="ghost" size="sm" className="rounded-xl gap-2 text-muted-foreground hover:text-primary transition-colors lowercase">
+                <LinkIcon className="h-4 w-4" /> connect account (advanced)
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="rounded-[32px] sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle className="font-headline text-xl lowercase">direct blackbaud sync</DialogTitle>
+                <DialogDescription className="lowercase">
+                  connecting directly to the blackbaud sky api requires school-level authorization.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="p-4 bg-muted/50 rounded-2xl flex gap-3 items-start">
+                  <Info className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                  <p className="text-sm text-muted-foreground lowercase leading-relaxed">
+                    to enable direct login, your school's <strong>blackbaud environment admin</strong> must approve guko buddy's developer client id.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <h4 className="font-bold text-sm lowercase">next steps:</h4>
+                  <ul className="text-xs text-muted-foreground space-y-2 lowercase list-disc pl-4">
+                    <li>register at developer.blackbaud.com</li>
+                    <li>obtain your own client id and secret</li>
+                    <li>contact your school's it admin for authorization</li>
+                  </ul>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button asChild className="w-full rounded-xl gap-2 lowercase">
+                  <a href="https://developer.blackbaud.com" target="_blank" rel="noopener noreferrer">
+                    go to portal <ExternalLink className="h-4 w-4" />
+                  </a>
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
         
         {isCoursesLoading ? (
           <div className="flex justify-center py-12">
@@ -215,12 +258,10 @@ function CourseItem({ course, onDelete }: { course: any, onDelete: () => void })
   return (
     <Card className="group border-none shadow-sm hover:shadow-md transition-all duration-300 rounded-[32px] overflow-hidden bg-white">
       <CardContent className="p-8 flex items-center gap-6">
-        {/* Left Icon Square */}
         <div className={cn("h-16 w-16 rounded-[20px] flex items-center justify-center shrink-0", colorClass)}>
           <GraduationCap className={cn("h-8 w-8", textClass)} />
         </div>
 
-        {/* Course Info */}
         <div className="flex-1 min-w-0">
           <h3 className="font-headline text-xl font-bold text-foreground lowercase leading-tight truncate">
             {course.name}
@@ -230,8 +271,7 @@ function CourseItem({ course, onDelete }: { course: any, onDelete: () => void })
           </p>
         </div>
 
-        {/* Current Grade Section (Mid-Right) */}
-        <div className="hidden sm:flex flex-col gap-2 w-32 shrink-0">
+        <div className="hidden md:flex flex-col gap-2 w-48 shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex flex-col">
               <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground leading-none">current</span>
@@ -242,9 +282,8 @@ function CourseItem({ course, onDelete }: { course: any, onDelete: () => void })
           <Progress value={grade} className="h-1.5 bg-muted" />
         </div>
 
-        {/* Large Letter Grade Section (Far-Right) */}
-        <div className="flex items-center gap-10 shrink-0">
-          <div className="flex flex-col items-center">
+        <div className="flex items-center gap-8 shrink-0">
+          <div className="flex flex-col items-center w-16">
             <span className="text-4xl font-bold text-foreground leading-none lowercase">
               {course.letterGrade || '-'}
             </span>
