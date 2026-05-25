@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -16,7 +15,8 @@ import {
   Trash2, 
   Loader2,
   Clock,
-  AlertCircle
+  AlertCircle,
+  BellRing
 } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { 
@@ -41,14 +41,50 @@ import {
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
-import { format, isToday, isFuture, isPast, addDays, parseISO } from "date-fns"
+import { format, isToday, isFuture, isPast, parseISO } from "date-fns"
+import { useToast } from "@/hooks/use-toast"
 
 export default function TasksPage() {
   const { user, isUserLoading } = useUser()
   const db = useFirestore()
+  const { toast } = useToast()
   
   const [searchTerm, setSearchTerm] = React.useState("")
   const [isAddOpen, setIsAddOpen] = React.useState(false)
+  const [notificationPermission, setNotificationPermission] = React.useState<NotificationPermission>('default')
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      setNotificationPermission(Notification.permission)
+    }
+  }, [])
+
+  const handleRequestPermission = async () => {
+    if (!('Notification' in window)) {
+      toast({
+        variant: "destructive",
+        title: "unsupported browser",
+        description: "your browser doesn't support desktop notifications."
+      })
+      return
+    }
+
+    const result = await Notification.requestPermission()
+    setNotificationPermission(result)
+    
+    if (result === 'granted') {
+      toast({
+        title: "notifications enabled",
+        description: "you'll now receive desktop alerts for upcoming tasks."
+      })
+    } else if (result === 'denied') {
+      toast({
+        variant: "destructive",
+        title: "notifications blocked",
+        description: "please enable notifications in your browser settings."
+      })
+    }
+  }
 
   const tasksQuery = useMemoFirebase(() => {
     if (!db || !user) return null
@@ -91,14 +127,25 @@ export default function TasksPage() {
           <h1 className="font-headline text-4xl font-bold tracking-tight text-foreground lowercase">task manager</h1>
           <p className="text-muted-foreground mt-2 lowercase text-lg">manage and prioritize your academic to-dos.</p>
         </div>
-        <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-6 px-8 rounded-2xl shadow-lg transition-all hover:scale-105 lowercase">
-              <Plus className="h-5 w-5 mr-2" /> add new task
+        <div className="flex gap-3">
+          {notificationPermission !== 'granted' && (
+            <Button 
+              variant="outline" 
+              onClick={handleRequestPermission}
+              className="border-2 font-bold py-6 px-8 rounded-2xl shadow-sm transition-all hover:bg-primary/5 lowercase group"
+            >
+              <BellRing className="h-5 w-5 mr-2 group-hover:animate-bounce" /> enable desktop alerts
             </Button>
-          </DialogTrigger>
-          <AddTaskDialog user={user} db={db} onClose={() => setIsAddOpen(false)} />
-        </Dialog>
+          )}
+          <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-6 px-8 rounded-2xl shadow-lg transition-all hover:scale-105 lowercase">
+                <Plus className="h-5 w-5 mr-2" /> add new task
+              </Button>
+            </DialogTrigger>
+            <AddTaskDialog user={user} db={db} onClose={() => setIsAddOpen(false)} />
+          </Dialog>
+        </div>
       </div>
 
       <div className="grid gap-6">
