@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server';
 
 export async function GET() {
-  const clientId = process.env.BLACKBAUD_CLIENT_ID;
+  const clientId = process.env.NEXT_PUBLIC_BLACKBAUD_CLIENT_ID;
   const redirectUri = `${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/blackbaud/callback`;
   
   if (!clientId) {
