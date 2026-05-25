@@ -16,28 +16,28 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
+      // Allow the user document itself to be read/written
+      allow get, write: if isOwner(userId);
+
       match /profile/settings {
         allow get: if isOwner(userId);
         allow write: if isOwner(userId);
       }
 
       match /courses/{courseId} {
-        allow get: if isOwner(userId);
-        allow list: if isOwner(userId);
+        allow get, list: if isOwner(userId);
         allow create: if isOwner(userId) && request.resource.data.id == courseId;
         allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
         allow delete: if isExistingOwner(userId);
       }
 
       match /tasks/{taskId} {
-        allow get: if isOwner(userId);
-        allow list: if isOwner(userId);
+        allow get, list: if isOwner(userId);
         allow create: if isOwner(userId) && request.resource.data.id == taskId;
         allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
         allow delete: if isExistingOwner(userId);
       }
 
-      // Existing flashcard rules...
       match /courses/{courseId}/flashcardSets/{flashcardSetId} {
         allow get, list: if isOwner(userId);
         allow create: if isOwner(userId);
