@@ -3,37 +3,26 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
+    // Helper function to check if the request is from the owner of the user data
     function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
+      return request.auth != null && request.auth.uid == userId;
     }
 
-    function isExistingOwner(userId) {
-      return resource != null && isOwner(userId);
-    }
-
+    // Match the user's root document and all its sub-collections
     match /users/{userId} {
-      // Allow the user to read and write their own document
-      allow get, write: if isOwner(userId);
+      // Allow read (get and list) and write (create, update, delete) for the owner
+      allow read, write: if isOwner(userId);
 
-      // Recursive match: Allow the user full access to all sub-collections in their own tree
-      // This covers tasks, courses, profile settings, and flashcards.
+      // Recursive match to ensure all sub-collections (tasks, courses, etc.) 
+      // inherit the same ownership permissions.
       match /{allPaths=**} {
-        allow read: if isOwner(userId);
-        allow write: if isOwner(userId);
+        allow read, write: if isOwner(userId);
       }
-
-      // Maintain specific validation for creation of core entities if needed
-      match /courses/{courseId} {
-        allow create: if isOwner(userId) && request.resource.data.id == courseId;
-      }
-
-      match /tasks/{taskId} {
-        allow create: if isOwner(userId) && request.resource.data.id == taskId;
-      }
+    }
+    
+    // Global fallback: deny everything else
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
