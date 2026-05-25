@@ -15,26 +15,21 @@
           "type": "string",
           "description": "The user's chosen display name."
         },
-        "username": {
-          "type": "string",
-          "description": "Unique username for the user."
-        },
-        "bio": {
-          "type": "string",
-          "description": "A short description about the user."
-        },
-        "photoUrl": {
-          "type": "string",
-          "description": "URL to the user's profile picture."
-        },
-        "bannerUrl": {
-          "type": "string",
-          "description": "URL to the user's account banner."
-        },
         "studentType": {
           "type": "string",
           "enum": ["high-school", "college"],
           "description": "The educational level of the user."
+"blackbaudConnected": {
+          "type": "boolean",
+          "description": "Whether the user has connected their blackbaud account."
+        },
+        "blackbaudToken": {
+          "type": "object",
+          "properties": {
+            "accessToken": { "type": "string" },
+            "refreshToken": { "type": "string" },
+            "expiresAt": { "type": "string", "format": "date-time" }
+          }
         },
         "useAi": {
           "type": "boolean",
@@ -44,20 +39,6 @@
           "type": "string",
           "enum": ["flashcards", "notebooks", "tasks", "all"],
           "description": "The primary tool the user wants to focus on."
-        },
-        "theme": {
-          "type": "object",
-          "properties": {
-            "body": { "type": "string" },
-            "text": { "type": "string" },
-            "buttons": { "type": "string" }
-          }
-        },
-        "font": {
-          "type": "string"
-        },
-        "cornerRounding": {
-          "type": "number"
         }
       },
       "required": [
@@ -71,149 +52,34 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Course",
       "type": "object",
-      "description": "Represents an academic course or subject, used to categorize flashcard sets, tasks, and notes.",
+      "description": "Represents an academic course or subject.",
       "properties": {
         "id": {
-          "type": "string",
-          "description": "Unique identifier for the Course entity."
+          "type": "string"
         },
         "name": {
-          "type": "string",
-          "description": "The name of the course or subject (e.g., 'Calculus I', 'World History')."
+          "type": "string"
         },
         "code": {
-          "type": "string",
-          "description": "The course code (e.g., 'MATH 101')."
-        },
-        "description": {
-          "type": "string",
-          "description": "An optional detailed description of the course or subject."
+          "type": "string"
         },
         "grade": {
-          "type": "number",
-          "description": "The current numeric grade percentage (0-100)."
+          "type": "number"
         },
         "letterGrade": {
-          "type": "string",
-          "description": "The letter grade equivalent (e.g., 'A-', 'B+')."
+          "type": "string"
         },
         "credits": {
-          "type": "number",
-          "description": "The number of credit hours for this course."
+          "type": "number"
+        },
+        "blackbaudId": {
+          "type": "string",
+          "description": "Internal ID from Blackbaud for syncing."
         }
       },
       "required": [
         "id",
         "name"
-      ]
-    },
-    "FlashcardSet": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "FlashcardSet",
-      "type": "object",
-      "description": "A collection of related flashcards, often grouped by topic or course.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the FlashcardSet entity."
-        },
-        "name": {
-          "type": "string",
-          "description": "The title or name of the flashcard set (e.g., 'Chapter 5 Vocabulary', 'Midterm Review')."
-        },
-        "description": {
-          "type": "string",
-          "description": "An optional detailed description of the flashcard set."
-        },
-        "courseId": {
-          "type": "string",
-          "description": "Reference to the Course this flashcard set belongs to. (Relationship: Course 1:N FlashcardSet)"
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp when the flashcard set was created.",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "Timestamp when the flashcard set was last updated.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "name",
-        "courseId",
-        "createdAt",
-        "updatedAt"
-      ]
-    },
-    "Flashcard": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Flashcard",
-      "type": "object",
-      "description": "An individual flashcard containing a question and an answer, part of a flashcard set.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Flashcard entity."
-        },
-        "flashcardSetId": {
-          "type": "string",
-          "description": "Reference to the FlashcardSet this flashcard belongs to. (Relationship: FlashcardSet 1:N Flashcard)"
-        },
-        "question": {
-          "type": "string",
-          "description": "The question or prompt displayed on the flashcard."
-        },
-        "answer": {
-          "type": "string",
-          "description": "The answer or response to the flashcard's question."
-        },
-        "imageUrl": {
-          "type": "string",
-          "description": "Optional URL to an image associated with the front of the flashcard."
-        },
-        "answerImageUrl": {
-          "type": "string",
-          "description": "Optional URL to an image associated with the back of the flashcard."
-        },
-        "lastReviewedAt": {
-          "type": "string",
-          "description": "Timestamp of the last time this flashcard was reviewed.",
-          "format": "date-time"
-        },
-        "reviewCount": {
-          "type": "number",
-          "description": "The total number of times this flashcard has been reviewed."
-        },
-        "easeFactor": {
-          "type": "number",
-          "description": "A factor indicating the perceived difficulty or ease of remembering the card."
-        },
-        "nextReviewAt": {
-          "type": "string",
-          "description": "The calculated timestamp when this flashcard is scheduled for its next review session.",
-          "format": "date-time"
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp when the flashcard was created.",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "Timestamp when the flashcard was last updated.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "flashcardSetId",
-        "question",
-        "answer",
-        "createdAt",
-        "updatedAt"
       ]
     }
   },
@@ -232,13 +98,7 @@
           "schema": {
             "$ref": "#/backend/entities/UserProfile"
           },
-          "description": "User personalization preferences.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user."
-            }
-          ]
+          "description": "User personalization preferences."
         }
       },
       {
@@ -248,72 +108,9 @@
           "schema": {
             "$ref": "#/backend/entities/Course"
           },
-          "description": "User-specific collection of academic courses.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user who owns this course."
-            },
-            {
-              "name": "courseId",
-              "description": "The unique identifier for the specific course."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/users/{userId}/courses/{courseId}/flashcardSets/{flashcardSetId}",
-        "definition": {
-          "entityName": "FlashcardSet",
-          "schema": {
-            "$ref": "#/backend/entities/FlashcardSet"
-          },
-          "description": "Collection of flashcard sets.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user who owns this flashcard set."
-            },
-            {
-              "name": "courseId",
-              "description": "The unique identifier of the course this flashcard set belongs to."
-            },
-            {
-              "name": "flashcardSetId",
-              "description": "The unique identifier for the specific flashcard set."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/users/{userId}/courses/{courseId}/flashcardSets/{flashcardSetId}/flashcards/{flashcardId}",
-        "definition": {
-          "entityName": "Flashcard",
-          "schema": {
-            "$ref": "#/backend/entities/Flashcard"
-          },
-          "description": "Collection of individual flashcards.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user who owns this flashcard."
-            },
-            {
-              "name": "courseId",
-              "description": "The unique identifier of the course the parent flashcard set belongs to."
-            },
-            {
-              "name": "flashcardSetId",
-              "description": "The unique identifier of the flashcard set this flashcard belongs to."
-            },
-            {
-              "name": "flashcardId",
-              "description": "The unique identifier for the specific flashcard."
-            }
-          ]
+          "description": "User-specific collection of academic courses."
         }
       }
-    ],
-    "reasoning": "Standard hierarchical structure for user isolation and easy security rules."
+    ]
   }
 }

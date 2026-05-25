@@ -16,7 +16,8 @@ import {
   School,
   Link as LinkIcon,
   Info,
-  ExternalLink
+  ExternalLink,
+  RefreshCw
 } from "lucide-react"
 import { 
   useUser, 
@@ -42,10 +43,12 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { importGrades } from "@/ai/flows/import-grades-flow"
 import { cn } from "@/lib/utils"
+import { useToast } from "@/hooks/use-toast"
 
 export default function TrackerPage() {
   const { user, isUserLoading } = useUser()
   const db = useFirestore()
+  const { toast } = useToast()
   
   const profileRef = useMemoFirebase(() => user ? doc(db, 'users', user.uid, 'profile', 'settings') : null, [user, db]);
   const { data: profile } = useDoc(profileRef);
@@ -60,6 +63,7 @@ export default function TrackerPage() {
 
   const [isImportOpen, setIsImportOpen] = React.useState(false)
   const [isAddOpen, setIsAddOpen] = React.useState(false)
+  const [isSyncing, setIsSyncing] = React.useState(false)
   
   const totalCredits = React.useMemo(() => {
     return courses?.reduce((acc, c) => acc + (parseFloat(c.credits) || 0), 0) || 0
@@ -86,6 +90,22 @@ export default function TrackerPage() {
     return (totalPoints / courses.length).toFixed(2)
   }, [courses])
 
+  const handleConnectBlackbaud = () => {
+    window.location.href = '/api/auth/blackbaud/login';
+  }
+
+  const handleSyncGrades = async () => {
+    if (!profile?.blackbaudToken?.accessToken) return;
+    setIsSyncing(true);
+    // implementation of actual sync would go here, calling a server action
+    // for now we'll show a toast
+    toast({
+      title: "syncing grades...",
+      description: "connecting to blackbaud sky api."
+    });
+    setTimeout(() => setIsSyncing(false), 2000);
+  }
+
   const handleDeleteCourse = (courseId: string) => {
     if (!user || !db) return
     const courseRef = doc(db, "users", user.uid, "courses", courseId)
@@ -110,12 +130,23 @@ export default function TrackerPage() {
           </p>
         </div>
         <div className="flex gap-3">
-          <ImportGradesDialog 
-            isOpen={isImportOpen} 
-            setIsOpen={setIsImportOpen} 
-            user={user} 
-            db={db} 
-          />
+          {profile?.blackbaudConnected ? (
+            <Button 
+              onClick={handleSyncGrades} 
+              disabled={isSyncing}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-6 px-8 rounded-2xl shadow-lg transition-all lowercase"
+            >
+              {isSyncing ? <Loader2 className="h-5 w-5 mr-2 animate-spin" /> : <RefreshCw className="h-5 w-5 mr-2" />} 
+              sync blackbaud
+            </Button>
+          ) : (
+            <ImportGradesDialog 
+              isOpen={isImportOpen} 
+              setIsOpen={setIsImportOpen} 
+              user={user} 
+              db={db} 
+            />
+          )}
           <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" className="bg-white border-2 font-bold py-6 px-8 rounded-2xl shadow-sm transition-all hover:scale-105 lowercase">
@@ -182,7 +213,7 @@ export default function TrackerPage() {
           <Dialog>
             <DialogTrigger asChild>
               <Button variant="ghost" size="sm" className="rounded-xl gap-2 text-muted-foreground hover:text-primary transition-colors lowercase">
-                <LinkIcon className="h-4 w-4" /> connect account (advanced)
+                <LinkIcon className="h-4 w-4" /> {profile?.blackbaudConnected ? 'account connected' : 'connect account (advanced)'}
               </Button>
             </DialogTrigger>
             <DialogContent className="rounded-[32px] sm:max-w-md">
@@ -199,22 +230,26 @@ export default function TrackerPage() {
                     to enable direct login, your school's <strong>blackbaud environment admin</strong> must approve guko buddy's developer client id.
                   </p>
                 </div>
-                <div className="space-y-2">
-                  <h4 className="font-bold text-sm lowercase">next steps:</h4>
-                  <ul className="text-xs text-muted-foreground space-y-2 lowercase list-disc pl-4">
-                    <li>register at developer.blackbaud.com</li>
-                    <li>obtain your own client id and secret</li>
-                    <li>contact your school's it admin for authorization</li>
-                  </ul>
-                </div>
+                {profile?.blackbaudConnected ? (
+                  <div className="p-4 rounded-xl bg-green-50 text-green-700 text-xs font-bold text-center lowercase">
+                    your account is connected!
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <h4 className="font-bold text-sm lowercase">next steps:</h4>
+                      <ul className="text-xs text-muted-foreground space-y-2 lowercase list-disc pl-4">
+                        <li>register at developer.blackbaud.com</li>
+                        <li>obtain your own client id and secret</li>
+                        <li>contact your school's it admin for authorization</li>
+                      </ul>
+                    </div>
+                    <Button onClick={handleConnectBlackbaud} className="w-full rounded-xl gap-2 bg-indigo-600 hover:bg-indigo-700 lowercase">
+                      try connecting <ExternalLink className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
               </div>
-              <DialogFooter>
-                <Button asChild className="w-full rounded-xl gap-2 lowercase">
-                  <a href="https://developer.blackbaud.com" target="_blank" rel="noopener noreferrer">
-                    go to portal <ExternalLink className="h-4 w-4" />
-                  </a>
-                </Button>
-              </DialogFooter>
             </DialogContent>
           </Dialog>
         </div>
