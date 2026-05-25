@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview ai flow for importing grades from blackbaud or other platforms.
@@ -36,6 +35,7 @@ export type ImportGradesOutput = z.infer<typeof ImportGradesOutputSchema>;
 export async function importGrades(input: z.infer<typeof ImportGradesInputSchema>): Promise<ImportGradesOutput> {
   const prompt = ai.definePrompt({
     name: 'importGradesPrompt',
+    model: 'googleai/gemini-1.5-flash',
     input: { schema: ImportGradesInputSchema },
     output: { schema: ImportGradesOutputSchema },
     prompt: `you are an expert academic data parser. 
@@ -67,6 +67,7 @@ export async function importGrades(input: z.infer<typeof ImportGradesInputSchema
     if (!output) throw new Error('failed to parse grade data');
     return output;
   } catch (error: any) {
+    console.error("import grades error:", error);
     throw error;
   }
 }

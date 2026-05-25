@@ -49,7 +49,7 @@ import {
   updateDocumentNonBlocking,
   initiateAnonymousSignIn
 } from "@/firebase"
-import { collection, doc, query, orderBy, serverTimestamp } from "firebase/firestore"
+import { collection, doc, query, orderBy } from "firebase/firestore"
 import {
   Dialog,
   DialogContent,
@@ -75,7 +75,6 @@ import {
 } from "@/components/ui/tooltip"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Textarea } from "@/components/ui/textarea"
 
 // Tiptap imports
@@ -710,7 +709,7 @@ function AiGeneratorDialog({ isOpen, setIsOpen, isHighSchool, user, activeCourse
       })
 
       setGenerationProgress(60)
-      setStatusMessage(`drafting ${output.cards.length} cards...`)
+      setStatusMessage(`finding related photos for ${output.cards.length} cards...`)
 
       // 1. Create Course if needed
       let courseIdToUse = activeCourse?.id
@@ -743,12 +742,17 @@ function AiGeneratorDialog({ isOpen, setIsOpen, isHighSchool, user, activeCourse
         const cardId = doc(collection(db, "temp")).id
         const cardRef = doc(db, "users", user.uid, "courses", courseIdToUse, "flashcardSets", deckId, "flashcards", cardId)
         
+        // Use loremflickr for related photos based on keywords
+        const photoUrl = cardData.searchKeyword 
+          ? `https://loremflickr.com/600/400/${encodeURIComponent(cardData.searchKeyword)}` 
+          : null;
+
         setDocumentNonBlocking(cardRef, {
           id: cardId,
           flashcardSetId: deckId,
           question: `<p>${cardData.question}</p>`,
           answer: `<p>${cardData.answer}</p>`,
-          imageUrl: null,
+          imageUrl: photoUrl,
           lastReviewedAt: new Date().toISOString(),
           reviewCount: 0,
           easeFactor: 2.5,

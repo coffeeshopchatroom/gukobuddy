@@ -44,6 +44,7 @@ export type GenerateQuizOutput = z.infer<typeof GenerateQuizOutputSchema>;
 export async function generateQuiz(input: z.infer<typeof GenerateQuizInputSchema>): Promise<GenerateQuizOutput> {
   const prompt = ai.definePrompt({
     name: 'generateQuizPrompt',
+    model: 'googleai/gemini-1.5-flash',
     input: { schema: GenerateQuizInputSchema },
     output: { schema: GenerateQuizOutputSchema },
     prompt: `you are an expert educator. your task is to generate a comprehensive quiz for the flashcard deck: "{{deckName}}".
@@ -68,6 +69,7 @@ export async function generateQuiz(input: z.infer<typeof GenerateQuizInputSchema
     if (!output) throw new Error('failed to generate quiz');
     return output;
   } catch (error: any) {
+    console.error("quiz generation error:", error);
     throw error;
   }
 }
@@ -90,6 +92,7 @@ const EvaluateAnswerOutputSchema = z.object({
 export async function evaluateAnswer(input: z.infer<typeof EvaluateAnswerInputSchema>): Promise<z.infer<typeof EvaluateAnswerOutputSchema>> {
   const prompt = ai.definePrompt({
     name: 'evaluateAnswerPrompt',
+    model: 'googleai/gemini-1.5-flash',
     input: { schema: EvaluateAnswerInputSchema },
     output: { schema: EvaluateAnswerOutputSchema },
     prompt: `you are a helpful tutor evaluating a student's answer.
@@ -113,6 +116,7 @@ export async function evaluateAnswer(input: z.infer<typeof EvaluateAnswerInputSc
     if (!output) throw new Error('failed to evaluate answer');
     return output;
   } catch (error: any) {
+    console.error("evaluate answer error:", error);
     throw error;
   }
 }
