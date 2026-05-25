@@ -2,25 +2,14 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Helper function to check if the request is from the owner of the user data
-    function isOwner(userId) {
-      return request.auth != null && request.auth.uid == userId;
-    }
-
-    // Match the user's root document and all its sub-collections
-    match /users/{userId} {
-      // Allow read (get and list) and write (create, update, delete) for the owner
-      allow read, write: if isOwner(userId);
-
-      // Recursive match to ensure all sub-collections (tasks, courses, etc.) 
-      // inherit the same ownership permissions.
-      match /{allPaths=**} {
-        allow read, write: if isOwner(userId);
-      }
+    // simplified recursive match for all user-specific data
+    // this ensures that any path starting with /users/{userId} is accessible
+    // only to the user with that matching UID.
+    match /users/{userId}/{allPaths=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
     }
     
-    // Global fallback: deny everything else
+    // global fallback: deny everything else
     match /{document=**} {
       allow read, write: if false;
     }
