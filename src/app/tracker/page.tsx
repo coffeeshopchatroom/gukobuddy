@@ -2,19 +2,14 @@
 "use client"
 
 import * as React from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { Badge } from "@/components/ui/badge"
 import { 
   TrendingUp, 
   GraduationCap, 
-  ChevronRight, 
   Plus, 
-  AlertCircle,
   FileText,
-  Clock,
-  CheckCircle2,
   Upload,
   Loader2,
   Trash2,
@@ -42,7 +37,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { importGrades, type ImportedCourse } from "@/ai/flows/import-grades-flow"
+import { importGrades } from "@/ai/flows/import-grades-flow"
 import { cn } from "@/lib/utils"
 
 export default function TrackerPage() {
@@ -55,7 +50,7 @@ export default function TrackerPage() {
 
   const coursesQuery = useMemoFirebase(() => {
     if (!db || !user) return null
-    return query(collection(db, "users", user.uid, "courses"))
+    return query(collection(db, "users", user.uid, "courses"), orderBy("createdAt", "desc"))
   }, [db, user])
 
   const { data: courses, isLoading: isCoursesLoading } = useCollection(coursesQuery)
@@ -63,11 +58,19 @@ export default function TrackerPage() {
   const [isImportOpen, setIsImportOpen] = React.useState(false)
   const [isAddOpen, setIsAddOpen] = React.useState(false)
   
-  const totalCredits = courses?.reduce((acc, c) => acc + (c.credits || 0), 0) || 0
-  const avgGrade = courses?.length ? Math.round(courses.reduce((acc, c) => acc + (c.grade || 0), 0) / courses.length) : 0
-  
-  const calculateGPA = (courses: any[]) => {
+  // Real-time calculations based on course data
+  const totalCredits = React.useMemo(() => {
+    return courses?.reduce((acc, c) => acc + (parseFloat(c.credits) || 0), 0) || 0
+  }, [courses])
+
+  const avgGrade = React.useMemo(() => {
     if (!courses || courses.length === 0) return 0
+    const total = courses.reduce((acc, c) => acc + (parseFloat(c.grade) || 0), 0)
+    return Math.round(total / courses.length)
+  }, [courses])
+  
+  const gpa = React.useMemo(() => {
+    if (!courses || courses.length === 0) return "0.00"
     const points: Record<string, number> = {
       'a+': 4.0, 'a': 4.0, 'a-': 3.7,
       'b+': 3.3, 'b': 3.0, 'b-': 2.7,
@@ -75,13 +78,11 @@ export default function TrackerPage() {
       'd+': 1.3, 'd': 1.0, 'f': 0.0
     }
     const totalPoints = courses.reduce((acc, c) => {
-      const lg = (c.letterGrade || '').toLowerCase()
+      const lg = (c.letterGrade || '').toLowerCase().trim()
       return acc + (points[lg] || 0)
     }, 0)
     return (totalPoints / courses.length).toFixed(2)
-  }
-
-  const gpa = calculateGPA(courses || [])
+  }, [courses])
 
   const handleDeleteCourse = (courseId: string) => {
     if (!user || !db) return
@@ -98,7 +99,7 @@ export default function TrackerPage() {
   }
 
   return (
-    <div className="space-y-8 animate-smooth-slow pb-20">
+    <div className="space-y-8 animate-smooth-slow pb-20 max-w-5xl mx-auto">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="font-headline text-4xl font-bold tracking-tight text-foreground lowercase">grade tracker</h1>
@@ -129,7 +130,7 @@ export default function TrackerPage() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-3">
-        <Card className="border-none shadow-sm bg-primary/10 rounded-3xl">
+        <Card className="border-none shadow-sm bg-primary/10 rounded-[32px]">
           <CardHeader className="pb-2">
             <span className="text-[10px] font-bold uppercase tracking-widest text-primary/70">cumulative gpa</span>
           </CardHeader>
@@ -144,7 +145,7 @@ export default function TrackerPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-none shadow-sm bg-accent/10 rounded-3xl">
+        <Card className="border-none shadow-sm bg-accent/10 rounded-[32px]">
           <CardHeader className="pb-2">
             <span className="text-[10px] font-bold uppercase tracking-widest text-accent-foreground/70">average grade</span>
           </CardHeader>
@@ -158,7 +159,7 @@ export default function TrackerPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-none shadow-sm bg-secondary/30 rounded-3xl">
+        <Card className="border-none shadow-sm bg-secondary/30 rounded-[32px]">
           <CardHeader className="pb-2">
             <span className="text-[10px] font-bold uppercase tracking-widest text-secondary-foreground/70">total credits</span>
           </CardHeader>
@@ -207,37 +208,55 @@ export default function TrackerPage() {
 }
 
 function CourseItem({ course, onDelete }: { course: any, onDelete: () => void }) {
-  const grade = course.grade || 0
-  const colorClass = grade >= 90 ? 'bg-primary' : grade >= 80 ? 'bg-accent' : 'bg-muted-foreground'
+  const grade = parseFloat(course.grade) || 0
+  const colorClass = grade >= 90 ? 'bg-primary/20' : grade >= 80 ? 'bg-accent/20' : 'bg-muted'
   const textClass = grade >= 90 ? 'text-primary' : grade >= 80 ? 'text-accent-foreground' : 'text-muted-foreground'
 
   return (
-    <Card className="group border-none shadow-sm hover:shadow-md transition-all duration-300 rounded-3xl overflow-hidden bg-white">
-      <CardContent className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="flex items-center gap-6">
-          <div className={cn("h-16 w-16 rounded-2xl flex items-center justify-center shrink-0 opacity-20", colorClass)}>
-            <GraduationCap className={cn("h-8 w-8", textClass)} />
-          </div>
-          <div className="space-y-1">
-            <h3 className="font-headline text-xl font-bold text-foreground lowercase">{course.name}</h3>
-            <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{course.code || 'n/a'}</p>
-          </div>
+    <Card className="group border-none shadow-sm hover:shadow-md transition-all duration-300 rounded-[32px] overflow-hidden bg-white">
+      <CardContent className="p-8 flex items-center gap-6">
+        {/* Left Icon Square */}
+        <div className={cn("h-16 w-16 rounded-[20px] flex items-center justify-center shrink-0", colorClass)}>
+          <GraduationCap className={cn("h-8 w-8", textClass)} />
         </div>
 
-        <div className="flex-1 flex flex-col gap-2 max-w-xs px-4">
-          <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest">
-            <span className="text-muted-foreground">current grade</span>
-            <span>{grade}%</span>
-          </div>
-          <Progress value={grade} className="h-2 bg-muted" />
+        {/* Course Info */}
+        <div className="flex-1 min-w-0">
+          <h3 className="font-headline text-xl font-bold text-foreground lowercase leading-tight truncate">
+            {course.name}
+          </h3>
+          <p className="text-sm font-medium text-muted-foreground lowercase mt-1 opacity-70">
+            {course.code || 'general course'}
+          </p>
         </div>
 
-        <div className="flex items-center gap-8 pr-4">
-          <div className="text-center min-w-[60px]">
-            <p className="text-4xl font-bold text-foreground lowercase">{course.letterGrade || '-'}</p>
-            <p className="text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">grade</p>
+        {/* Current Grade Section (Mid-Right) */}
+        <div className="hidden sm:flex flex-col gap-2 w-32 shrink-0">
+          <div className="flex items-center justify-between">
+            <div className="flex flex-col">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground leading-none">current</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground leading-none">grade</span>
+            </div>
+            <span className="text-base font-bold text-foreground ml-2">{grade}%</span>
           </div>
-          <Button variant="ghost" size="icon" onClick={onDelete} className="text-destructive hover:bg-destructive/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity">
+          <Progress value={grade} className="h-1.5 bg-muted" />
+        </div>
+
+        {/* Large Letter Grade Section (Far-Right) */}
+        <div className="flex items-center gap-10 shrink-0">
+          <div className="flex flex-col items-center">
+            <span className="text-4xl font-bold text-foreground leading-none lowercase">
+              {course.letterGrade || '-'}
+            </span>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mt-1">grade</span>
+          </div>
+          
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={onDelete} 
+            className="text-destructive hover:bg-destructive/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"
+          >
             <Trash2 className="h-5 w-5" />
           </Button>
         </div>
@@ -406,7 +425,7 @@ function AddCourseContent({ onClose, user, db }: any) {
   }
 
   return (
-    <DialogContent className="rounded-3xl border-none shadow-2xl">
+    <DialogContent className="rounded-[32px] border-none shadow-2xl">
       <DialogHeader>
         <DialogTitle className="font-headline text-2xl lowercase">add new course</DialogTitle>
         <DialogDescription className="lowercase">track a class manually in your dashboard.</DialogDescription>
@@ -414,25 +433,25 @@ function AddCourseContent({ onClose, user, db }: any) {
       <div className="grid gap-4 py-4">
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label className="lowercase">course name</Label>
+            <Label className="lowercase ml-1">course name</Label>
             <Input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. physics 1" className="rounded-xl lowercase" />
           </div>
           <div className="space-y-2">
-            <Label className="lowercase">course code</Label>
+            <Label className="lowercase ml-1">course code</Label>
             <Input value={code} onChange={e => setCode(e.target.value)} placeholder="e.g. PHYS 101" className="rounded-xl lowercase" />
           </div>
         </div>
         <div className="grid grid-cols-3 gap-4">
           <div className="space-y-2">
-            <Label className="lowercase">grade %</Label>
+            <Label className="lowercase ml-1">grade %</Label>
             <Input type="number" value={grade} onChange={e => setGrade(e.target.value)} placeholder="95" className="rounded-xl lowercase" />
           </div>
           <div className="space-y-2">
-            <Label className="lowercase">letter</Label>
+            <Label className="lowercase ml-1">letter</Label>
             <Input value={letterGrade} onChange={e => setLetterGrade(e.target.value)} placeholder="A" className="rounded-xl lowercase" />
           </div>
           <div className="space-y-2">
-            <Label className="lowercase">credits</Label>
+            <Label className="lowercase ml-1">credits</Label>
             <Input type="number" value={credits} onChange={e => setCredits(e.target.value)} placeholder="3" className="rounded-xl lowercase" />
           </div>
         </div>

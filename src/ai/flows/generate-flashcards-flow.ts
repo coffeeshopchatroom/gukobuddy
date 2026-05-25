@@ -38,7 +38,7 @@ export type GenerateFlashcardsOutput = z.infer<typeof GenerateFlashcardsOutputSc
 export async function generateFlashcardsFromFile(input: z.infer<typeof GenerateFlashcardsInputSchema>): Promise<GenerateFlashcardsOutput> {
   const prompt = ai.definePrompt({
     name: 'generateFlashcardsFromFilePrompt',
-    model: 'googleai/gemini-1.5-flash',
+    model: 'googleai/gemini-2.5-flash',
     input: { schema: GenerateFlashcardsInputSchema },
     output: { schema: GenerateFlashcardsOutputSchema },
     prompt: `you are an expert study assistant. your goal is to help a student learn from their provided materials.
