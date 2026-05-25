@@ -19,17 +19,10 @@
           "type": "string",
           "enum": ["high-school", "college"],
           "description": "The educational level of the user."
-"blackbaudConnected": {
+        },
+        "blackbaudConnected": {
           "type": "boolean",
           "description": "Whether the user has connected their blackbaud account."
-        },
-        "blackbaudToken": {
-          "type": "object",
-          "properties": {
-            "accessToken": { "type": "string" },
-            "refreshToken": { "type": "string" },
-            "expiresAt": { "type": "string", "format": "date-time" }
-          }
         },
         "useAi": {
           "type": "boolean",
@@ -71,16 +64,48 @@
         },
         "credits": {
           "type": "number"
-        },
-        "blackbaudId": {
-          "type": "string",
-          "description": "Internal ID from Blackbaud for syncing."
         }
       },
       "required": [
         "id",
         "name"
       ]
+    },
+    "Task": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Task",
+      "type": "object",
+      "description": "An academic task or to-do item.",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "dueDate": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "priority": {
+          "type": "string",
+          "enum": ["low", "medium", "high"]
+        },
+        "completed": {
+          "type": "boolean"
+        },
+        "courseId": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["id", "title", "dueDate", "priority", "completed"]
     }
   },
   "auth": {
@@ -109,6 +134,16 @@
             "$ref": "#/backend/entities/Course"
           },
           "description": "User-specific collection of academic courses."
+        }
+      },
+      {
+        "path": "/users/{userId}/tasks/{taskId}",
+        "definition": {
+          "entityName": "Task",
+          "schema": {
+            "$ref": "#/backend/entities/Task"
+          },
+          "description": "User tasks and deadlines."
         }
       }
     ]

@@ -13,9 +13,9 @@ import {
   GraduationCap,
   Plus,
   LogOut,
-  UserCircle,
   LogIn,
-  Sparkles
+  Sparkles,
+  Bell
 } from "lucide-react"
 
 import {
@@ -31,11 +31,18 @@ import {
   SidebarGroupContent,
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
-import { useFirebase, useUser, useDoc, useMemoFirebase } from "@/firebase"
+import { useFirebase, useUser, useDoc, useCollection, useMemoFirebase } from "@/firebase"
 import { signOut } from "firebase/auth"
-import { doc } from 'firebase/firestore'
+import { doc, collection, query, where, orderBy } from 'firebase/firestore'
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ProfileCustomizer } from "@/components/profile/ProfileCustomizer"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { addDays, isPast, parseISO } from "date-fns"
+import { cn } from "@/lib/utils"
 
 export function AppSidebar() {
   const pathname = usePathname()
@@ -57,36 +64,11 @@ export function AppSidebar() {
   const focus = profile?.focus || 'all';
 
   const navItems = [
-    {
-      title: "dashboard",
-      url: "/",
-      icon: LayoutDashboard,
-      visible: true
-    },
-    {
-      title: "tasks",
-      url: "/tasks",
-      icon: CheckSquare,
-      visible: focus === 'all' || focus === 'tasks'
-    },
-    {
-      title: "notebooks",
-      url: "/notebooks",
-      icon: StickyNote,
-      visible: focus === 'all' || focus === 'notebooks'
-    },
-    {
-      title: "flashcards",
-      url: "/flashcards",
-      icon: Layers,
-      visible: focus === 'all' || focus === 'flashcards'
-    },
-    {
-      title: trackerLabel,
-      url: "/tracker",
-      icon: GraduationCap,
-      visible: true
-    },
+    { title: "dashboard", url: "/", icon: LayoutDashboard, visible: true },
+    { title: "tasks", url: "/tasks", icon: CheckSquare, visible: focus === 'all' || focus === 'tasks' },
+    { title: "notebooks", url: "/notebooks", icon: StickyNote, visible: focus === 'all' || focus === 'notebooks' },
+    { title: "flashcards", url: "/flashcards", icon: Layers, visible: focus === 'all' || focus === 'flashcards' },
+    { title: trackerLabel, url: "/tracker", icon: GraduationCap, visible: true },
   ]
 
   const userName = user?.isAnonymous ? "guest" : (profile?.displayName || user?.displayName || user?.email?.split('@')[0] || "student");
@@ -107,7 +89,10 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className="px-6 text-[10px] uppercase tracking-widest font-bold opacity-30">menu</SidebarGroupLabel>
+          <div className="flex items-center justify-between px-6 mb-2">
+            <SidebarGroupLabel className="p-0 text-[10px] uppercase tracking-widest font-bold opacity-30">menu</SidebarGroupLabel>
+            {user && <NotificationCenter user={user} firestore={firestore} />}
+          </div>
           <SidebarGroupContent>
             <SidebarMenu className="px-4 py-2">
               {navItems.filter(i => i.visible).map((item) => (
@@ -128,22 +113,6 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        
-        {(focus === 'all' || focus === 'notebooks') && (
-          <SidebarGroup className="mt-4">
-            <SidebarGroupLabel className="px-6 text-[10px] uppercase tracking-widest font-bold opacity-30">actions</SidebarGroupLabel>
-            <SidebarMenu className="px-4 py-2">
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild className="flex items-center gap-3 px-4 py-6 rounded-xl text-muted-foreground hover:bg-accent/50 transition-colors lowercase">
-                  <Link href="/notebooks">
-                    <Plus className="h-5 w-5" />
-                    <span className="font-medium">new note</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroup>
-        )}
       </SidebarContent>
       <SidebarFooter className="p-4 space-y-4">
         {user && (
@@ -179,12 +148,6 @@ export function AppSidebar() {
                 </div>
               </div>
             </ProfileCustomizer>
-            {profile?.useAi && (
-              <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-50 border border-indigo-100">
-                <Sparkles className="h-3 w-3 text-indigo-500" />
-                <span className="text-[9px] font-bold text-indigo-600 uppercase tracking-tighter">smart mode active</span>
-              </div>
-            )}
           </div>
         ) : (
           <Button asChild className="w-full rounded-2xl py-6 font-bold gap-2 lowercase">
@@ -193,5 +156,76 @@ export function AppSidebar() {
         )}
       </SidebarFooter>
     </Sidebar>
+  )
+}
+
+function NotificationCenter({ user, firestore }: any) {
+  const tasksQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null
+    return query(
+      collection(firestore, "users", user.uid, "tasks"), 
+      where("completed", "==", false),
+      orderBy("dueDate", "asc")
+    )
+  }, [user, firestore])
+
+  const { data: tasks } = useCollection(tasksQuery)
+
+  const upcomingTasks = React.useMemo(() => {
+    if (!tasks) return []
+    const now = new Date()
+    const threshold = addDays(now, 2)
+    return tasks.filter(t => {
+      const due = parseISO(t.dueDate)
+      return due <= threshold
+    })
+  }, [tasks])
+
+  if (upcomingTasks.length === 0) return null
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button className="relative p-1 hover:bg-muted rounded-full transition-colors group">
+          <Bell className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
+          <span className="absolute -top-1 -right-1 h-3 w-3 bg-destructive rounded-full border-2 border-white flex items-center justify-center">
+            <span className="sr-only">new notifications</span>
+          </span>
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-80 p-0 rounded-3xl border-none shadow-2xl bg-white overflow-hidden" align="start" side="right" sideOffset={10}>
+        <div className="p-6 bg-primary/10 border-b">
+          <h3 className="font-headline font-bold text-lg lowercase">upcoming deadlines</h3>
+          <p className="text-xs text-muted-foreground lowercase">tasks due within 48 hours.</p>
+        </div>
+        <div className="max-h-[300px] overflow-y-auto">
+          {upcomingTasks.map((task) => {
+            const isOverdue = isPast(parseISO(task.dueDate)) && !task.completed
+            return (
+              <div key={task.id} className="p-4 border-b last:border-0 flex items-start gap-4 hover:bg-muted/30 transition-colors">
+                <div className={cn(
+                  "mt-1 h-2 w-2 rounded-full shrink-0",
+                  isOverdue ? "bg-destructive" : "bg-primary"
+                )} />
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-sm lowercase truncate">{task.title}</p>
+                  <p className={cn(
+                    "text-[10px] font-bold uppercase tracking-widest",
+                    isOverdue ? "text-destructive" : "text-muted-foreground"
+                  )}>
+                    {isOverdue ? "overdue" : "due soon"}
+                  </p>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+        <div className="p-4 bg-muted/20 text-center">
+          <Link href="/tasks" className="text-xs font-bold text-primary hover:underline lowercase">
+            view task manager
+          </Link>
+        </div>
+      </PopoverContent>
+    </Popover>
   )
 }

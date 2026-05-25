@@ -13,11 +13,7 @@ import {
   Upload,
   Loader2,
   Trash2,
-  School,
-  Link as LinkIcon,
-  Info,
-  ExternalLink,
-  RefreshCw
+  School
 } from "lucide-react"
 import { 
   useUser, 
@@ -63,7 +59,6 @@ export default function TrackerPage() {
 
   const [isImportOpen, setIsImportOpen] = React.useState(false)
   const [isAddOpen, setIsAddOpen] = React.useState(false)
-  const [isSyncing, setIsSyncing] = React.useState(false)
   
   const totalCredits = React.useMemo(() => {
     return courses?.reduce((acc, c) => acc + (parseFloat(c.credits) || 0), 0) || 0
@@ -90,22 +85,6 @@ export default function TrackerPage() {
     return (totalPoints / courses.length).toFixed(2)
   }, [courses])
 
-  const handleConnectBlackbaud = () => {
-    window.location.href = '/api/auth/blackbaud/login';
-  }
-
-  const handleSyncGrades = async () => {
-    if (!profile?.blackbaudToken?.accessToken) return;
-    setIsSyncing(true);
-    // implementation of actual sync would go here, calling a server action
-    // for now we'll show a toast
-    toast({
-      title: "syncing grades...",
-      description: "connecting to blackbaud sky api."
-    });
-    setTimeout(() => setIsSyncing(false), 2000);
-  }
-
   const handleDeleteCourse = (courseId: string) => {
     if (!user || !db) return
     const courseRef = doc(db, "users", user.uid, "courses", courseId)
@@ -130,23 +109,12 @@ export default function TrackerPage() {
           </p>
         </div>
         <div className="flex gap-3">
-          {profile?.blackbaudConnected ? (
-            <Button 
-              onClick={handleSyncGrades} 
-              disabled={isSyncing}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-6 px-8 rounded-2xl shadow-lg transition-all lowercase"
-            >
-              {isSyncing ? <Loader2 className="h-5 w-5 mr-2 animate-spin" /> : <RefreshCw className="h-5 w-5 mr-2" />} 
-              sync blackbaud
-            </Button>
-          ) : (
-            <ImportGradesDialog 
-              isOpen={isImportOpen} 
-              setIsOpen={setIsImportOpen} 
-              user={user} 
-              db={db} 
-            />
-          )}
+          <ImportGradesDialog 
+            isOpen={isImportOpen} 
+            setIsOpen={setIsImportOpen} 
+            user={user} 
+            db={db} 
+          />
           <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" className="bg-white border-2 font-bold py-6 px-8 rounded-2xl shadow-sm transition-all hover:scale-105 lowercase">
@@ -209,49 +177,6 @@ export default function TrackerPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between px-2">
           <h2 className="font-headline text-2xl font-bold text-foreground lowercase">current {isHighSchool ? 'classes' : 'courses'}</h2>
-          
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="ghost" size="sm" className="rounded-xl gap-2 text-muted-foreground hover:text-primary transition-colors lowercase">
-                <LinkIcon className="h-4 w-4" /> {profile?.blackbaudConnected ? 'account connected' : 'connect account (advanced)'}
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="rounded-[32px] sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle className="font-headline text-xl lowercase">direct blackbaud sync</DialogTitle>
-                <DialogDescription className="lowercase">
-                  connecting directly to the blackbaud sky api requires school-level authorization.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="p-4 bg-muted/50 rounded-2xl flex gap-3 items-start">
-                  <Info className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                  <p className="text-sm text-muted-foreground lowercase leading-relaxed">
-                    to enable direct login, your school's <strong>blackbaud environment admin</strong> must approve guko buddy's developer client id.
-                  </p>
-                </div>
-                {profile?.blackbaudConnected ? (
-                  <div className="p-4 rounded-xl bg-green-50 text-green-700 text-xs font-bold text-center lowercase">
-                    your account is connected!
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <h4 className="font-bold text-sm lowercase">next steps:</h4>
-                      <ul className="text-xs text-muted-foreground space-y-2 lowercase list-disc pl-4">
-                        <li>register at developer.blackbaud.com</li>
-                        <li>obtain your own client id and secret</li>
-                        <li>contact your school's it admin for authorization</li>
-                      </ul>
-                    </div>
-                    <Button onClick={handleConnectBlackbaud} className="w-full rounded-xl gap-2 bg-indigo-600 hover:bg-indigo-700 lowercase">
-                      try connecting <ExternalLink className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </DialogContent>
-          </Dialog>
         </div>
         
         {isCoursesLoading ? (
@@ -273,11 +198,16 @@ export default function TrackerPage() {
             <GraduationCap className="h-12 w-12 text-muted-foreground mb-4 opacity-20" />
             <h3 className="text-xl font-bold font-headline lowercase">no courses tracked</h3>
             <p className="text-muted-foreground mt-2 lowercase text-center max-w-sm">
-              add your subjects manually or import them from blackbaud to start tracking your grades.
+              add your subjects manually or import them from a screenshot to get started.
             </p>
-            <Button onClick={() => setIsImportOpen(true)} className="mt-6 rounded-xl lowercase">
-              import from blackbaud
-            </Button>
+            <div className="flex gap-4 mt-6">
+              <Button onClick={() => setIsImportOpen(true)} className="rounded-xl lowercase">
+                <Upload className="h-5 w-5 mr-2" /> Import Grades
+              </Button>
+              <Button variant="secondary" onClick={() => setIsAddOpen(true)} className="rounded-xl lowercase">
+                <Plus className="h-5 w-5 mr-2" /> Add Manually
+              </Button>
+            </div>
           </div>
         )}
       </div>
@@ -397,7 +327,7 @@ function ImportGradesDialog({ isOpen, setIsOpen, user, db }: any) {
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-6 px-8 rounded-2xl shadow-lg transition-all hover:scale-105 lowercase">
-          <Upload className="h-5 w-5 mr-2" /> import from blackbaud
+          <Upload className="h-5 w-5 mr-2" /> import grades
         </Button>
       </DialogTrigger>
       <DialogContent className="rounded-[32px] sm:max-w-xl p-0 overflow-hidden border-none bg-background shadow-2xl">
