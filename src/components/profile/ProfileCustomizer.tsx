@@ -4,7 +4,9 @@ import * as React from 'react';
 import { 
   Dialog, 
   DialogContent, 
-  DialogTrigger 
+  DialogTrigger,
+  DialogTitle,
+  DialogDescription
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -73,14 +75,14 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
     photoUrl: '',
     bannerUrl: '',
     theme: {
-      body: { type: 'solid', solid: '#8b6b61', gradient: [{ color: '#8b6b61', offset: 0 }, { color: '#5d4037', offset: 100 }], rotation: 90 } as ColorValue,
+      body: { type: 'solid', solid: '#111111', gradient: [{ color: '#111111', offset: 0 }, { color: '#222222', offset: 100 }], rotation: 90 } as ColorValue,
       text: { type: 'solid', solid: '#ffffff', gradient: [{ color: '#ffffff', offset: 0 }, { color: '#cccccc', offset: 100 }], rotation: 90 } as ColorValue,
       buttons: { type: 'gradient', solid: '#3b82f6', gradient: [{ color: '#60a5fa', offset: 0 }, { color: '#2563eb', offset: 100 }], rotation: 90 } as ColorValue,
       border: { type: 'solid', solid: '#ffffff33', gradient: [], rotation: 90 } as ColorValue
     },
     borderWidth: 0,
-    font: 'Arial',
-    cornerRounding: 0
+    font: 'Plus Jakarta Sans',
+    cornerRounding: 16
   });
 
   const [uploading, setUploading] = React.useState<'photo' | 'banner' | null>(null);
@@ -108,8 +110,8 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
           border: parseColor(profile.theme?.border, formData.theme.border)
         },
         borderWidth: profile.borderWidth ?? 0,
-        font: profile.font || 'Arial',
-        cornerRounding: profile.cornerRounding ?? 0
+        font: profile.font || 'Plus Jakarta Sans',
+        cornerRounding: profile.cornerRounding ?? 16
       });
     }
   }, [profile]);
@@ -150,14 +152,17 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
   };
 
   const previewRounding = `${formData.cornerRounding}px`;
-  const borderStyle = `solid ${formData.borderWidth}px ${getColorStyle(formData.theme.border)}`;
+  const borderStyle = `${formData.borderWidth}px solid ${getColorStyle(formData.theme.border)}`;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="max-w-[900px] p-0 border-none bg-[#111] shadow-none gap-0 overflow-hidden sm:rounded-[32px]">
+      <DialogContent className="max-w-[900px] p-0 border-none bg-[#0a0a0a] shadow-none gap-0 overflow-hidden sm:rounded-[32px]">
+        <DialogTitle className="sr-only">Customize Profile</DialogTitle>
+        <DialogDescription className="sr-only">Adjust your profile aesthetics and personal information.</DialogDescription>
+        
         <div 
           className="relative flex flex-col md:flex-row h-full max-h-[85vh] overflow-hidden"
           style={{ color: '#ffffff' }}
@@ -174,17 +179,17 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
           </div>
 
           {/* Left Side: Inputs */}
-          <div className="flex-[1] p-8 pt-16 space-y-6 overflow-y-auto custom-scrollbar border-r border-white/5 bg-white/5">
+          <div className="flex-[1] p-6 pt-16 space-y-4 overflow-y-auto custom-scrollbar border-r border-white/5 bg-white/5">
             <div className="flex flex-col items-center gap-2">
               <div className="relative group">
                 <div 
-                  className="h-24 w-24 overflow-hidden flex items-center justify-center bg-white/10 border border-white/10 transition-all"
+                  className="h-20 w-24 overflow-hidden flex items-center justify-center bg-white/10 border border-white/10 transition-all"
                   style={{ borderRadius: previewRounding }}
                 >
                   {formData.photoUrl ? (
                     <img src={formData.photoUrl} className="w-full h-full object-cover" alt="pfp" />
                   ) : (
-                    <span className="text-2xl font-bold text-white/30">{formData.displayName?.[0] || '?'}</span>
+                    <span className="text-xl font-bold text-white/30">{formData.displayName?.[0] || '?'}</span>
                   )}
                 </div>
                 <label className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer" style={{ borderRadius: previewRounding }}>
@@ -195,13 +200,13 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
               <Label className="text-[9px] font-bold uppercase tracking-widest opacity-40">profile photo</Label>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div className="space-y-1">
                 <Label className="text-[10px] font-bold uppercase tracking-widest opacity-50 ml-1">display name</Label>
                 <Input 
                   value={formData.displayName} 
                   onChange={(e) => setFormData(prev => ({ ...prev, displayName: e.target.value }))}
-                  className="bg-black/20 border-white/10 border text-white rounded-xl h-10 no-focus-ring placeholder:text-white/20 text-sm"
+                  className="bg-black/40 border-white/10 border text-white rounded-xl h-9 no-focus-ring placeholder:text-white/20 text-sm"
                   placeholder="Your Name"
                 />
               </div>
@@ -210,7 +215,7 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
                 <Input 
                   value={formData.username} 
                   onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
-                  className="bg-black/20 border-white/10 border text-white rounded-xl h-10 no-focus-ring placeholder:text-white/20 text-sm"
+                  className="bg-black/40 border-white/10 border text-white rounded-xl h-9 no-focus-ring placeholder:text-white/20 text-sm"
                   placeholder="username123"
                 />
               </div>
@@ -219,24 +224,24 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
                 <Textarea 
                   value={formData.bio} 
                   onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
-                  className="bg-black/20 border-white/10 border text-white rounded-xl min-h-[80px] no-focus-ring placeholder:text-white/20 resize-none p-3 text-sm"
+                  className="bg-black/40 border-white/10 border text-white rounded-xl min-h-[60px] no-focus-ring placeholder:text-white/20 resize-none p-3 text-sm"
                   placeholder="tell us something..."
                 />
               </div>
             </div>
 
-            <Button onClick={handleSave} className="w-full h-12 rounded-xl bg-white text-black hover:bg-white/90 font-bold lowercase transition-all">
+            <Button onClick={handleSave} className="w-full h-11 rounded-xl bg-white text-black hover:bg-white/90 font-bold lowercase transition-all">
               save profile
             </Button>
           </div>
 
           {/* Right Side: Options & Preview */}
-          <div className="flex-[1.2] p-8 pt-16 space-y-8 overflow-y-auto custom-scrollbar">
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-3">
+          <div className="flex-[1.2] p-6 pt-16 space-y-6 overflow-y-auto custom-scrollbar">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
                 <Label className="text-[10px] font-bold uppercase tracking-widest opacity-50">banner</Label>
                 <div 
-                  className="relative w-full h-16 rounded-xl overflow-hidden border border-white/10 group bg-white/5"
+                  className="relative w-full h-12 rounded-xl overflow-hidden border border-white/10 group bg-white/5"
                 >
                   {formData.bannerUrl ? (
                     <img src={formData.bannerUrl} className="w-full h-full object-cover" alt="banner" />
@@ -250,9 +255,9 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
                 </div>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <Label className="text-[10px] font-bold uppercase tracking-widest opacity-50">colors</Label>
-                <div className="flex items-center gap-4 bg-white/5 p-2 rounded-2xl border border-white/5">
+                <div className="flex items-center justify-around bg-white/5 p-1.5 rounded-xl border border-white/5">
                   <AestheticColorPickerMini 
                     label="bg" 
                     value={formData.theme.body} 
@@ -272,12 +277,12 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <Label className="text-[10px] font-bold uppercase tracking-widest opacity-50">font & rounding</Label>
-                <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <Label className="text-[10px] font-bold uppercase tracking-widest opacity-50">font & radius</Label>
+                <div className="space-y-2">
                   <Select value={formData.font} onValueChange={(v) => setFormData(p => ({ ...p, font: v }))}>
-                    <SelectTrigger className="bg-white/5 border-white/10 text-white rounded-lg h-9 text-xs lowercase">
+                    <SelectTrigger className="bg-white/5 border-white/10 text-white rounded-lg h-8 text-[11px] lowercase">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -287,14 +292,8 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
                     </SelectContent>
                   </Select>
                   
-                  <div className="flex items-center gap-3 bg-white/5 p-1.5 px-3 rounded-lg border border-white/10">
-                    <span className="text-[10px] opacity-40">radius</span>
-                    <Input 
-                      type="number" 
-                      value={formData.cornerRounding} 
-                      onChange={(e) => setFormData(p => ({ ...p, cornerRounding: parseInt(e.target.value) || 0 }))}
-                      className="w-8 h-6 bg-transparent border-none text-white text-center p-0 no-focus-ring text-xs"
-                    />
+                  <div className="flex items-center gap-2 bg-white/5 p-1 px-2 rounded-lg border border-white/10">
+                    <span className="text-[9px] opacity-40 uppercase">rad</span>
                     <Slider 
                       value={[formData.cornerRounding]} 
                       max={32} 
@@ -305,10 +304,10 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <Label className="text-[10px] font-bold uppercase tracking-widest opacity-50">border settings</Label>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-4 bg-white/5 p-1.5 px-3 rounded-lg border border-white/10">
+              <div className="space-y-3">
+                <Label className="text-[10px] font-bold uppercase tracking-widest opacity-50">border</Label>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3 bg-white/5 p-1 px-2 rounded-lg border border-white/10 h-[68px]">
                     <AestheticColorPickerMini 
                       label="color" 
                       value={formData.theme.border} 
@@ -316,8 +315,8 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
                     />
                     <div className="flex-1 flex flex-col gap-1">
                       <div className="flex justify-between">
-                        <span className="text-[10px] opacity-40">width</span>
-                        <span className="text-[10px] opacity-40">{formData.borderWidth}px</span>
+                        <span className="text-[9px] opacity-40 uppercase">width</span>
+                        <span className="text-[9px] opacity-40">{formData.borderWidth}px</span>
                       </div>
                       <Slider 
                         value={[formData.borderWidth]} 
@@ -334,7 +333,7 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
             <div className="space-y-2">
               <Label className="text-[10px] font-bold uppercase tracking-widest opacity-50">live preview</Label>
               <div 
-                className="w-full h-[220px] overflow-hidden relative transition-all duration-300 border shadow-2xl"
+                className="w-full h-[180px] overflow-hidden relative transition-all duration-300 shadow-2xl"
                 style={{ 
                   borderRadius: previewRounding,
                   fontFamily: formData.font,
@@ -343,33 +342,29 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
                   border: borderStyle
                 }}
               >
-                <div className="h-16 w-full relative bg-black/10">
+                <div className="h-12 w-full relative bg-black/10">
                   {formData.bannerUrl && (
                     <img src={formData.bannerUrl} className="w-full h-full object-cover" alt="banner" />
                   )}
                 </div>
                 
-                <div className="absolute top-12 left-5 flex items-end gap-3">
-                  <div 
-                    className="h-16 w-16 overflow-hidden flex items-center justify-center bg-white/10 transition-all border border-white/5"
-                    style={{ borderRadius: previewRounding }}
-                  >
-                    {formData.photoUrl && (
-                      <img src={formData.photoUrl} className="w-full h-full object-cover" alt="pfp" />
-                    )}
+                <div className="absolute top-8 left-5 right-5 flex items-end justify-between gap-3">
+                  <div className="flex items-end gap-3">
+                    <div 
+                      className="h-14 w-14 overflow-hidden flex items-center justify-center bg-white/10 transition-all border border-white/5"
+                      style={{ borderRadius: previewRounding }}
+                    >
+                      {formData.photoUrl && (
+                        <img src={formData.photoUrl} className="w-full h-full object-cover" alt="pfp" />
+                      )}
+                    </div>
+                    <div className="pb-1 min-w-0">
+                      <h4 className="text-base font-bold leading-none lowercase mb-0.5 truncate">{formData.displayName || 'name'}</h4>
+                      <p className="text-[10px] opacity-60 lowercase truncate">{formData.username ? `@${formData.username}` : '@username'}</p>
+                    </div>
                   </div>
-                  <div className="pb-1">
-                    <h4 className="text-lg font-bold leading-none lowercase mb-0.5">{formData.displayName || 'name'}</h4>
-                    <p className="text-[10px] opacity-60 lowercase">{formData.username ? `@${formData.username}` : '@username'}</p>
-                  </div>
-                </div>
-
-                <div className="p-4 pt-14 space-y-1">
-                  <p className="text-xs leading-tight lowercase opacity-90 italic">
-                    {formData.bio || 'your bio will appear here...'}
-                  </p>
                   <Button 
-                    className="h-7 px-4 rounded-md text-[9px] font-bold lowercase border-none transition-all shadow-none mt-2"
+                    className="h-7 px-4 rounded-md text-[9px] font-bold lowercase border-none transition-all shadow-none shrink-0"
                     style={{ 
                       background: getColorStyle(formData.theme.buttons),
                       color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : '#ffffff',
@@ -378,6 +373,12 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
                   >
                     add friend
                   </Button>
+                </div>
+
+                <div className="p-4 pt-12 space-y-1">
+                  <p className="text-[11px] leading-tight lowercase opacity-90 italic line-clamp-2">
+                    {formData.bio || 'your bio will appear here...'}
+                  </p>
                 </div>
               </div>
             </div>
@@ -396,11 +397,13 @@ function AestheticColorPickerMini({ label, value, onChange }: { label: string, v
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>
           <div 
-            className="h-7 w-7 rounded-lg border border-white/20 transition-transform group-hover:scale-110 shadow-lg shrink-0" 
+            className="h-6 w-6 rounded-lg border border-white/20 transition-transform group-hover:scale-110 shadow-lg shrink-0" 
             style={{ background: value.type === 'solid' ? value.solid : `linear-gradient(${value.rotation ?? 90}deg, ${value.gradient.map(s => `${s.color} ${s.offset}%`).join(', ')})` }}
           />
         </DialogTrigger>
         <DialogContent className="sm:rounded-[24px] p-6 bg-[#1a1a1a] text-white border-none shadow-3xl max-w-[350px]">
+          <DialogTitle className="sr-only">Pick Color for {label}</DialogTitle>
+          <DialogDescription className="sr-only">Choose between solid or gradient colors for your profile theme.</DialogDescription>
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold font-headline lowercase">color: {label}</h3>
@@ -432,11 +435,11 @@ function AestheticColorPickerMini({ label, value, onChange }: { label: string, v
                     />
                   </div>
                   <div className="relative flex-1">
-                    <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-3 w-3 opacity-30" />
+                    <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-3 w-3 opacity-30 text-white" />
                     <Input 
                       value={value.solid.replace('#', '')} 
                       onChange={(e) => onChange({ ...value, solid: `#${e.target.value}` })}
-                      className="bg-white/10 border-white/10 text-white pl-8 h-12 text-sm font-mono rounded-xl lowercase"
+                      className="bg-black/50 border-white/10 text-white pl-8 h-12 text-sm font-mono rounded-xl lowercase"
                       placeholder="ffffff"
                     />
                   </div>
