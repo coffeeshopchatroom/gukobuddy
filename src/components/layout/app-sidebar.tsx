@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -114,7 +115,14 @@ export function AppSidebar() {
         <Link href="/" className="flex items-center gap-2">
             <div className="h-9 w-9 rounded-full bg-primary/20 flex items-center justify-center p-1 flex-shrink-0">
               <div className="relative w-full h-full">
-                <Image src="/devmade-icons/gukologo.png" alt="guko logo" fill className="object-contain" sizes="35px" />
+                <Image 
+                  src="/devmade-icons/gukologo.png" 
+                  alt="guko logo" 
+                  fill 
+                  className="object-fill" 
+                  sizes="30px" 
+                  unoptimized
+                />
               </div>
             </div>
             <span className="font-headline text-xl font-bold tracking-tight text-foreground lowercase">guko buddy</span>
