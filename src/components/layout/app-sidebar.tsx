@@ -155,11 +155,11 @@ export function AppSidebar() {
                       >
                         <CheckSquare className="h-5 w-5" />
                         <span className="font-medium">tasks</span>
-                        <ChevronDown className={cn("ml-auto h-4 w-4 transition-transform duration-200", isTasksOpen && "rotate-180")} />
+                        <ChevronDown className={cn("ml-auto h-4 w-4 transition-transform duration-300", isTasksOpen && "rotate-180")} />
                       </SidebarMenuButton>
                     </CollapsibleTrigger>
-                    <CollapsibleContent className="animate-in slide-in-from-top-1 duration-200">
-                      <SidebarMenuSub>
+                    <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
+                      <SidebarMenuSub className="py-1">
                         <SidebarMenuSubItem>
                           <SidebarMenuSubButton asChild isActive={pathname === '/tasks'}>
                             <Link href="/tasks">
