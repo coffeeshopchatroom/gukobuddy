@@ -73,6 +73,17 @@ export function AppSidebar() {
 
   const [isProfileOpen, setIsProfileOpen] = React.useState(false);
   const [isAdminPanelOpen, setIsAdminPanelOpen] = React.useState(false);
+  
+  // State to control Tasks collapsible on hover
+  const isTaskRelatedPage = pathname.startsWith('/tasks') || pathname === '/pomodoro' || pathname === '/study-session';
+  const [isTasksOpen, setIsTasksOpen] = React.useState(isTaskRelatedPage);
+
+  // Sync state with pathname changes
+  React.useEffect(() => {
+    if (isTaskRelatedPage) {
+      setIsTasksOpen(true);
+    }
+  }, [pathname, isTaskRelatedPage]);
 
   const handleSignOut = () => {
     if(auth) {
@@ -124,7 +135,17 @@ export function AppSidebar() {
               </SidebarMenuItem>
 
               {(focus === 'all' || focus === 'tasks') && (
-                <Collapsible asChild defaultOpen={pathname.startsWith('/tasks') || pathname === '/pomodoro' || pathname === '/study-session'} className="group/collapsible">
+                <Collapsible 
+                  open={isTasksOpen} 
+                  onOpenChange={setIsTasksOpen}
+                  onMouseEnter={() => setIsTasksOpen(true)}
+                  onMouseLeave={() => {
+                    if (!isTaskRelatedPage) {
+                      setIsTasksOpen(false);
+                    }
+                  }}
+                  className="group/collapsible"
+                >
                   <SidebarMenuItem>
                     <CollapsibleTrigger asChild>
                       <SidebarMenuButton
@@ -134,10 +155,10 @@ export function AppSidebar() {
                       >
                         <CheckSquare className="h-5 w-5" />
                         <span className="font-medium">tasks</span>
-                        <ChevronDown className="ml-auto h-4 w-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-180" />
+                        <ChevronDown className={cn("ml-auto h-4 w-4 transition-transform duration-200", isTasksOpen && "rotate-180")} />
                       </SidebarMenuButton>
                     </CollapsibleTrigger>
-                    <CollapsibleContent>
+                    <CollapsibleContent className="animate-in slide-in-from-top-1 duration-200">
                       <SidebarMenuSub>
                         <SidebarMenuSubItem>
                           <SidebarMenuSubButton asChild isActive={pathname === '/tasks'}>
@@ -158,7 +179,7 @@ export function AppSidebar() {
                         <SidebarMenuSubItem>
                           <SidebarMenuSubButton asChild isActive={pathname === '/study-session'}>
                             <Link href="/study-session">
-                              <span className="flex items-center gap-2 lowercase text-muted-foreground/60">
+                              <span className="flex items-center gap-2 lowercase">
                                 <Coffee className="h-3 w-3" /> study session
                               </span>
                             </Link>
