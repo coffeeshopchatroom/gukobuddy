@@ -253,7 +253,6 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
       };
     } else {
       const gradient = getColorStyle(color);
-      // We use the padding-box/border-box trick for gradient borders with rounding
       const mask = currentItemBg.includes('gradient') ? currentItemBg : `linear-gradient(${currentItemBg}, ${currentItemBg})`;
       return {
         border: `${width}px solid transparent`,
@@ -274,7 +273,6 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
         <DialogDescription className="sr-only">adjust your profile aesthetics and personal information.</DialogDescription>
         
         <div className="relative flex flex-col md:flex-row h-full max-h-[90vh] overflow-hidden" style={{ color: '#ffffff' }}>
-          {/* Header Controls */}
           <div className="absolute top-4 right-4 z-50">
             <Button variant="ghost" size="icon" onClick={() => onOpenChange?.(false)} className="text-white hover:bg-white/10 rounded-full h-8 w-8">
               <X className="h-5 w-5" />
@@ -285,7 +283,6 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
             <h2 className="text-lg font-bold font-headline lowercase tracking-tight opacity-90">customize account</h2>
           </div>
 
-          {/* Left Side: Inputs */}
           <div className="flex-[1] p-6 pt-16 space-y-4 overflow-y-auto custom-scrollbar border-r border-white/5 bg-white/5">
             <div className="flex flex-col items-center gap-2">
               <div className="relative group">
@@ -342,7 +339,6 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
             </Button>
           </div>
 
-          {/* Right Side: Options & Preview */}
           <div className="flex-[1.4] p-6 pt-16 space-y-6 overflow-y-auto custom-scrollbar">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -460,7 +456,7 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
                     width: formData.layout.pfp.w,
                     height: formData.layout.pfp.h,
                     borderRadius: previewRounding,
-                    ...getTargetBorderStyle('profile', 'rgba(255,255,255,0.1)'),
+                    ...getTargetBorderStyle('profile', bodyBgStyle),
                     overflow: 'hidden'
                   }}
                 >
@@ -599,15 +595,28 @@ function AdvancedProfileEditor({
   const [historyIndex, setHistoryIndex] = React.useState(-1);
   const canvasRef = React.useRef<HTMLDivElement>(null);
 
-  const [dragState, setDragging] = React.useState<{ id: string, type: 'move' | 'resize', dir?: string, startX: number, startY: number, initialX: number, initialY: number, initialW: number, initialH: number } | null>(null);
+  const [dragState, setDragging] = React.useState<{ 
+    id: string, 
+    type: 'move' | 'resize', 
+    dir?: string, 
+    startX: number, 
+    startY: number, 
+    initialX: number, 
+    initialY: number, 
+    initialW: number, 
+    initialH: number 
+  } | null>(null);
 
   const saveToHistory = React.useCallback((newData: any) => {
-    const newHistory = history.slice(0, historyIndex + 1);
-    newHistory.push(JSON.parse(JSON.stringify(newData)));
-    if (newHistory.length > 20) newHistory.shift();
-    setHistory(newHistory);
-    setHistoryIndex(newHistory.length - 1);
-  }, [history, historyIndex]);
+    const dataCopy = JSON.parse(JSON.stringify(newData));
+    setHistory(prev => {
+      const newHistory = prev.slice(0, historyIndex + 1);
+      newHistory.push(dataCopy);
+      if (newHistory.length > 30) newHistory.shift();
+      return newHistory;
+    });
+    setHistoryIndex(prev => prev + 1);
+  }, [historyIndex]);
 
   const undo = () => {
     if (historyIndex > 0) {
@@ -627,8 +636,13 @@ function AdvancedProfileEditor({
 
   const handlePointerDown = (e: React.PointerEvent, id: string, type: 'move' | 'resize', dir?: string) => {
     e.stopPropagation();
-    setSelectedId(id);
     
+    // Only allow drag if already selected, or if clicking a resize handle
+    if (type === 'move' && selectedId !== id) {
+      setSelectedId(id);
+      return;
+    }
+
     let element;
     if (id.startsWith('sticker-')) {
       element = formData.stickers.find((s: any) => s.id === id.replace('sticker-', ''));
@@ -726,7 +740,7 @@ function AdvancedProfileEditor({
 
   const renderHandle = (id: string, dir: string, className: string) => (
     <div 
-      className={cn("absolute w-3 h-3 bg-white border border-black z-50 cursor-pointer pointer-events-auto", className)}
+      className={cn("absolute w-4 h-4 bg-white border-2 border-primary z-50 rounded-full shadow-md", className)}
       onPointerDown={(e) => handlePointerDown(e, id, 'resize', dir)}
     />
   );
@@ -736,51 +750,51 @@ function AdvancedProfileEditor({
     return (
       <div 
         className="absolute border-2 border-primary pointer-events-none z-40"
-        style={{ left: -2, top: -2, width: element.w + 4, height: element.h + 4 }}
+        style={{ left: -4, top: -4, width: element.w + 8, height: element.h + 8 }}
       >
-        {renderHandle(id, 'nw', "top-[-6px] left-[-6px] cursor-nw-resize")}
-        {renderHandle(id, 'ne', "top-[-6px] right-[-6px] cursor-ne-resize")}
-        {renderHandle(id, 'sw', "bottom-[-6px] left-[-6px] cursor-sw-resize")}
-        {renderHandle(id, 'se', "bottom-[-6px] right-[-6px] cursor-se-resize")}
+        {renderHandle(id, 'nw', "top-[-8px] left-[-8px] cursor-nw-resize pointer-events-auto")}
+        {renderHandle(id, 'ne', "top-[-8px] right-[-8px] cursor-ne-resize pointer-events-auto")}
+        {renderHandle(id, 'sw', "bottom-[-8px] left-[-8px] cursor-sw-resize pointer-events-auto")}
+        {renderHandle(id, 'se', "bottom-[-8px] right-[-8px] cursor-se-resize pointer-events-auto")}
       </div>
     );
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl p-0 border-none bg-black/90 backdrop-blur-xl h-[90vh] flex flex-col overflow-hidden sm:rounded-[40px]">
-        <DialogHeader className="p-6 border-b border-white/10 flex flex-row items-center justify-between shrink-0">
-          <div className="flex items-center gap-4">
-            <DialogTitle className="text-xl font-bold font-headline lowercase text-white">advanced edit</DialogTitle>
-            <div className="flex items-center gap-1 bg-white/5 p-1 rounded-xl border border-white/10">
-              <Button variant="ghost" size="icon" onClick={undo} disabled={historyIndex <= 0} className="h-8 w-8 text-white"><Undo2 className="h-4 w-4" /></Button>
-              <Button variant="ghost" size="icon" onClick={redo} disabled={historyIndex >= history.length - 1} className="h-8 w-8 text-white"><Redo2 className="h-4 w-4" /></Button>
+      <DialogContent className="max-w-4xl p-0 border-none bg-black/95 backdrop-blur-xl h-[90vh] flex flex-col overflow-hidden sm:rounded-[40px] shadow-3xl">
+        <DialogHeader className="p-6 border-b border-white/10 flex flex-row items-center justify-between shrink-0 bg-white/5">
+          <div className="flex items-center gap-6">
+            <DialogTitle className="text-xl font-bold font-headline lowercase text-white">advanced editor</DialogTitle>
+            <div className="flex items-center gap-2 bg-black/40 p-1 rounded-xl border border-white/10">
+              <Button variant="ghost" size="icon" onClick={undo} disabled={historyIndex <= 0} className="h-9 w-9 text-white hover:bg-white/10"><Undo2 className="h-5 w-5" /></Button>
+              <Button variant="ghost" size="icon" onClick={redo} disabled={historyIndex >= history.length - 1} className="h-9 w-9 text-white hover:bg-white/10"><Redo2 className="h-5 w-5" /></Button>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <label className="cursor-pointer">
-              <Button variant="outline" size="icon" asChild className="rounded-full bg-white/10 border-white/10 text-white hover:bg-white/20">
-                <div>{uploadingSticker ? <Loader2 className="h-4 w-4 animate-spin" /> : <Star className="h-4 w-4" />}</div>
+              <Button variant="outline" size="icon" asChild className="rounded-full bg-white/10 border-white/10 text-white hover:bg-white/20 h-10 w-10">
+                <div>{uploadingSticker ? <Loader2 className="h-5 w-5 animate-spin" /> : <Star className="h-5 w-5" />}</div>
               </Button>
               <input type="file" className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && onStickerUpload(e.target.files[0])} />
             </label>
             {selectedId?.startsWith('sticker-') && (
-              <Button variant="destructive" size="icon" onClick={deleteSelected} className="rounded-full"><Trash2 className="h-4 w-4" /></Button>
+              <Button variant="destructive" size="icon" onClick={deleteSelected} className="rounded-full h-10 w-10"><Trash2 className="h-5 w-5" /></Button>
             )}
-            <Button onClick={() => onOpenChange(false)} className="rounded-full px-8 bg-white text-black font-bold lowercase">done</Button>
+            <Button onClick={() => onOpenChange(false)} className="rounded-full px-8 bg-white text-black font-bold h-10 lowercase hover:bg-white/90">done</Button>
           </div>
         </DialogHeader>
 
         <div 
-          className="flex-1 overflow-hidden relative flex items-center justify-center p-12 bg-[#050505] custom-scrollbar"
+          className="flex-1 overflow-hidden relative flex items-center justify-center p-20 bg-[#050505]"
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onClick={() => setSelectedId(null)}
         >
           <div 
             ref={canvasRef}
-            className="w-[600px] h-[400px] relative shadow-2xl overflow-hidden cursor-crosshair shrink-0"
+            className="w-[600px] h-[400px] relative shadow-2xl overflow-hidden shrink-0"
             style={{ 
               borderRadius: previewRounding,
               fontFamily: formData.font,
@@ -789,7 +803,7 @@ function AdvancedProfileEditor({
           >
             {/* Elements */}
             <div 
-              className={cn("absolute cursor-move transition-shadow", selectedId === 'pfp' && "z-50")}
+              className={cn("absolute cursor-pointer transition-shadow", selectedId === 'pfp' ? "z-50" : "z-10")}
               onPointerDown={(e) => handlePointerDown(e, 'pfp', 'move')}
               style={{ 
                 left: formData.layout.pfp.x, 
@@ -797,7 +811,7 @@ function AdvancedProfileEditor({
                 width: formData.layout.pfp.w,
                 height: formData.layout.pfp.h,
                 borderRadius: previewRounding,
-                ...getTargetBorderStyle('profile', 'rgba(255,255,255,0.1)'),
+                ...getTargetBorderStyle('profile', bodyBgStyle),
                 overflow: 'hidden'
               }}
             >
@@ -810,7 +824,7 @@ function AdvancedProfileEditor({
             </div>
 
             <div 
-              className={cn("absolute cursor-move group", selectedId === 'name' && "z-50")}
+              className={cn("absolute cursor-pointer", selectedId === 'name' ? "z-50" : "z-10")}
               onPointerDown={(e) => handlePointerDown(e, 'name', 'move')}
               style={{ 
                 left: formData.layout.name.x, 
@@ -827,7 +841,7 @@ function AdvancedProfileEditor({
             </div>
 
             <div 
-              className={cn("absolute cursor-move group", selectedId === 'username' && "z-50")}
+              className={cn("absolute cursor-pointer", selectedId === 'username' ? "z-50" : "z-10")}
               onPointerDown={(e) => handlePointerDown(e, 'username', 'move')}
               style={{ 
                 left: formData.layout.username.x, 
@@ -843,7 +857,7 @@ function AdvancedProfileEditor({
             </div>
 
             <div 
-              className={cn("absolute cursor-move group", selectedId === 'addBtn' && "z-50")}
+              className={cn("absolute cursor-pointer", selectedId === 'addBtn' ? "z-50" : "z-10")}
               onPointerDown={(e) => handlePointerDown(e, 'addBtn', 'move')}
               style={{ 
                 left: formData.layout.addBtn.x, 
@@ -867,7 +881,7 @@ function AdvancedProfileEditor({
             </div>
 
             <div 
-              className={cn("absolute cursor-move group", selectedId === 'bio' && "z-50")}
+              className={cn("absolute cursor-pointer", selectedId === 'bio' ? "z-50" : "z-10")}
               onPointerDown={(e) => handlePointerDown(e, 'bio', 'move')}
               style={{ 
                 left: formData.layout.bio.x, 
@@ -886,7 +900,7 @@ function AdvancedProfileEditor({
             {formData.stickers.map((sticker: Sticker) => (
               <div 
                 key={sticker.id}
-                className={cn("absolute cursor-move group", selectedId === `sticker-${sticker.id}` && "z-50")}
+                className={cn("absolute cursor-pointer", selectedId === `sticker-${sticker.id}` ? "z-50" : "z-10")}
                 onPointerDown={(e) => handlePointerDown(e, `sticker-${sticker.id}`, 'move')}
                 style={{ left: sticker.x, top: sticker.y, width: sticker.w, height: sticker.h }}
               >
