@@ -133,20 +133,6 @@ export function AppSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
-                  isActive={pathname === "/channel"}
-                  tooltip="guko channel"
-                  className="flex items-center gap-3 px-4 py-7 rounded-2xl transition-all duration-300 bg-primary/10 text-primary hover:bg-primary/20 mb-4 border border-primary/20 shadow-sm lowercase"
-                >
-                  <Link href="/channel">
-                    <Radio className="h-6 w-6 animate-pulse" />
-                    <span className="font-bold text-base">guko channel</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
                   isActive={pathname === "/"}
                   tooltip="dashboard"
                   className="flex items-center gap-3 px-4 py-6 rounded-xl transition-all duration-300 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground lowercase"
@@ -318,6 +304,20 @@ export function AppSidebar() {
                   <Link href="/tracker">
                     <GraduationCap className="h-5 w-5" />
                     <span className="font-medium">{trackerLabel}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem className="mt-8">
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === "/channel"}
+                  tooltip="guko channel"
+                  className="flex items-center gap-3 px-4 py-7 rounded-2xl transition-all duration-300 bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20 shadow-sm lowercase"
+                >
+                  <Link href="/channel">
+                    <Radio className="h-5 w-5 animate-pulse" />
+                    <span className="font-bold text-sm">guko channel</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

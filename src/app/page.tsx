@@ -193,42 +193,6 @@ function DashboardPage({ user, profile }: { user: any, profile?: any }) {
         </div>
       </header>
 
-      {/* Guko Channel Hero Portal */}
-      <Link href="/channel" className="block">
-        <Card className="border-none shadow-xl rounded-[48px] bg-gradient-to-r from-primary/20 via-indigo-50 to-primary/20 overflow-hidden group hover:scale-[1.01] transition-all duration-500 relative">
-          <div className="absolute inset-0 opacity-10 bg-[url('https://picsum.photos/seed/pattern/1200/400')] bg-cover mix-blend-overlay" />
-          <CardContent className="p-10 flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
-            <div className="flex items-center gap-6">
-              <div className="h-20 w-20 rounded-[32px] bg-white shadow-lg flex items-center justify-center group-hover:rotate-12 transition-transform duration-500">
-                <Radio className="h-10 w-10 text-primary animate-pulse" />
-              </div>
-              <div>
-                <h2 className="text-3xl font-bold font-headline lowercase flex items-center gap-2">
-                  enter the guko channel
-                  <Badge className="bg-primary text-primary-foreground border-none text-[10px] uppercase tracking-widest px-3 py-1">online</Badge>
-                </h2>
-                <p className="text-muted-foreground text-lg lowercase mt-1">join the global study plaza. connect with buddies now.</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="flex -space-x-4">
-                {[1,2,3].map(i => (
-                  <div key={i} className="h-12 w-12 rounded-full border-4 border-white bg-muted overflow-hidden">
-                    <img src={`https://picsum.photos/seed/${i+10}/100/100`} alt="buddy" className="w-full h-full object-cover" />
-                  </div>
-                ))}
-                <div className="h-12 w-12 rounded-full border-4 border-white bg-primary flex items-center justify-center text-xs font-bold text-primary-foreground">
-                  +12
-                </div>
-              </div>
-              <Button size="lg" className="rounded-2xl px-10 h-16 font-bold shadow-xl shadow-primary/20 bg-primary hover:bg-primary/90 text-primary-foreground transition-all group-hover:translate-x-2">
-                go online <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </Link>
-
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         {(focus === 'all' || focus === 'tasks') && (
           <Link href="/tasks" className="block">
@@ -358,6 +322,26 @@ function DashboardPage({ user, profile }: { user: any, profile?: any }) {
           </CardContent>
         </Card>
       </div>
+
+      {/* Guko Channel Entry Portal */}
+      <Link href="/channel" className="block pt-8">
+        <Card className="border-none shadow-md rounded-[32px] bg-primary/5 hover:bg-primary/10 transition-all group overflow-hidden relative">
+          <CardContent className="p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex items-center gap-4">
+              <div className="h-12 w-12 rounded-2xl bg-white shadow-sm flex items-center justify-center group-hover:rotate-6 transition-transform">
+                <Radio className="h-6 w-6 text-primary animate-pulse" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold font-headline lowercase">the guko channel</h3>
+                <p className="text-muted-foreground text-sm lowercase">join the global study plaza. connect with others now.</p>
+              </div>
+            </div>
+            <Button variant="secondary" className="rounded-xl px-8 font-bold lowercase gap-2 group-hover:translate-x-1 transition-transform">
+              go online <ArrowRight className="h-4 w-4" />
+            </Button>
+          </CardContent>
+        </Card>
+      </Link>
     </div>
   );
 }
