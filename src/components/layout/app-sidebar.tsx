@@ -37,6 +37,7 @@ import {
   SidebarMenuSub,
   SidebarMenuSubItem,
   SidebarMenuSubButton,
+  SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { useFirebase, useUser, useDoc, useMemoFirebase, useCollection } from "@/firebase"
@@ -106,9 +107,9 @@ export function AppSidebar() {
   const isAdmin = profile?.isAdmin === true;
 
   return (
-    <Sidebar className="border-r border-sidebar-border">
-      <SidebarHeader className="px-6 py-8">
-        <Link href="/" className="flex items-center gap-2">
+    <Sidebar className="border-r border-sidebar-border" collapsible="icon">
+      <SidebarHeader className="px-6 py-8 flex flex-row items-center justify-between">
+        <Link href="/" className="flex items-center gap-2 overflow-hidden">
             <div className="h-9 w-9 rounded-full bg-primary/20 flex items-center justify-center p-1 flex-shrink-0 overflow-hidden">
               <img 
                 src="/devmade-icons/gukologo.png" 
@@ -119,17 +120,18 @@ export function AppSidebar() {
                 }}
               />
             </div>
-            <span className="font-headline text-xl font-bold tracking-tight text-foreground lowercase">guko buddy</span>
+            <span className="font-headline text-xl font-bold tracking-tight text-foreground lowercase whitespace-nowrap group-data-[collapsible=icon]:hidden">guko buddy</span>
         </Link>
+        <SidebarTrigger className="hidden md:flex h-8 w-8 rounded-lg hover:bg-muted" />
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <div className="flex items-center justify-between px-6 mb-2">
-            <SidebarGroupLabel className="p-0 text-[10px] uppercase tracking-widest font-bold opacity-30">menu</SidebarGroupLabel>
+          <div className="flex items-center justify-between px-6 mb-2 group-data-[collapsible=icon]:px-2 group-data-[collapsible=icon]:justify-center">
+            <SidebarGroupLabel className="p-0 text-[10px] uppercase tracking-widest font-bold opacity-30 group-data-[collapsible=icon]:hidden">menu</SidebarGroupLabel>
             {user && !user.isAnonymous && <NotificationCenter user={user} firestore={firestore} />}
           </div>
           <SidebarGroupContent>
-            <SidebarMenu className="px-4 py-2">
+            <SidebarMenu className="px-4 py-2 group-data-[collapsible=icon]:px-2">
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
@@ -161,7 +163,7 @@ export function AppSidebar() {
                       >
                         <CheckSquare className="h-5 w-5" />
                         <span className="font-medium">tasks</span>
-                        <ChevronDown className={cn("ml-auto h-4 w-4 transition-transform duration-300", isTasksOpen && "rotate-180")} />
+                        <ChevronDown className={cn("ml-auto h-4 w-4 transition-transform duration-300 group-data-[collapsible=icon]:hidden", isTasksOpen && "rotate-180")} />
                       </SidebarMenuButton>
                     </CollapsibleTrigger>
                     <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
@@ -214,7 +216,7 @@ export function AppSidebar() {
                       >
                         <StickyNote className="h-5 w-5" />
                         <span className="font-medium">notebooks</span>
-                        <ChevronDown className={cn("ml-auto h-4 w-4 transition-transform duration-300", isNotebooksOpen && "rotate-180")} />
+                        <ChevronDown className={cn("ml-auto h-4 w-4 transition-transform duration-300 group-data-[collapsible=icon]:hidden", isNotebooksOpen && "rotate-180")} />
                       </SidebarMenuButton>
                     </CollapsibleTrigger>
                     <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
@@ -267,7 +269,7 @@ export function AppSidebar() {
                       >
                         <Layers className="h-5 w-5" />
                         <span className="font-medium">flashcards</span>
-                        <ChevronDown className={cn("ml-auto h-4 w-4 transition-transform duration-300", isFlashcardsOpen && "rotate-180")} />
+                        <ChevronDown className={cn("ml-auto h-4 w-4 transition-transform duration-300 group-data-[collapsible=icon]:hidden", isFlashcardsOpen && "rotate-180")} />
                       </SidebarMenuButton>
                     </CollapsibleTrigger>
                     <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
@@ -325,7 +327,7 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="p-4 space-y-4">
+      <SidebarFooter className="p-4 space-y-4 group-data-[collapsible=icon]:p-2">
         {user && (
           <SidebarMenu className="px-0 py-0">
               <SidebarMenuItem>
@@ -341,13 +343,13 @@ export function AppSidebar() {
         )}
 
         {user ? (
-          <div className="flex flex-col gap-2 p-1">
+          <div className="flex flex-col gap-2 p-1 group-data-[collapsible=icon]:p-0">
             <div className="flex items-center gap-2">
               <div className="flex-1">
                 <ProfileCustomizer open={isProfileOpen} onOpenChange={setIsProfileOpen}>
                   <div 
                     onClick={() => setIsProfileOpen(true)}
-                    className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-secondary/50 backdrop-blur-sm border border-border/30 hover:bg-secondary/70 transition-all group cursor-pointer"
+                    className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-secondary/50 backdrop-blur-sm border border-border/30 hover:bg-secondary/70 transition-all group cursor-pointer group-data-[collapsible=icon]:px-2"
                   >
                     <Avatar className="h-9 w-9 border border-primary/20 shadow-sm transition-transform group-hover:scale-105">
                       <AvatarImage src={userPhoto} className="object-cover" />
@@ -355,7 +357,7 @@ export function AppSidebar() {
                         {userName[0]}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="flex flex-col min-w-0">
+                    <div className="flex flex-col min-w-0 group-data-[collapsible=icon]:hidden">
                       <span className="text-sm font-semibold truncate lowercase">{userName}</span>
                       <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-tighter truncate lowercase">{userRole}</span>
                     </div>
@@ -369,7 +371,7 @@ export function AppSidebar() {
                     variant="ghost" 
                     size="icon" 
                     onClick={() => setIsAdminPanelOpen(true)}
-                    className="h-10 w-10 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-all"
+                    className="h-10 w-10 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-all group-data-[collapsible=icon]:hidden"
                   >
                     <Shield className="h-5 w-5" />
                   </Button>
@@ -378,8 +380,8 @@ export function AppSidebar() {
             </div>
           </div>
         ) : (
-          <Button asChild className="w-full rounded-2xl py-6 font-bold gap-2 lowercase">
-            <Link href="/login"><LogIn className="h-4 w-4" /> sign in</Link>
+          <Button asChild className="w-full rounded-2xl py-6 font-bold gap-2 lowercase group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:h-12">
+            <Link href="/login"><LogIn className="h-4 w-4" /> <span className="group-data-[collapsible=icon]:hidden">sign in</span></Link>
           </Button>
         )}
       </SidebarFooter>
@@ -481,7 +483,7 @@ function NotificationCenter({ user, firestore }: any) {
       <PopoverTrigger asChild>
         <button className="relative p-1 hover:bg-muted rounded-full transition-colors group">
           <Bell className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
-          <span className="absolute -top-1 -right-1 h-3 w-3 bg-destructive rounded-full border-2 border-white flex items-center justify-center">
+          <span className="absolute -top-1 -right-1 h-3 w-3 bg-destructive rounded-full border-2 border-white flex items-center justify-center group-data-[collapsible=icon]:hidden">
             <span className="sr-only">new notifications</span>
           </span>
         </button>

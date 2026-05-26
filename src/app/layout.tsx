@@ -1,6 +1,6 @@
 import type {Metadata} from 'next';
 import './globals.css';
-import { SidebarProvider } from '@/components/ui/sidebar';
+import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layout/app-sidebar';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { Toaster } from '@/components/ui/toaster';
@@ -32,7 +32,20 @@ export default function RootLayout({
             <SidebarProvider>
               <div className="flex min-h-screen w-full">
                 <AppSidebar />
-                <main className="flex-1 overflow-auto bg-background/50 backdrop-blur-sm px-4 py-8 md:px-8">
+                <main className="flex-1 overflow-auto bg-background/50 backdrop-blur-sm px-4 py-6 md:px-8 md:py-8">
+                  {/* Mobile Header with Sidebar Trigger */}
+                  <header className="flex items-center gap-3 mb-8 md:hidden">
+                    <SidebarTrigger className="-ml-2 h-10 w-10 rounded-xl hover:bg-muted" />
+                    <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center p-1 flex-shrink-0 overflow-hidden">
+                      <img 
+                        src="/devmade-icons/gukologo.png" 
+                        alt="guko logo" 
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+                    <h2 className="font-headline font-bold text-lg tracking-tight lowercase">guko buddy</h2>
+                  </header>
+                  
                   <div className="max-w-7xl mx-auto animate-smooth-slow">
                     {children}
                   </div>

@@ -3,7 +3,7 @@
 import * as React from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Radio, ArrowLeft, Sparkles, Globe, Zap } from "lucide-react"
+import { Radio, ArrowLeft, Sparkles, Globe, Zap, smartphoneNfc, Database } from "lucide-react"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 
@@ -15,13 +15,13 @@ export default function GukoChannelPage() {
         
         <CardContent className="p-12 md:p-24 space-y-10 flex flex-col items-center">
           <div className="relative">
-            <div className="h-32 w-32 rounded-[40px] bg-primary/10 flex items-center justify-center animate-bounce duration-1000">
+            <div className="h-32 w-32 rounded-[40px] bg-primary/10 flex items-center justify-center">
               <Radio className="h-16 w-16 text-primary" />
             </div>
             <div className="absolute -top-6 -right-6 h-12 w-12 rounded-full bg-accent flex items-center justify-center shadow-lg animate-pulse">
               <Globe className="h-6 w-6 text-accent-foreground" />
             </div>
-            <Sparkles className="absolute -bottom-4 -left-4 h-10 w-10 text-indigo-400 animate-spin-slow" />
+            
           </div>
 
           <div className="space-y-4">
@@ -32,7 +32,7 @@ export default function GukoChannelPage() {
           </div>
 
           <p className="text-muted-foreground text-xl md:text-2xl max-w-lg leading-relaxed lowercase font-medium">
-            get ready to go online. a shared world for studying, competing, and existing together is currently being broadcast.
+            get ready to go online, share texts and learn together.
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-xl">
@@ -41,12 +41,12 @@ export default function GukoChannelPage() {
               <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">global plaza</span>
             </div>
             <div className="p-6 rounded-[32px] bg-muted/30 flex flex-col items-center gap-3 border border-transparent hover:border-primary/20 transition-colors">
-              <Zap className="h-6 w-6 text-muted-foreground" />
-              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">live sessions</span>
+              <Database className="h-6 w-6 text-muted-foreground" />
+              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground"> sessions with friends</span>
             </div>
             <div className="p-6 rounded-[32px] bg-muted/30 flex flex-col items-center gap-3 border border-transparent hover:border-primary/20 transition-colors">
               <Radio className="h-6 w-6 text-muted-foreground" />
-              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">buddy sync</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">study sync</span>
             </div>
           </div>
 
