@@ -568,7 +568,7 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
           onOpenChange={setIsAdvancedOpen}
           formData={formData}
           setFormData={setFormData}
-          onStickerUpload={(file) => handleImageUpload(file, 'sticker')}
+          onStickerUpload={(file: File) => handleImageUpload(file, 'sticker')}
           uploadingSticker={uploading === 'sticker'}
           previewRounding={previewRounding}
           bodyBgStyle={bodyBgStyle}
