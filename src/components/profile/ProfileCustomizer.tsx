@@ -32,7 +32,8 @@ import {
   Undo2, 
   Redo2, 
   Star, 
-  Trash2
+  Trash2,
+  RotateCw
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { 
@@ -87,6 +88,7 @@ type ElementLayout = {
 type Sticker = ElementLayout & {
   id: string;
   url: string;
+  rotation: number;
 };
 
 type ProfileLayout = {
@@ -165,7 +167,7 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
         font: profile.font || 'Plus Jakarta Sans',
         cornerRounding: profile.cornerRounding ?? 16,
         layout: profile.layout || DEFAULT_LAYOUT,
-        stickers: profile.stickers || []
+        stickers: (profile.stickers || []).map((s: any) => ({ ...s, rotation: s.rotation || 0 }))
       });
     }
   }, [profile]);
@@ -188,7 +190,8 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
           x: 200,
           y: 200,
           w: 80,
-          h: 80
+          h: 80,
+          rotation: 0
         };
         setFormData(prev => ({ ...prev, stickers: [...prev.stickers, newSticker] }));
       } else {
@@ -553,9 +556,12 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
                   <div 
                     key={sticker.id}
                     className="absolute transition-all pointer-events-none"
-                    style={{ left: sticker.x, top: sticker.y, width: sticker.w, height: sticker.h }}
+                    style={{
+                      left: sticker.x, top: sticker.y, width: sticker.w, height: sticker.h,
+                      transform: `rotate(${sticker.rotation || 0}deg)`
+                    }}
                   >
-                    <img src={sticker.url} className="w-full h-full object-contain" alt="sticker" />
+                    <img src={sticker.url} className="w-full h-full object-fill" alt="sticker" />
                   </div>
                 ))}
               </div>
@@ -598,14 +604,15 @@ function AdvancedProfileEditor({
 
   const [dragState, setDragging] = React.useState<{ 
     id: string, 
-    type: 'move' | 'resize', 
+    type: 'move' | 'resize' | 'rotate', 
     dir?: string, 
     startX: number, 
     startY: number, 
     initialX: number, 
     initialY: number, 
     initialW: number, 
-    initialH: number 
+    initialH: number,
+    initialRotation?: number
   } | null>(null);
 
   const saveToHistory = React.useCallback((newData: any) => {
@@ -635,7 +642,7 @@ function AdvancedProfileEditor({
     }
   };
 
-  const handlePointerDown = (e: React.PointerEvent, id: string, type: 'move' | 'resize', dir?: string) => {
+  const handlePointerDown = (e: React.PointerEvent, id: string, type: 'move' | 'resize' | 'rotate', dir?: string) => {
     e.stopPropagation();
     setSelectedId(id);
   
@@ -655,6 +662,7 @@ function AdvancedProfileEditor({
       initialY: element.y,
       initialW: element.w,
       initialH: element.h,
+      initialRotation: 'rotation' in element ? element.rotation : 0
     });
   
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
@@ -707,6 +715,20 @@ function AdvancedProfileEditor({
       }
 
       setFormData((prev: any) => updateElement(prev, dragState.id, changes));
+    } else if (dragState.type === 'rotate') {
+      if (dragState.initialRotation === undefined) return;
+
+      const centerX = dragState.initialX + dragState.initialW / 2;
+      const centerY = dragState.initialY + dragState.initialH / 2;
+
+      const startAngle = Math.atan2(dragState.startY - centerY, dragState.startX - centerX) * 180 / Math.PI;
+      const currentAngle = Math.atan2(e.clientY - centerY, e.clientX - centerX) * 180 / Math.PI;
+
+      const newRotation = dragState.initialRotation + (currentAngle - startAngle);
+
+      setFormData((prev: any) => updateElement(prev, dragState.id, {
+        rotation: newRotation
+      }));
     }
   };
 
@@ -741,15 +763,32 @@ function AdvancedProfileEditor({
 
   const renderSelectionBox = (id: string, element: any) => {
     if (selectedId !== id) return null;
+    const isSticker = id.startsWith('sticker-');
     return (
       <div 
         className="absolute border-2 border-primary pointer-events-none z-[99]"
-        style={{ left: element.x - 4, top: element.y - 4, width: element.w + 8, height: element.h + 8 }}
+        style={{
+          left: element.x - 4, 
+          top: element.y - 4, 
+          width: element.w + 8, 
+          height: element.h + 8,
+          transform: `rotate(${element.rotation || 0}deg)`
+        }}
       >
         {renderHandle(id, 'nw', "top-[-8px] left-[-8px] cursor-nw-resize pointer-events-auto")}
         {renderHandle(id, 'ne', "top-[-8px] right-[-8px] cursor-ne-resize pointer-events-auto")}
         {renderHandle(id, 'sw', "bottom-[-8px] left-[-8px] cursor-sw-resize pointer-events-auto")}
         {renderHandle(id, 'se', "bottom-[-8px] right-[-8px] cursor-se-resize pointer-events-auto")}
+
+        {isSticker && (
+          <div
+            className="absolute w-5 h-5 flex items-center justify-center bg-white border-2 border-primary z-50 rounded-full shadow-md top-[-25px] left-1/2 -translate-x-1/2 cursor-alias pointer-events-auto"
+            onPointerDown={(e) => handlePointerDown(e, id, 'rotate')}
+            onClick={e => e.stopPropagation()}
+          >
+            <RotateCw className="h-3 w-3 text-primary" />
+          </div>
+        )}
       </div>
     );
   };
@@ -917,9 +956,12 @@ function AdvancedProfileEditor({
                 className={cn("absolute cursor-pointer", selectedId === `sticker-${sticker.id}` ? "z-50" : "z-10")}
                 onPointerDown={(e) => handlePointerDown(e, `sticker-${sticker.id}`, 'move')}
                 onClick={e => e.stopPropagation()}
-                style={{ left: sticker.x, top: sticker.y, width: sticker.w, height: sticker.h }}
+                style={{
+                  left: sticker.x, top: sticker.y, width: sticker.w, height: sticker.h,
+                  transform: `rotate(${sticker.rotation || 0}deg)`
+                }}
               >
-                <img src={sticker.url} className="w-full h-full object-contain select-none pointer-events-none" alt="sticker" />
+                <img src={sticker.url} className="w-full h-full object-fill select-none pointer-events-none" alt="sticker" />
               </div>
             ))}
 
