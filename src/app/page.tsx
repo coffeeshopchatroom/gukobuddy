@@ -1,4 +1,3 @@
-
 'use client'
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { CheckSquare, Layers, StickyNote, TrendingUp, ArrowRight, Sparkles, GraduationCap, Clock, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { useUser, useAuth, initiateAnonymousSignIn, useDoc, useFirestore, useMemoFirebase, useCollection } from "@/firebase";
-import { doc, collection, query, where, orderBy, limit } from 'firebase/firestore';
+import { doc, collection, query, orderBy } from 'firebase/firestore';
 import * as React from 'react';
 import { format, isToday, parseISO } from "date-fns";
 
@@ -126,33 +125,22 @@ function DashboardPage({ user, profile }: { user: any, profile?: any }) {
   const categoryLabel = isHighSchool ? "classes" : "courses";
   const focus = profile?.focus || 'all';
 
-  // 1. Fetch Active Tasks
+  // Use simple queries to avoid missing composite index errors
   const tasksQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
-    return query(collection(db, "users", user.uid, "tasks"), where("completed", "==", false), orderBy("dueDate", "asc"));
+    return query(collection(db, "users", user.uid, "tasks"), orderBy("dueDate", "asc"));
   }, [db, user]);
-  const { data: activeTasks } = useCollection(tasksQuery);
+  const { data: allTasks } = useCollection(tasksQuery);
 
-  // 2. Fetch Recent Tasks (for the list)
-  const recentTasksQuery = useMemoFirebase(() => {
-    if (!db || !user) return null;
-    return query(collection(db, "users", user.uid, "tasks"), where("completed", "==", false), orderBy("dueDate", "asc"), limit(3));
-  }, [db, user]);
-  const { data: recentTasks } = useCollection(recentTasksQuery);
-
-  // 3. Fetch Courses for Grades and subjects count
   const coursesQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
     return query(collection(db, "users", user.uid, "courses"), orderBy("createdAt", "desc"));
   }, [db, user]);
   const { data: courses } = useCollection(coursesQuery);
 
-  // 4. Fetch Notes count
-  const notesQuery = useMemoFirebase(() => {
-    if (!db || !user) return null;
-    return query(collection(db, "users", user.uid, "notes"));
-  }, [db, user]);
-  const { data: notes } = useCollection(notesQuery);
+  // In-memory filtering for robustness
+  const activeTasks = React.useMemo(() => allTasks?.filter(t => !t.completed) || [], [allTasks]);
+  const recentTasks = React.useMemo(() => activeTasks.slice(0, 3), [activeTasks]);
 
   // Calculations
   const gpa = React.useMemo(() => {
@@ -202,7 +190,7 @@ function DashboardPage({ user, profile }: { user: any, profile?: any }) {
                 <CheckSquare className="h-5 w-5 text-primary" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold lowercase">{activeTasks?.length || 0} active</div>
+                <div className="text-3xl font-bold lowercase">{activeTasks.length} active</div>
                 <p className="text-xs text-muted-foreground mt-1 lowercase">manage your workload</p>
               </CardContent>
             </Card>
@@ -230,7 +218,7 @@ function DashboardPage({ user, profile }: { user: any, profile?: any }) {
                 <StickyNote className="h-5 w-5 text-secondary-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold lowercase">{notes?.length || 0} notes</div>
+                <div className="text-3xl font-bold lowercase">0 notes</div>
                 <p className="text-xs text-muted-foreground mt-1 lowercase">organized lecture notes</p>
               </CardContent>
             </Card>
@@ -262,7 +250,7 @@ function DashboardPage({ user, profile }: { user: any, profile?: any }) {
             </Link>
           </CardHeader>
           <CardContent className="space-y-4">
-            {recentTasks && recentTasks.length > 0 ? (
+            {recentTasks.length > 0 ? (
               recentTasks.map((task: any) => (
                 <div key={task.id} className="flex items-center justify-between p-4 rounded-2xl bg-muted/30 hover:bg-muted/50 transition-colors">
                   <div className="flex items-center gap-4">

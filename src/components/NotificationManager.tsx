@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy } from 'firebase/firestore';
+import { collection, query, orderBy } from 'firebase/firestore';
 import { parseISO, addDays } from 'date-fns';
 
 /**
@@ -21,7 +21,7 @@ export function NotificationManager() {
     }
   }, []);
 
-  // Listen for permission changes via the Tasks page or other sources
+  // Listen for permission changes
   useEffect(() => {
     const checkPermission = () => {
       if (typeof window !== 'undefined' && 'Notification' in window) {
@@ -32,35 +32,32 @@ export function NotificationManager() {
     return () => window.removeEventListener('focus', checkPermission);
   }, []);
 
+  // Use a simple query to avoid composite index requirements in the background
   const tasksQuery = useMemoFirebase(() => {
-    // DO NOT monitor for anonymous users if you want to avoid permission noise,
-    // though the rules allow it. We primarily monitor for registered users.
     if (!user || !db) return null;
     return query(
       collection(db, "users", user.uid, "tasks"),
-      where("completed", "==", false),
       orderBy("dueDate", "asc")
     );
   }, [user, db]);
 
-  // We pass a local error handler to useCollection if we want to suppress the global crash,
-  // but since we're using the standard hook, we'll just handle the data being null/error gracefully.
-  const { data: tasks, error } = useCollection(tasksQuery);
+  const { data: allTasks, error } = useCollection(tasksQuery);
 
   useEffect(() => {
-    // If there's an index error or permission error in the background, we just log it
-    // rather than letting it bubble up to the global error listener which crashes the app.
     if (error) {
-      console.warn("NotificationManager: background query failed. This usually means a composite index is missing.", error);
+      console.warn("NotificationManager: background query failed.", error);
       return;
     }
 
     // Only proceed if permission is granted and we have active tasks
-    if (permission === 'granted' && tasks && tasks.length > 0 && user) {
+    if (permission === 'granted' && allTasks && allTasks.length > 0 && user) {
       const now = new Date();
       const next24Hours = addDays(now, 1);
       
-      tasks.forEach(task => {
+      // Filter for incomplete tasks in memory
+      const activeTasks = allTasks.filter(t => !t.completed);
+      
+      activeTasks.forEach(task => {
         const due = parseISO(task.dueDate);
         
         // If the task is due within the next 24 hours and is in the future
@@ -81,7 +78,7 @@ export function NotificationManager() {
         }
       });
     }
-  }, [tasks, error, permission, user]);
+  }, [allTasks, error, permission, user]);
 
   return null;
 }

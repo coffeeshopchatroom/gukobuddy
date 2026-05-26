@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -41,7 +40,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { useFirebase, useUser, useDoc, useMemoFirebase, useCollection } from "@/firebase"
 import { signOut } from "firebase/auth"
-import { doc, collection, query, where, orderBy } from 'firebase/firestore'
+import { doc, collection, query, orderBy } from 'firebase/firestore'
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ProfileCustomizer } from "@/components/profile/ProfileCustomizer"
 import {
@@ -438,11 +437,11 @@ function AdminPanelDialog({ children, open, onOpenChange }: { children: React.Re
 }
 
 function NotificationCenter({ user, firestore }: any) {
+  // Use simple query to avoid index errors
   const tasksQuery = useMemoFirebase(() => {
     if (!user || !firestore) return null
     return query(
       collection(firestore, "users", user.uid, "tasks"), 
-      where("completed", "==", false),
       orderBy("dueDate", "asc")
     )
   }, [user, firestore])
@@ -453,9 +452,10 @@ function NotificationCenter({ user, firestore }: any) {
     if (!tasks) return []
     const now = new Date()
     const threshold = addDays(now, 2)
+    // Filter for incomplete tasks in memory
     return tasks.filter(t => {
       const due = parseISO(t.dueDate)
-      return due <= threshold
+      return !t.completed && due <= threshold
     })
   }, [tasks])
 
@@ -478,7 +478,7 @@ function NotificationCenter({ user, firestore }: any) {
         </div>
         <div className="max-h-[300px] overflow-y-auto">
           {upcomingTasks.map((task) => {
-            const isOverdue = isPast(parseISO(task.dueDate)) && !task.completed
+            const isOverdue = isPast(parseISO(task.dueDate))
             return (
               <div key={task.id} className="p-4 border-b last:border-0 flex items-start gap-4 hover:bg-muted/30 transition-colors">
                 <div className={cn(
