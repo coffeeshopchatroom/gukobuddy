@@ -172,11 +172,28 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
 
   const previewRounding = `${formData.cornerRounding}px`;
   
-  const getTargetBorderStyle = (target: BorderTarget) => {
-    if (!formData.borderTargets.includes(target)) return 'none';
+  const getTargetBorderStyle = (target: BorderTarget, baseBg: string): React.CSSProperties => {
+    if (!formData.borderTargets.includes(target)) return {};
+    
     const color = formData.targetColors[target] || formData.theme.border;
-    return `${formData.borderWidth}px solid ${getColorStyle(color)}`;
+    const width = formData.borderWidth;
+
+    if (color.type === 'solid') {
+      return { border: `${width}px solid ${color.solid}` };
+    } else {
+      const gradient = getColorStyle(color);
+      // To support rounded borders with gradients, we use the background-clip trick
+      // We need a base background that matches the content area, plus the gradient for the border area
+      return {
+        border: `${width}px solid transparent`,
+        backgroundImage: `linear-gradient(${baseBg}, ${baseBg}), ${gradient}`,
+        backgroundOrigin: 'border-box',
+        backgroundClip: 'padding-box, border-box'
+      };
+    }
   };
+
+  const bodyBgStyle = getColorStyle(formData.theme.body);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -207,7 +224,7 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
             <div className="flex flex-col items-center gap-2">
               <div className="relative group">
                 <div 
-                  className="h-24 w-28 overflow-hidden flex items-center justify-center bg-white/10 border border-white/10 transition-all"
+                  className="h-24 w-24 overflow-hidden flex items-center justify-center bg-white/10 border border-white/10 transition-all"
                   style={{ borderRadius: previewRounding }}
                 >
                   {formData.photoUrl ? (
@@ -335,7 +352,11 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
                     <AestheticColorPickerMini 
                       label="color" 
                       value={formData.theme.border} 
-                      onChange={(v) => setFormData(p => ({ ...p, theme: { ...p.theme, border: v } }))} 
+                      onChange={(v) => setFormData(p => ({ 
+                        ...p, 
+                        theme: { ...p.theme, border: v },
+                        targetColors: {} as Record<BorderTarget, ColorValue> // Reset individual overrides when global color changes
+                      }))} 
                     />
                     <div className="flex-1 flex flex-col gap-1">
                       <div className="flex justify-between">
@@ -380,7 +401,7 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
                 style={{ 
                   borderRadius: previewRounding,
                   fontFamily: formData.font,
-                  background: getColorStyle(formData.theme.body),
+                  background: bodyBgStyle,
                   color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : '#ffffff'
                 }}
               >
@@ -393,10 +414,10 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
                 <div className="absolute top-10 left-6 right-6 flex items-end justify-between gap-4">
                   <div className="flex items-end gap-4">
                     <div 
-                      className="h-20 w-24 overflow-hidden flex items-center justify-center bg-white/10 transition-all"
+                      className="h-20 w-20 overflow-hidden flex items-center justify-center bg-white/10 transition-all shrink-0"
                       style={{ 
                         borderRadius: previewRounding,
-                        border: getTargetBorderStyle('profile')
+                        ...getTargetBorderStyle('profile', bodyBgStyle)
                       }}
                     >
                       {formData.photoUrl ? (
@@ -407,22 +428,22 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
                     </div>
                     <div className="pb-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <h4 className="text-2xl font-bold leading-none lowercase truncate">{formData.displayName || 'name'}</h4>
+                        <h4 className="text-3xl font-bold leading-none lowercase truncate">{formData.displayName || 'name'}</h4>
                         <div 
-                          className="h-4 w-4 rounded-full bg-white/20 shrink-0"
-                          style={{ border: getTargetBorderStyle('icon') }}
+                          className="h-5 w-5 rounded-full bg-white/20 shrink-0"
+                          style={{ ...getTargetBorderStyle('icon', bodyBgStyle) }}
                         />
                       </div>
-                      <p className="text-xs opacity-60 lowercase truncate mt-1">{formData.username ? `@${formData.username}` : '@username'}</p>
+                      <p className="text-sm opacity-60 lowercase truncate mt-1">{formData.username ? `@${formData.username}` : '@username'}</p>
                     </div>
                   </div>
                   <Button 
-                    className="h-9 px-6 rounded-md text-[10px] font-bold lowercase border-none transition-all shadow-none shrink-0"
+                    className="h-10 px-8 rounded-md text-[11px] font-bold lowercase border-none transition-all shadow-none shrink-0"
                     style={{ 
                       background: getColorStyle(formData.theme.buttons),
                       color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : '#ffffff',
                       borderRadius: previewRounding,
-                      border: getTargetBorderStyle('add')
+                      ...getTargetBorderStyle('add', getColorStyle(formData.theme.buttons))
                     }}
                   >
                     add friend
