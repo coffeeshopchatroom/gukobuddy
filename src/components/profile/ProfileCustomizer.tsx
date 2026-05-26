@@ -637,38 +637,26 @@ function AdvancedProfileEditor({
 
   const handlePointerDown = (e: React.PointerEvent, id: string, type: 'move' | 'resize', dir?: string) => {
     e.stopPropagation();
-    
-    // Set selection box immediately
     setSelectedId(id);
-
-    // If it's a movement attempt but not selected yet, just select it
-    if (type === 'move' && selectedId !== id) {
-      return;
-    }
-
-    let element;
-    if (id.startsWith('sticker-')) {
-      const stickerId = id.replace('sticker-', '');
-      element = formData.stickers.find((s: any) => s.id === stickerId);
-    } else {
-      element = formData.layout[id];
-    }
-
+  
+    const element = id.startsWith('sticker-')
+      ? formData.stickers.find((s: any) => s.id === id.replace('sticker-', ''))
+      : formData.layout[id];
+  
     if (!element) return;
-
+  
     setDragging({
       id,
       type,
       dir,
       startX: e.clientX,
-      startY: e.startY,
+      startY: e.clientY,
       initialX: element.x,
       initialY: element.y,
       initialW: element.w,
-      initialH: element.h
+      initialH: element.h,
     });
-
-    // Capture pointer on the interacting target
+  
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
   };
 
@@ -747,6 +735,7 @@ function AdvancedProfileEditor({
     <div 
       className={cn("absolute w-4 h-4 bg-white border-2 border-primary z-50 rounded-full shadow-md", className)}
       onPointerDown={(e) => handlePointerDown(e, id, 'resize', dir)}
+      onClick={e => e.stopPropagation()}
     />
   );
 
@@ -754,8 +743,8 @@ function AdvancedProfileEditor({
     if (selectedId !== id) return null;
     return (
       <div 
-        className="absolute border-2 border-primary pointer-events-none z-40"
-        style={{ left: -4, top: -4, width: element.w + 8, height: element.h + 8 }}
+        className="absolute border-2 border-primary pointer-events-none z-[99]"
+        style={{ left: element.x - 4, top: element.y - 4, width: element.w + 8, height: element.h + 8 }}
       >
         {renderHandle(id, 'nw', "top-[-8px] left-[-8px] cursor-nw-resize pointer-events-auto")}
         {renderHandle(id, 'ne', "top-[-8px] right-[-8px] cursor-ne-resize pointer-events-auto")}
@@ -805,10 +794,16 @@ function AdvancedProfileEditor({
               background: bodyBgStyle,
             }}
           >
-            {/* Elements */}
+            <div className="h-20 w-full absolute top-0 left-0 bg-black/10 z-0">
+              {formData.bannerUrl && (
+                <img src={formData.bannerUrl} className="w-full h-full object-cover" alt="banner" />
+              )}
+            </div>
+
             <div 
               className={cn("absolute cursor-pointer", selectedId === 'pfp' ? "z-50" : "z-10")}
               onPointerDown={(e) => handlePointerDown(e, 'pfp', 'move')}
+              onClick={e => e.stopPropagation()}
               style={{ 
                 left: formData.layout.pfp.x, 
                 top: formData.layout.pfp.y,
@@ -824,12 +819,12 @@ function AdvancedProfileEditor({
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-white/10"><UserCircle2 className="h-8 w-8 opacity-20" /></div>
               )}
-              {renderSelectionBox('pfp', formData.layout.pfp)}
             </div>
 
             <div 
               className={cn("absolute cursor-pointer", selectedId === 'name' ? "z-50" : "z-10")}
               onPointerDown={(e) => handlePointerDown(e, 'name', 'move')}
+              onClick={e => e.stopPropagation()}
               style={{ 
                 left: formData.layout.name.x, 
                 top: formData.layout.name.y,
@@ -841,12 +836,12 @@ function AdvancedProfileEditor({
               <h4 className="text-4xl font-bold leading-none lowercase truncate select-none pointer-events-none">
                 {formData.displayName || 'name'}
               </h4>
-              {renderSelectionBox('name', formData.layout.name)}
             </div>
 
             <div 
               className={cn("absolute cursor-pointer", selectedId === 'username' ? "z-50" : "z-10")}
               onPointerDown={(e) => handlePointerDown(e, 'username', 'move')}
+              onClick={e => e.stopPropagation()}
               style={{ 
                 left: formData.layout.username.x, 
                 top: formData.layout.username.y,
@@ -857,12 +852,12 @@ function AdvancedProfileEditor({
               }}
             >
               <p className="text-sm lowercase truncate select-none pointer-events-none">{formData.username ? `@${formData.username}` : '@username'}</p>
-              {renderSelectionBox('username', formData.layout.username)}
             </div>
 
             <div 
               className={cn("absolute cursor-pointer", selectedId === 'addBtn' ? "z-50" : "z-10")}
               onPointerDown={(e) => handlePointerDown(e, 'addBtn', 'move')}
+              onClick={e => e.stopPropagation()}
               style={{ 
                 left: formData.layout.addBtn.x, 
                 top: formData.layout.addBtn.y,
@@ -881,12 +876,28 @@ function AdvancedProfileEditor({
               >
                 add friend
               </Button>
-              {renderSelectionBox('addBtn', formData.layout.addBtn)}
+            </div>
+
+            <div 
+              className={cn("absolute cursor-pointer", selectedId === 'aboutHeader' ? "z-50" : "z-10")}
+              onPointerDown={(e) => handlePointerDown(e, 'aboutHeader', 'move')}
+              onClick={e => e.stopPropagation()}
+              style={{ 
+                left: formData.layout.aboutHeader.x, 
+                top: formData.layout.aboutHeader.y,
+                width: formData.layout.aboutHeader.w,
+                height: formData.layout.aboutHeader.h,
+                color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : '#ffffff',
+                opacity: 0.4
+              }}
+            >
+              <h5 className="text-[10px] font-bold uppercase tracking-widest select-none pointer-events-none">about me</h5>
             </div>
 
             <div 
               className={cn("absolute cursor-pointer", selectedId === 'bio' ? "z-50" : "z-10")}
               onPointerDown={(e) => handlePointerDown(e, 'bio', 'move')}
+              onClick={e => e.stopPropagation()}
               style={{ 
                 left: formData.layout.bio.x, 
                 top: formData.layout.bio.y,
@@ -898,7 +909,6 @@ function AdvancedProfileEditor({
               <p className="text-xs leading-relaxed lowercase opacity-90 italic line-clamp-3 select-none pointer-events-none">
                 {formData.bio || 'your bio will appear here...'}
               </p>
-              {renderSelectionBox('bio', formData.layout.bio)}
             </div>
 
             {formData.stickers.map((sticker: Sticker) => (
@@ -906,11 +916,18 @@ function AdvancedProfileEditor({
                 key={sticker.id}
                 className={cn("absolute cursor-pointer", selectedId === `sticker-${sticker.id}` ? "z-50" : "z-10")}
                 onPointerDown={(e) => handlePointerDown(e, `sticker-${sticker.id}`, 'move')}
+                onClick={e => e.stopPropagation()}
                 style={{ left: sticker.x, top: sticker.y, width: sticker.w, height: sticker.h }}
               >
                 <img src={sticker.url} className="w-full h-full object-contain select-none pointer-events-none" alt="sticker" />
-                {renderSelectionBox(`sticker-${sticker.id}`, sticker)}
               </div>
+            ))}
+
+            {Object.keys(formData.layout).map(key =>
+              renderSelectionBox(key, formData.layout[key as keyof ProfileLayout])
+            )}
+            {formData.stickers.map((sticker: Sticker) => (
+              renderSelectionBox(`sticker-${sticker.id}`, sticker)
             ))}
           </div>
         </div>
