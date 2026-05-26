@@ -5,6 +5,8 @@ import { AppSidebar } from '@/components/layout/app-sidebar';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { Toaster } from '@/components/ui/toaster';
 import { NotificationManager } from '@/components/NotificationManager';
+import { PomodoroProvider } from '@/components/pomodoro/pomodoro-context';
+import { FloatingTimer } from '@/components/pomodoro/floating-timer';
 
 export const metadata: Metadata = {
   title: 'guko buddy',
@@ -25,18 +27,21 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <FirebaseClientProvider>
-          <NotificationManager />
-          <SidebarProvider>
-            <div className="flex min-h-screen w-full">
-              <AppSidebar />
-              <main className="flex-1 overflow-auto bg-background/50 backdrop-blur-sm px-4 py-8 md:px-8">
-                <div className="max-w-7xl mx-auto animate-smooth-slow">
-                  {children}
-                </div>
-              </main>
-            </div>
-          </SidebarProvider>
-          <Toaster />
+          <PomodoroProvider>
+            <NotificationManager />
+            <SidebarProvider>
+              <div className="flex min-h-screen w-full">
+                <AppSidebar />
+                <main className="flex-1 overflow-auto bg-background/50 backdrop-blur-sm px-4 py-8 md:px-8">
+                  <div className="max-w-7xl mx-auto animate-smooth-slow">
+                    {children}
+                  </div>
+                </main>
+              </div>
+            </SidebarProvider>
+            <FloatingTimer />
+            <Toaster />
+          </PomodoroProvider>
         </FirebaseClientProvider>
       </body>
     </html>

@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -11,14 +10,14 @@ import {
   StickyNote,
   Layers,
   GraduationCap,
-  Plus,
   LogOut,
   LogIn,
-  Sparkles,
   Bell,
   Shield,
-  Settings,
-  Terminal
+  Terminal,
+  Clock,
+  Coffee,
+  ChevronDown
 } from "lucide-react"
 
 import {
@@ -32,9 +31,12 @@ import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarGroupContent,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
-import { useFirebase, useUser, useDoc, useCollection, useMemoFirebase } from "@/firebase"
+import { useFirebase, useUser, useDoc, useMemoFirebase } from "@/firebase"
 import { signOut } from "firebase/auth"
 import { doc, collection, query, where, orderBy } from 'firebase/firestore'
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -52,9 +54,15 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
 import { addDays, isPast, parseISO } from "date-fns"
 import { cn } from "@/lib/utils"
 import { useToast } from "@/hooks/use-toast"
+import { useCollection } from "@/firebase"
 
 export function AppSidebar() {
   const pathname = usePathname()
@@ -75,14 +83,6 @@ export function AppSidebar() {
   const isHighSchool = profile?.studentType === 'high-school';
   const trackerLabel = isHighSchool ? "class tracker" : "course tracker";
   const focus = profile?.focus || 'all';
-
-  const navItems = [
-    { title: "dashboard", url: "/", icon: LayoutDashboard, visible: true },
-    { title: "tasks", url: "/tasks", icon: CheckSquare, visible: focus === 'all' || focus === 'tasks' },
-    { title: "notebooks", url: "/notebooks", icon: StickyNote, visible: focus === 'all' || focus === 'notebooks' },
-    { title: "flashcards", url: "/flashcards", icon: Layers, visible: focus === 'all' || focus === 'flashcards' },
-    { title: trackerLabel, url: "/tracker", icon: GraduationCap, visible: true },
-  ]
 
   const userName = user?.isAnonymous ? "guest" : (profile?.displayName || user?.displayName || user?.email?.split('@')[0] || "student");
   const userPhoto = profile?.photoUrl || user?.photoURL || "";
@@ -109,21 +109,112 @@ export function AppSidebar() {
           </div>
           <SidebarGroupContent>
             <SidebarMenu className="px-4 py-2">
-              {navItems.filter(i => i.visible).map((item) => (
-                <SidebarMenuItem key={item.title}>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === "/"}
+                  tooltip="dashboard"
+                  className="flex items-center gap-3 px-4 py-6 rounded-xl transition-all duration-300 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground lowercase"
+                >
+                  <Link href="/">
+                    <LayoutDashboard className="h-5 w-5" />
+                    <span className="font-medium">dashboard</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              {(focus === 'all' || focus === 'tasks') && (
+                <Collapsible asChild defaultOpen={pathname.startsWith('/tasks') || pathname === '/pomodoro' || pathname === '/study-session'} className="group/collapsible">
+                  <SidebarMenuItem>
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuButton
+                        isActive={pathname.startsWith('/tasks')}
+                        tooltip="tasks"
+                        className="flex items-center gap-3 px-4 py-6 rounded-xl transition-all duration-300 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground lowercase"
+                      >
+                        <CheckSquare className="h-5 w-5" />
+                        <span className="font-medium">tasks</span>
+                        <ChevronDown className="ml-auto h-4 w-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-180" />
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <SidebarMenuSub>
+                        <SidebarMenuSubItem>
+                          <SidebarMenuSubButton asChild isActive={pathname === '/tasks'}>
+                            <Link href="/tasks">
+                              <span className="lowercase">all tasks</span>
+                            </Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                        <SidebarMenuSubItem>
+                          <SidebarMenuSubButton asChild isActive={pathname === '/pomodoro'}>
+                            <Link href="/pomodoro">
+                              <span className="flex items-center gap-2 lowercase">
+                                <Clock className="h-3 w-3" /> pomodoro
+                              </span>
+                            </Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                        <SidebarMenuSubItem>
+                          <SidebarMenuSubButton asChild isActive={pathname === '/study-session'}>
+                            <Link href="/study-session">
+                              <span className="flex items-center gap-2 lowercase text-muted-foreground/60">
+                                <Coffee className="h-3 w-3" /> study session
+                              </span>
+                            </Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      </SidebarMenuSub>
+                    </CollapsibleContent>
+                  </SidebarMenuItem>
+                </Collapsible>
+              )}
+
+              {(focus === 'all' || focus === 'notebooks') && (
+                <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
-                    isActive={pathname === item.url}
-                    tooltip={item.title}
+                    isActive={pathname === "/notebooks"}
+                    tooltip="notebooks"
                     className="flex items-center gap-3 px-4 py-6 rounded-xl transition-all duration-300 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground lowercase"
                   >
-                    <Link href={item.url}>
-                      <item.icon className="h-5 w-5" />
-                      <span className="font-medium">{item.title}</span>
+                    <Link href="/notebooks">
+                      <StickyNote className="h-5 w-5" />
+                      <span className="font-medium">notebooks</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-              ))}
+              )}
+
+              {(focus === 'all' || focus === 'flashcards') && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname === "/flashcards"}
+                    tooltip="flashcards"
+                    className="flex items-center gap-3 px-4 py-6 rounded-xl transition-all duration-300 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground lowercase"
+                  >
+                    <Link href="/flashcards">
+                      <Layers className="h-5 w-5" />
+                      <span className="font-medium">flashcards</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
+
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === "/tracker"}
+                  tooltip={trackerLabel}
+                  className="flex items-center gap-3 px-4 py-6 rounded-xl transition-all duration-300 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground lowercase"
+                >
+                  <Link href="/tracker">
+                    <GraduationCap className="h-5 w-5" />
+                    <span className="font-medium">{trackerLabel}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

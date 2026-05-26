@@ -198,7 +198,7 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
                   value={formData.displayName} 
                   onChange={(e) => setFormData(prev => ({ ...prev, displayName: e.target.value }))}
                   className="bg-transparent border-white/10 border-2 text-white rounded-[20px] h-14 no-focus-ring placeholder:text-white/20"
-                  placeholder="olivia"
+                  placeholder="Your Name"
                 />
               </div>
               <div className="space-y-2">
@@ -207,7 +207,7 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
                   value={formData.username} 
                   onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
                   className="bg-transparent border-white/10 border-2 text-white rounded-[20px] h-14 no-focus-ring placeholder:text-white/20"
-                  placeholder="via"
+                  placeholder="username123"
                 />
               </div>
               <div className="space-y-2">
