@@ -17,7 +17,10 @@ import {
   Terminal,
   Clock,
   Coffee,
-  ChevronDown
+  ChevronDown,
+  Brain,
+  Palette,
+  ClipboardCheck
 } from "lucide-react"
 
 import {
@@ -74,16 +77,21 @@ export function AppSidebar() {
   const [isProfileOpen, setIsProfileOpen] = React.useState(false);
   const [isAdminPanelOpen, setIsAdminPanelOpen] = React.useState(false);
   
-  // State to control Tasks collapsible on hover
-  const isTaskRelatedPage = pathname.startsWith('/tasks') || pathname === '/pomodoro' || pathname === '/study-session';
-  const [isTasksOpen, setIsTasksOpen] = React.useState(isTaskRelatedPage);
+  // State for sub-menus
+  const isTaskRelated = pathname.startsWith('/tasks') || pathname === '/pomodoro' || pathname === '/study-session';
+  const isNotebookRelated = pathname.startsWith('/notebooks');
+  const isFlashcardRelated = pathname.startsWith('/flashcards');
 
-  // Sync state with pathname changes
+  const [isTasksOpen, setIsTasksOpen] = React.useState(isTaskRelated);
+  const [isNotebooksOpen, setIsNotebooksOpen] = React.useState(isNotebookRelated);
+  const [isFlashcardsOpen, setIsFlashcardsOpen] = React.useState(isFlashcardRelated);
+
+  // Sync states on navigation
   React.useEffect(() => {
-    if (isTaskRelatedPage) {
-      setIsTasksOpen(true);
-    }
-  }, [pathname, isTaskRelatedPage]);
+    if (isTaskRelated) setIsTasksOpen(true);
+    if (isNotebookRelated) setIsNotebooksOpen(true);
+    if (isFlashcardRelated) setIsFlashcardsOpen(true);
+  }, [pathname, isTaskRelated, isNotebookRelated, isFlashcardRelated]);
 
   const handleSignOut = () => {
     if(auth) {
@@ -139,11 +147,7 @@ export function AppSidebar() {
                   open={isTasksOpen} 
                   onOpenChange={setIsTasksOpen}
                   onMouseEnter={() => setIsTasksOpen(true)}
-                  onMouseLeave={() => {
-                    if (!isTaskRelatedPage) {
-                      setIsTasksOpen(false);
-                    }
-                  }}
+                  onMouseLeave={() => !isTaskRelated && setIsTasksOpen(false)}
                   className="group/collapsible"
                 >
                   <SidebarMenuItem>
@@ -192,35 +196,100 @@ export function AppSidebar() {
               )}
 
               {(focus === 'all' || focus === 'notebooks') && (
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={pathname === "/notebooks"}
-                    tooltip="notebooks"
-                    className="flex items-center gap-3 px-4 py-6 rounded-xl transition-all duration-300 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground lowercase"
-                  >
-                    <Link href="/notebooks">
-                      <StickyNote className="h-5 w-5" />
-                      <span className="font-medium">notebooks</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                <Collapsible 
+                  open={isNotebooksOpen} 
+                  onOpenChange={setIsNotebooksOpen}
+                  onMouseEnter={() => setIsNotebooksOpen(true)}
+                  onMouseLeave={() => !isNotebookRelated && setIsNotebooksOpen(false)}
+                  className="group/collapsible"
+                >
+                  <SidebarMenuItem>
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuButton
+                        isActive={pathname === "/notebooks"}
+                        tooltip="notebooks"
+                        className="flex items-center gap-3 px-4 py-6 rounded-xl transition-all duration-300 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground lowercase"
+                      >
+                        <StickyNote className="h-5 w-5" />
+                        <span className="font-medium">notebooks</span>
+                        <ChevronDown className={cn("ml-auto h-4 w-4 transition-transform duration-300", isNotebooksOpen && "rotate-180")} />
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
+                      <SidebarMenuSub className="py-1">
+                        <SidebarMenuSubItem>
+                          <SidebarMenuSubButton asChild isActive={pathname === '/notebooks'}>
+                            <Link href="/notebooks">
+                              <span className="lowercase">all notes</span>
+                            </Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                        <SidebarMenuSubItem>
+                          <SidebarMenuSubButton asChild isActive={pathname === '/notebooks/mind-maps'}>
+                            <Link href="/notebooks/mind-maps">
+                              <span className="flex items-center gap-2 lowercase">
+                                <Brain className="h-3 w-3" /> mind maps
+                              </span>
+                            </Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                        <SidebarMenuSubItem>
+                          <SidebarMenuSubButton asChild isActive={pathname === '/notebooks/whiteboard'}>
+                            <Link href="/notebooks/whiteboard">
+                              <span className="flex items-center gap-2 lowercase">
+                                <Palette className="h-3 w-3" /> whiteboard
+                              </span>
+                            </Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      </SidebarMenuSub>
+                    </CollapsibleContent>
+                  </SidebarMenuItem>
+                </Collapsible>
               )}
 
               {(focus === 'all' || focus === 'flashcards') && (
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={pathname === "/flashcards"}
-                    tooltip="flashcards"
-                    className="flex items-center gap-3 px-4 py-6 rounded-xl transition-all duration-300 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground lowercase"
-                  >
-                    <Link href="/flashcards">
-                      <Layers className="h-5 w-5" />
-                      <span className="font-medium">flashcards</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                <Collapsible 
+                  open={isFlashcardsOpen} 
+                  onOpenChange={setIsFlashcardsOpen}
+                  onMouseEnter={() => setIsFlashcardsOpen(true)}
+                  onMouseLeave={() => !isFlashcardRelated && setIsFlashcardsOpen(false)}
+                  className="group/collapsible"
+                >
+                  <SidebarMenuItem>
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuButton
+                        isActive={pathname === "/flashcards"}
+                        tooltip="flashcards"
+                        className="flex items-center gap-3 px-4 py-6 rounded-xl transition-all duration-300 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground lowercase"
+                      >
+                        <Layers className="h-5 w-5" />
+                        <span className="font-medium">flashcards</span>
+                        <ChevronDown className={cn("ml-auto h-4 w-4 transition-transform duration-300", isFlashcardsOpen && "rotate-180")} />
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
+                      <SidebarMenuSub className="py-1">
+                        <SidebarMenuSubItem>
+                          <SidebarMenuSubButton asChild isActive={pathname === '/flashcards'}>
+                            <Link href="/flashcards">
+                              <span className="lowercase">all decks</span>
+                            </Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                        <SidebarMenuSubItem>
+                          <SidebarMenuSubButton asChild isActive={pathname === '/flashcards/quiz'}>
+                            <Link href="/flashcards/quiz">
+                              <span className="flex items-center gap-2 lowercase">
+                                <ClipboardCheck className="h-3 w-3" /> create quiz
+                              </span>
+                            </Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      </SidebarMenuSub>
+                    </CollapsibleContent>
+                  </SidebarMenuItem>
+                </Collapsible>
               )}
 
               <SidebarMenuItem>
