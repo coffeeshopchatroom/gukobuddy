@@ -3,7 +3,6 @@
 
 import * as React from "react"
 import Link from "next/link"
-import Image from "next/image"
 import { usePathname } from "next/navigation"
 import {
   LayoutDashboard,
@@ -13,7 +12,6 @@ import {
   GraduationCap,
   LogOut,
   LogIn,
-  Bell,
   Shield,
   Terminal,
   Clock,
@@ -21,7 +19,8 @@ import {
   ChevronDown,
   Brain,
   Palette,
-  ClipboardCheck
+  ClipboardCheck,
+  Bell
 } from "lucide-react"
 
 import {
@@ -40,7 +39,7 @@ import {
   SidebarMenuSubButton,
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
-import { useFirebase, useUser, useDoc, useMemoFirebase } from "@/firebase"
+import { useFirebase, useUser, useDoc, useMemoFirebase, useCollection } from "@/firebase"
 import { signOut } from "firebase/auth"
 import { doc, collection, query, where, orderBy } from 'firebase/firestore'
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -66,7 +65,6 @@ import {
 import { addDays, isPast, parseISO } from "date-fns"
 import { cn } from "@/lib/utils"
 import { useToast } from "@/hooks/use-toast"
-import { useCollection } from "@/firebase"
 
 export function AppSidebar() {
   const pathname = usePathname()
@@ -78,7 +76,6 @@ export function AppSidebar() {
   const [isProfileOpen, setIsProfileOpen] = React.useState(false);
   const [isAdminPanelOpen, setIsAdminPanelOpen] = React.useState(false);
   
-  // State for sub-menus
   const isTaskRelated = pathname.startsWith('/tasks') || pathname === '/pomodoro' || pathname === '/study-session';
   const isNotebookRelated = pathname.startsWith('/notebooks');
   const isFlashcardRelated = pathname.startsWith('/flashcards');
@@ -87,7 +84,6 @@ export function AppSidebar() {
   const [isNotebooksOpen, setIsNotebooksOpen] = React.useState(isNotebookRelated);
   const [isFlashcardsOpen, setIsFlashcardsOpen] = React.useState(isFlashcardRelated);
 
-  // Sync states on navigation
   React.useEffect(() => {
     if (isTaskRelated) setIsTasksOpen(true);
     if (isNotebookRelated) setIsNotebooksOpen(true);
@@ -118,6 +114,9 @@ export function AppSidebar() {
                 src="/devmade-icons/gukologo.png" 
                 alt="guko logo" 
                 className="w-full h-full object-contain"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                }}
               />
             </div>
             <span className="font-headline text-xl font-bold tracking-tight text-foreground lowercase">guko buddy</span>

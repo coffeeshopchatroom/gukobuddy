@@ -1,12 +1,12 @@
+
 'use client'
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { CheckSquare, Layers, StickyNote, TrendingUp, ArrowRight, Plus, Sparkles, GraduationCap } from "lucide-react";
+import { CheckSquare, Layers, StickyNote, TrendingUp, ArrowRight, Sparkles, GraduationCap } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
 import { useUser, useAuth, initiateAnonymousSignIn, useDoc, useFirestore, useMemoFirebase } from "@/firebase";
 import { doc } from 'firebase/firestore';
 
