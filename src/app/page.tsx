@@ -1,4 +1,3 @@
-
 'use client'
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -122,7 +121,7 @@ function FeatureCard({ icon, title, description, color }: { icon: React.ReactNod
 }
 
 function DashboardPage({ user, profile }: { user: any, profile?: any }) {
-  const displayName = user.isAnonymous ? "guest" : (user.displayName || user.email?.split('@')[0]);
+  const displayName = user.isAnonymous ? "guest" : (profile?.displayName || user.displayName || user.email?.split('@')[0]);
   const isHighSchool = profile?.studentType === 'high-school';
   const categoryLabel = isHighSchool ? "classes" : "courses";
   const focus = profile?.focus || 'all';
