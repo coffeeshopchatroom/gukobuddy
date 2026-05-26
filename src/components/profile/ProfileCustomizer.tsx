@@ -170,30 +170,40 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
     });
   };
 
+  const handleGlobalBorderColorChange = (newVal: ColorValue) => {
+    setFormData(prev => ({
+      ...prev,
+      theme: { ...prev.theme, border: newVal },
+      targetColors: {} as Record<BorderTarget, ColorValue> // Master reset logic
+    }));
+  };
+
   const previewRounding = `${formData.cornerRounding}px`;
-  
-  const getTargetBorderStyle = (target: BorderTarget, baseBg: string): React.CSSProperties => {
-    if (!formData.borderTargets.includes(target)) return {};
+  const bodyBgStyle = getColorStyle(formData.theme.body);
+
+  const getTargetBorderStyle = (target: BorderTarget, currentItemBg: string): React.CSSProperties => {
+    if (!formData.borderTargets.includes(target)) return { border: 'none' };
     
     const color = formData.targetColors[target] || formData.theme.border;
     const width = formData.borderWidth;
 
     if (color.type === 'solid') {
-      return { border: `${width}px solid ${color.solid}` };
+      return { 
+        border: `${width}px solid ${color.solid}`,
+        backgroundImage: 'none'
+      };
     } else {
       const gradient = getColorStyle(color);
-      // To support rounded borders with gradients, we use the background-clip trick
-      // We need a base background that matches the content area, plus the gradient for the border area
+      // Use the item's background as the padding mask
+      const mask = currentItemBg.includes('gradient') ? currentItemBg : `linear-gradient(${currentItemBg}, ${currentItemBg})`;
       return {
         border: `${width}px solid transparent`,
-        backgroundImage: `linear-gradient(${baseBg}, ${baseBg}), ${gradient}`,
+        backgroundImage: `${mask}, ${gradient}`,
         backgroundOrigin: 'border-box',
         backgroundClip: 'padding-box, border-box'
       };
     }
   };
-
-  const bodyBgStyle = getColorStyle(formData.theme.body);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -224,7 +234,7 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
             <div className="flex flex-col items-center gap-2">
               <div className="relative group">
                 <div 
-                  className="h-24 w-24 overflow-hidden flex items-center justify-center bg-white/10 border border-white/10 transition-all"
+                  className="h-24 w-24 overflow-hidden flex items-center justify-center bg-white/10 border border-white/10 transition-all aspect-square"
                   style={{ borderRadius: previewRounding }}
                 >
                   {formData.photoUrl ? (
@@ -247,7 +257,7 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
                 <Input 
                   value={formData.displayName} 
                   onChange={(e) => setFormData(prev => ({ ...prev, displayName: e.target.value }))}
-                  className="bg-black/40 border-white/10 border text-white rounded-xl h-9 no-focus-ring placeholder:text-white/20 text-sm"
+                  className="bg-black/60 border-white/10 border text-white !placeholder-white/20 rounded-xl h-10 no-focus-ring text-sm"
                   placeholder="your name"
                 />
               </div>
@@ -256,7 +266,7 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
                 <Input 
                   value={formData.username} 
                   onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
-                  className="bg-black/40 border-white/10 border text-white rounded-xl h-9 no-focus-ring placeholder:text-white/20 text-sm"
+                  className="bg-black/60 border-white/10 border text-white !placeholder-white/20 rounded-xl h-10 no-focus-ring text-sm"
                   placeholder="username123"
                 />
               </div>
@@ -265,7 +275,7 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
                 <Textarea 
                   value={formData.bio} 
                   onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
-                  className="bg-black/40 border-white/10 border text-white rounded-xl min-h-[70px] no-focus-ring placeholder:text-white/20 resize-none p-3 text-sm"
+                  className="bg-black/60 border-white/10 border text-white !placeholder-white/20 rounded-xl min-h-[70px] no-focus-ring resize-none p-3 text-sm"
                   placeholder="tell us something..."
                 />
               </div>
@@ -352,11 +362,7 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
                     <AestheticColorPickerMini 
                       label="color" 
                       value={formData.theme.border} 
-                      onChange={(v) => setFormData(p => ({ 
-                        ...p, 
-                        theme: { ...p.theme, border: v },
-                        targetColors: {} as Record<BorderTarget, ColorValue> // Reset individual overrides when global color changes
-                      }))} 
+                      onChange={handleGlobalBorderColorChange} 
                     />
                     <div className="flex-1 flex flex-col gap-1">
                       <div className="flex justify-between">
@@ -397,7 +403,7 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
             <div className="space-y-2">
               <Label className="text-[10px] font-bold uppercase tracking-widest opacity-50">live preview</Label>
               <div 
-                className="w-full h-[220px] overflow-hidden relative transition-all duration-300 shadow-2xl"
+                className="w-full h-[250px] overflow-hidden relative transition-all duration-300 shadow-2xl"
                 style={{ 
                   borderRadius: previewRounding,
                   fontFamily: formData.font,
@@ -414,31 +420,31 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
                 <div className="absolute top-10 left-6 right-6 flex items-end justify-between gap-4">
                   <div className="flex items-end gap-4">
                     <div 
-                      className="h-20 w-20 overflow-hidden flex items-center justify-center bg-white/10 transition-all shrink-0"
+                      className="h-24 w-24 overflow-hidden flex items-center justify-center bg-white/10 transition-all shrink-0 aspect-square"
                       style={{ 
                         borderRadius: previewRounding,
-                        ...getTargetBorderStyle('profile', bodyBgStyle)
+                        ...getTargetBorderStyle('profile', 'rgba(255,255,255,0.1)')
                       }}
                     >
                       {formData.photoUrl ? (
                         <img src={formData.photoUrl} className="w-full h-full object-cover" alt="pfp" />
                       ) : (
-                        <UserCircle2 className="h-10 w-10 opacity-20" />
+                        <UserCircle2 className="h-12 w-12 opacity-20" />
                       )}
                     </div>
                     <div className="pb-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h4 className="text-3xl font-bold leading-none lowercase truncate">{formData.displayName || 'name'}</h4>
+                      <div className="flex items-center gap-3">
+                        <h4 className="text-4xl font-bold leading-none lowercase truncate">{formData.displayName || 'name'}</h4>
                         <div 
-                          className="h-5 w-5 rounded-full bg-white/20 shrink-0"
-                          style={{ ...getTargetBorderStyle('icon', bodyBgStyle) }}
+                          className="h-6 w-6 rounded-full bg-white/20 shrink-0"
+                          style={{ ...getTargetBorderStyle('icon', 'rgba(255,255,255,0.2)') }}
                         />
                       </div>
                       <p className="text-sm opacity-60 lowercase truncate mt-1">{formData.username ? `@${formData.username}` : '@username'}</p>
                     </div>
                   </div>
                   <Button 
-                    className="h-10 px-8 rounded-md text-[11px] font-bold lowercase border-none transition-all shadow-none shrink-0"
+                    className="h-11 px-8 rounded-md text-[11px] font-bold lowercase border-none transition-all shadow-none shrink-0"
                     style={{ 
                       background: getColorStyle(formData.theme.buttons),
                       color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : '#ffffff',
@@ -450,9 +456,9 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
                   </Button>
                 </div>
 
-                <div className="p-6 pt-16 space-y-2">
+                <div className="p-6 pt-24 space-y-2">
                   <h5 className="text-[10px] font-bold uppercase tracking-widest opacity-40">about me</h5>
-                  <p className="text-xs leading-relaxed lowercase opacity-90 italic line-clamp-2 max-w-[80%]">
+                  <p className="text-xs leading-relaxed lowercase opacity-90 italic line-clamp-2 max-w-[85%]">
                     {formData.bio || 'your bio will appear here...'}
                   </p>
                 </div>
@@ -471,7 +477,7 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
                 <AestheticColorPickerContent
                   label={editingTargetColor}
                   value={formData.targetColors[editingTargetColor] || formData.theme.border}
-                  onChange={(v) => setFormData(p => ({ ...p, targetColors: { ...p.targetColors, [editingTargetColor]: v } }))}
+                  onChange={(v) => setFormData(p => ({ ...p, targetColors: { ...p.targetColors, [editingTargetColor!]: v } }))}
                 />
                 <Button 
                   onClick={() => setEditingTargetColor(null)} 
@@ -548,8 +554,8 @@ function AestheticColorPickerContent({ label, value, onChange }: { label: string
               <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-3 w-3 opacity-30 text-white" />
               <Input 
                 value={value.solid.replace('#', '')} 
-                onChange={(e) => onChange({ ...value, solid: `#${e.target.value}` })}
-                className="bg-black/50 border-white/10 text-white pl-8 h-12 text-sm font-mono rounded-xl lowercase"
+                onChange={(e) => onChange({ ...value, solid: `#${e.target.value.replace(/[^0-9a-fA-F]/gi, '')}` })}
+                className="bg-black border-white/20 text-white pl-8 h-12 text-sm font-mono rounded-xl lowercase !important"
                 placeholder="ffffff"
               />
             </div>
