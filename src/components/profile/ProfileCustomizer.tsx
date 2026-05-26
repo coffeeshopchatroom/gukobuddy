@@ -246,6 +246,8 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
     const color = formData.targetColors[target] || formData.theme.border;
     const width = formData.borderWidth;
 
+    if (width <= 0) return { border: 'none' };
+
     if (color.type === 'solid') {
       return { 
         border: `${width}px solid ${color.solid}`,
@@ -593,7 +595,6 @@ function AdvancedProfileEditor({
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
   const [history, setHistory] = React.useState<any[]>([]);
   const [historyIndex, setHistoryIndex] = React.useState(-1);
-  const canvasRef = React.useRef<HTMLDivElement>(null);
 
   const [dragState, setDragging] = React.useState<{ 
     id: string, 
@@ -637,15 +638,18 @@ function AdvancedProfileEditor({
   const handlePointerDown = (e: React.PointerEvent, id: string, type: 'move' | 'resize', dir?: string) => {
     e.stopPropagation();
     
-    // Only allow drag if already selected, or if clicking a resize handle
+    // Set selection box immediately
+    setSelectedId(id);
+
+    // If it's a movement attempt but not selected yet, just select it
     if (type === 'move' && selectedId !== id) {
-      setSelectedId(id);
       return;
     }
 
     let element;
     if (id.startsWith('sticker-')) {
-      element = formData.stickers.find((s: any) => s.id === id.replace('sticker-', ''));
+      const stickerId = id.replace('sticker-', '');
+      element = formData.stickers.find((s: any) => s.id === stickerId);
     } else {
       element = formData.layout[id];
     }
@@ -664,7 +668,8 @@ function AdvancedProfileEditor({
       initialH: element.h
     });
 
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    // Capture pointer on the interacting target
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
@@ -721,7 +726,7 @@ function AdvancedProfileEditor({
     if (dragState) {
       saveToHistory(formData);
       setDragging(null);
-      (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
     }
   };
 
@@ -793,7 +798,6 @@ function AdvancedProfileEditor({
           onClick={() => setSelectedId(null)}
         >
           <div 
-            ref={canvasRef}
             className="w-[600px] h-[400px] relative shadow-2xl overflow-hidden shrink-0"
             style={{ 
               borderRadius: previewRounding,
@@ -803,7 +807,7 @@ function AdvancedProfileEditor({
           >
             {/* Elements */}
             <div 
-              className={cn("absolute cursor-pointer transition-shadow", selectedId === 'pfp' ? "z-50" : "z-10")}
+              className={cn("absolute cursor-pointer", selectedId === 'pfp' ? "z-50" : "z-10")}
               onPointerDown={(e) => handlePointerDown(e, 'pfp', 'move')}
               style={{ 
                 left: formData.layout.pfp.x, 
