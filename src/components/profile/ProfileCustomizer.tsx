@@ -32,8 +32,7 @@ import {
   Undo2, 
   Redo2, 
   Star, 
-  Trash2,
-  Maximize2
+  Trash2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { 
@@ -103,8 +102,8 @@ const DEFAULT_LAYOUT: ProfileLayout = {
   pfp: { x: 24, y: 40, w: 96, h: 96 },
   name: { x: 136, y: 50, w: 200, h: 48 },
   username: { x: 136, y: 98, w: 150, h: 24 },
-  bio: { x: 24, y: 200, w: 300, h: 40 },
-  addBtn: { x: 370, y: 60, w: 100, h: 44 },
+  bio: { x: 24, y: 200, w: 300, h: 60 },
+  addBtn: { x: 450, y: 50, w: 120, h: 44 },
   aboutHeader: { x: 24, y: 175, w: 100, h: 20 }
 };
 
@@ -186,8 +185,8 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
         const newSticker: Sticker = {
           id: Math.random().toString(36).substr(2, 9),
           url: blob.url,
-          x: 150,
-          y: 150,
+          x: 200,
+          y: 200,
           w: 80,
           h: 80
         };
@@ -254,6 +253,7 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
       };
     } else {
       const gradient = getColorStyle(color);
+      // We use the padding-box/border-box trick for gradient borders with rounding
       const mask = currentItemBg.includes('gradient') ? currentItemBg : `linear-gradient(${currentItemBg}, ${currentItemBg})`;
       return {
         border: `${width}px solid transparent`,
@@ -273,10 +273,7 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
         <DialogTitle className="sr-only">customize profile</DialogTitle>
         <DialogDescription className="sr-only">adjust your profile aesthetics and personal information.</DialogDescription>
         
-        <div 
-          className="relative flex flex-col md:flex-row h-full max-h-[90vh] overflow-hidden"
-          style={{ color: '#ffffff' }}
-        >
+        <div className="relative flex flex-col md:flex-row h-full max-h-[90vh] overflow-hidden" style={{ color: '#ffffff' }}>
           {/* Header Controls */}
           <div className="absolute top-4 right-4 z-50">
             <Button variant="ghost" size="icon" onClick={() => onOpenChange?.(false)} className="text-white hover:bg-white/10 rounded-full h-8 w-8">
@@ -350,9 +347,7 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-[10px] font-bold uppercase tracking-widest opacity-50">banner</Label>
-                <div 
-                  className="relative w-full h-14 rounded-xl overflow-hidden border border-white/10 group bg-white/5"
-                >
+                <div className="relative w-full h-14 rounded-xl overflow-hidden border border-white/10 group bg-white/5">
                   {formData.bannerUrl ? (
                     <img src={formData.bannerUrl} className="w-full h-full object-cover" alt="banner" />
                   ) : (
@@ -368,21 +363,9 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
               <div className="space-y-2">
                 <Label className="text-[10px] font-bold uppercase tracking-widest opacity-50">colors</Label>
                 <div className="flex items-center justify-around bg-white/5 p-2 rounded-xl border border-white/5 h-14">
-                  <AestheticColorPickerMini 
-                    label="bg" 
-                    value={formData.theme.body} 
-                    onChange={(v) => setFormData(p => ({ ...p, theme: { ...p.theme, body: v } }))} 
-                  />
-                  <AestheticColorPickerMini 
-                    label="text" 
-                    value={formData.theme.text} 
-                    onChange={(v) => setFormData(p => ({ ...p, theme: { ...p.theme, text: v } }))} 
-                  />
-                  <AestheticColorPickerMini 
-                    label="btn" 
-                    value={formData.theme.buttons} 
-                    onChange={(v) => setFormData(p => ({ ...p, theme: { ...p.theme, buttons: v } }))} 
-                  />
+                  <AestheticColorPickerMini label="bg" value={formData.theme.body} onChange={(v) => setFormData(p => ({ ...p, theme: { ...p.theme, body: v } }))} />
+                  <AestheticColorPickerMini label="text" value={formData.theme.text} onChange={(v) => setFormData(p => ({ ...p, theme: { ...p.theme, text: v } }))} />
+                  <AestheticColorPickerMini label="btn" value={formData.theme.buttons} onChange={(v) => setFormData(p => ({ ...p, theme: { ...p.theme, buttons: v } }))} />
                 </div>
               </div>
             </div>
@@ -404,12 +387,7 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
                   
                   <div className="flex items-center gap-2 bg-white/5 p-1 px-2 rounded-lg border border-white/10">
                     <span className="text-[9px] opacity-40 uppercase">rad</span>
-                    <Slider 
-                      value={[formData.cornerRounding]} 
-                      max={48} 
-                      onValueChange={(v) => setFormData(p => ({ ...p, cornerRounding: v[0] }))}
-                      className="flex-1"
-                    />
+                    <Slider value={[formData.cornerRounding]} max={48} onValueChange={(v) => setFormData(p => ({ ...p, cornerRounding: v[0] }))} className="flex-1" />
                   </div>
                 </div>
               </div>
@@ -418,22 +396,13 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
                 <Label className="text-[10px] font-bold uppercase tracking-widest opacity-50">borders</Label>
                 <div className="space-y-2">
                   <div className="flex items-center gap-3 bg-white/5 p-2 rounded-lg border border-white/10 h-auto min-h-[68px]">
-                    <AestheticColorPickerMini 
-                      label="color" 
-                      value={formData.theme.border} 
-                      onChange={handleGlobalBorderColorChange} 
-                    />
+                    <AestheticColorPickerMini label="color" value={formData.theme.border} onChange={handleGlobalBorderColorChange} />
                     <div className="flex-1 flex flex-col gap-1">
                       <div className="flex justify-between">
                         <span className="text-[9px] opacity-40 uppercase">width</span>
                         <span className="text-[9px] opacity-40">{formData.borderWidth}px</span>
                       </div>
-                      <Slider 
-                        value={[formData.borderWidth]} 
-                        max={10} 
-                        onValueChange={(v) => setFormData(p => ({ ...p, borderWidth: v[0] }))}
-                        className="w-full"
-                      />
+                      <Slider value={[formData.borderWidth]} max={10} onValueChange={(v) => setFormData(p => ({ ...p, borderWidth: v[0] }))} className="w-full" />
                     </div>
                   </div>
 
@@ -444,9 +413,7 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
                         variant="ghost"
                         className={cn(
                           "flex-1 h-7 rounded-md text-[9px] font-bold lowercase border transition-all",
-                          formData.borderTargets.includes(t) 
-                            ? "bg-white text-black border-white" 
-                            : "bg-white/5 text-white/40 border-white/10"
+                          formData.borderTargets.includes(t) ? "bg-white text-black border-white" : "bg-white/5 text-white/40 border-white/10"
                         )}
                         onClick={() => toggleTarget(t)}
                       >
@@ -485,7 +452,6 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
                   )}
                 </div>
                 
-                {/* Dynamically Positioned Elements */}
                 <div 
                   className="absolute transition-all"
                   style={{ 
@@ -585,17 +551,11 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
                   </p>
                 </div>
 
-                {/* Stickers */}
                 {formData.stickers.map((sticker) => (
                   <div 
                     key={sticker.id}
                     className="absolute transition-all pointer-events-none"
-                    style={{ 
-                      left: sticker.x, 
-                      top: sticker.y, 
-                      width: sticker.w, 
-                      height: sticker.h 
-                    }}
+                    style={{ left: sticker.x, top: sticker.y, width: sticker.w, height: sticker.h }}
                   >
                     <img src={sticker.url} className="w-full h-full object-contain" alt="sticker" />
                   </div>
@@ -605,7 +565,6 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
           </div>
         </div>
 
-        {/* Advanced Editor Pop-up */}
         <AdvancedProfileEditor 
           open={isAdvancedOpen} 
           onOpenChange={setIsAdvancedOpen}
@@ -690,6 +649,8 @@ function AdvancedProfileEditor({
       initialW: element.w,
       initialH: element.h
     });
+
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
@@ -698,19 +659,19 @@ function AdvancedProfileEditor({
     const dx = e.clientX - dragState.startX;
     const dy = e.clientY - dragState.startY;
 
-    const updateElement = (layout: any, id: string, changes: any) => {
+    const updateElement = (prev: any, id: string, changes: any) => {
       if (id.startsWith('sticker-')) {
         const stickerId = id.replace('sticker-', '');
         return {
-          ...layout,
-          stickers: layout.stickers.map((s: any) => s.id === stickerId ? { ...s, ...changes } : s)
+          ...prev,
+          stickers: prev.stickers.map((s: any) => s.id === stickerId ? { ...s, ...changes } : s)
         };
       } else {
         return {
-          ...layout,
+          ...prev,
           layout: {
-            ...layout.layout,
-            [id]: { ...layout.layout[id], ...changes }
+            ...prev.layout,
+            [id]: { ...prev.layout[id], ...changes }
           }
         };
       }
@@ -742,10 +703,11 @@ function AdvancedProfileEditor({
     }
   };
 
-  const handlePointerUp = () => {
+  const handlePointerUp = (e: React.PointerEvent) => {
     if (dragState) {
       saveToHistory(formData);
       setDragging(null);
+      (e.target as HTMLElement).releasePointerCapture(e.pointerId);
     }
   };
 
@@ -762,11 +724,9 @@ function AdvancedProfileEditor({
     }
   };
 
-  const isSticker = (id: string) => id.startsWith('sticker-');
-  
   const renderHandle = (id: string, dir: string, className: string) => (
     <div 
-      className={cn("absolute w-3 h-3 bg-white border border-black z-50 cursor-pointer", className)}
+      className={cn("absolute w-3 h-3 bg-white border border-black z-50 cursor-pointer pointer-events-auto", className)}
       onPointerDown={(e) => handlePointerDown(e, id, 'resize', dir)}
     />
   );
@@ -791,7 +751,7 @@ function AdvancedProfileEditor({
       <DialogContent className="max-w-4xl p-0 border-none bg-black/90 backdrop-blur-xl h-[90vh] flex flex-col overflow-hidden sm:rounded-[40px]">
         <DialogHeader className="p-6 border-b border-white/10 flex flex-row items-center justify-between shrink-0">
           <div className="flex items-center gap-4">
-            <h2 className="text-xl font-bold font-headline lowercase text-white">advanced edit</h2>
+            <DialogTitle className="text-xl font-bold font-headline lowercase text-white">advanced edit</DialogTitle>
             <div className="flex items-center gap-1 bg-white/5 p-1 rounded-xl border border-white/10">
               <Button variant="ghost" size="icon" onClick={undo} disabled={historyIndex <= 0} className="h-8 w-8 text-white"><Undo2 className="h-4 w-4" /></Button>
               <Button variant="ghost" size="icon" onClick={redo} disabled={historyIndex >= history.length - 1} className="h-8 w-8 text-white"><Redo2 className="h-4 w-4" /></Button>
@@ -800,8 +760,8 @@ function AdvancedProfileEditor({
 
           <div className="flex items-center gap-3">
             <label className="cursor-pointer">
-              <Button variant="outline" size="icon" className="rounded-full bg-white/10 border-white/10 text-white hover:bg-white/20">
-                {uploadingSticker ? <Loader2 className="h-4 w-4 animate-spin" /> : <Star className="h-4 w-4" />}
+              <Button variant="outline" size="icon" asChild className="rounded-full bg-white/10 border-white/10 text-white hover:bg-white/20">
+                <div>{uploadingSticker ? <Loader2 className="h-4 w-4 animate-spin" /> : <Star className="h-4 w-4" />}</div>
               </Button>
               <input type="file" className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && onStickerUpload(e.target.files[0])} />
             </label>
@@ -816,7 +776,6 @@ function AdvancedProfileEditor({
           className="flex-1 overflow-hidden relative flex items-center justify-center p-12 bg-[#050505] custom-scrollbar"
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
-          onPointerLeave={handlePointerUp}
           onClick={() => setSelectedId(null)}
         >
           <div 
@@ -830,7 +789,7 @@ function AdvancedProfileEditor({
           >
             {/* Elements */}
             <div 
-              className={cn("absolute cursor-move transition-shadow", selectedId === 'pfp' && "z-50 shadow-[0_0_0_2px_#3b82f6]")}
+              className={cn("absolute cursor-move transition-shadow", selectedId === 'pfp' && "z-50")}
               onPointerDown={(e) => handlePointerDown(e, 'pfp', 'move')}
               style={{ 
                 left: formData.layout.pfp.x, 
@@ -843,7 +802,7 @@ function AdvancedProfileEditor({
               }}
             >
               {formData.photoUrl ? (
-                <img src={formData.photoUrl} className="w-full h-full object-cover select-none" alt="pfp" />
+                <img src={formData.photoUrl} className="w-full h-full object-cover select-none pointer-events-none" alt="pfp" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-white/10"><UserCircle2 className="h-8 w-8 opacity-20" /></div>
               )}
@@ -861,7 +820,7 @@ function AdvancedProfileEditor({
                 color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : '#ffffff'
               }}
             >
-              <h4 className="text-4xl font-bold leading-none lowercase truncate select-none">
+              <h4 className="text-4xl font-bold leading-none lowercase truncate select-none pointer-events-none">
                 {formData.displayName || 'name'}
               </h4>
               {renderSelectionBox('name', formData.layout.name)}
@@ -879,7 +838,7 @@ function AdvancedProfileEditor({
                 opacity: 0.6
               }}
             >
-              <p className="text-sm lowercase truncate select-none">{formData.username ? `@${formData.username}` : '@username'}</p>
+              <p className="text-sm lowercase truncate select-none pointer-events-none">{formData.username ? `@${formData.username}` : '@username'}</p>
               {renderSelectionBox('username', formData.layout.username)}
             </div>
 
@@ -918,26 +877,20 @@ function AdvancedProfileEditor({
                 color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : '#ffffff',
               }}
             >
-              <p className="text-xs leading-relaxed lowercase opacity-90 italic line-clamp-3 select-none">
+              <p className="text-xs leading-relaxed lowercase opacity-90 italic line-clamp-3 select-none pointer-events-none">
                 {formData.bio || 'your bio will appear here...'}
               </p>
               {renderSelectionBox('bio', formData.layout.bio)}
             </div>
 
-            {/* Stickers */}
             {formData.stickers.map((sticker: Sticker) => (
               <div 
                 key={sticker.id}
                 className={cn("absolute cursor-move group", selectedId === `sticker-${sticker.id}` && "z-50")}
                 onPointerDown={(e) => handlePointerDown(e, `sticker-${sticker.id}`, 'move')}
-                style={{ 
-                  left: sticker.x, 
-                  top: sticker.y, 
-                  width: sticker.w, 
-                  height: sticker.h 
-                }}
+                style={{ left: sticker.x, top: sticker.y, width: sticker.w, height: sticker.h }}
               >
-                <img src={sticker.url} className="w-full h-full object-contain select-none" alt="sticker" />
+                <img src={sticker.url} className="w-full h-full object-contain select-none pointer-events-none" alt="sticker" />
                 {renderSelectionBox(`sticker-${sticker.id}`, sticker)}
               </div>
             ))}
@@ -962,7 +915,7 @@ function AestheticColorPickerMini({ label, value, onChange }: { label: string, v
         </DialogTrigger>
         <DialogContent className="sm:rounded-[24px] p-6 bg-[#1a1a1a] text-white border-none shadow-3xl max-w-[350px]">
           <DialogTitle className="sr-only">pick color for {label}</DialogTitle>
-          <DialogDescription className="sr-only">choose between solid or gradient colors for your profile theme.</DialogDescription>
+          <DialogDescription className="sr-only">choose between solid or gradient colors.</DialogDescription>
           <AestheticColorPickerContent label={label} value={value} onChange={onChange} />
           <Button onClick={(e) => { e.stopPropagation(); setIsOpen(false); }} className="w-full h-12 rounded-xl bg-white text-black font-bold text-sm lowercase hover:bg-white/90 mt-6">done</Button>
         </DialogContent>
@@ -978,18 +931,8 @@ function AestheticColorPickerContent({ label, value, onChange }: { label: string
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-bold font-headline lowercase">color: {label}</h3>
         <div className="flex gap-1 bg-white/5 rounded-lg p-0.5 border border-white/5">
-          <button 
-            onClick={() => onChange({ ...value, type: 'solid' })}
-            className={cn("px-3 py-1 text-[9px] font-bold rounded-md transition-all", value.type === 'solid' ? "bg-white text-black" : "opacity-30 hover:opacity-60")}
-          >
-            solid
-          </button>
-          <button 
-            onClick={() => onChange({ ...value, type: 'gradient' })}
-            className={cn("px-3 py-1 text-[9px] font-bold rounded-md transition-all", value.type === 'gradient' ? "bg-white text-black" : "opacity-30 hover:opacity-60")}
-          >
-            gradient
-          </button>
+          <button onClick={() => onChange({ ...value, type: 'solid' })} className={cn("px-3 py-1 text-[9px] font-bold rounded-md transition-all", value.type === 'solid' ? "bg-white text-black" : "opacity-30 hover:opacity-60")}>solid</button>
+          <button onClick={() => onChange({ ...value, type: 'gradient' })} className={cn("px-3 py-1 text-[9px] font-bold rounded-md transition-all", value.type === 'gradient' ? "bg-white text-black" : "opacity-30 hover:opacity-60")}>gradient</button>
         </div>
       </div>
 
@@ -997,12 +940,7 @@ function AestheticColorPickerContent({ label, value, onChange }: { label: string
         <div className="space-y-4">
           <div className="flex items-center gap-3">
             <div className="relative h-12 w-12 rounded-xl overflow-hidden border border-white/10">
-              <input 
-                type="color" 
-                value={value.solid} 
-                onChange={(e) => onChange({ ...value, solid: e.target.value })} 
-                className="absolute inset-0 w-[200%] h-[200%] -translate-x-1/4 -translate-y-1/4 cursor-pointer"
-              />
+              <input type="color" value={value.solid} onChange={(e) => onChange({ ...value, solid: e.target.value })} className="absolute inset-0 w-[200%] h-[200%] -translate-x-1/4 -translate-y-1/4 cursor-pointer" />
             </div>
             <div className="relative flex-1">
               <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-3 w-3 opacity-30 text-white" />
