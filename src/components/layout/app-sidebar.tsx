@@ -122,7 +122,7 @@ export function AppSidebar() {
             </div>
             <span className="font-headline text-xl font-bold tracking-tight text-foreground lowercase whitespace-nowrap group-data-[collapsible=icon]:hidden animate-in fade-in duration-500">guko buddy</span>
         </Link>
-        <SidebarTrigger className="hidden md:flex h-8 w-8 rounded-lg hover:bg-muted group-data-[collapsible=icon]:hidden" />
+        <SidebarTrigger className="hidden md:flex h-8 w-8 rounded-lg hover:bg-muted group-data-[collapsible=icon]:flex" />
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
