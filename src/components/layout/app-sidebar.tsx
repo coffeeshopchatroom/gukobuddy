@@ -19,7 +19,8 @@ import {
   Brain,
   Palette,
   ClipboardCheck,
-  Bell
+  Bell,
+  Radio
 } from "lucide-react"
 
 import {
@@ -129,6 +130,20 @@ export function AppSidebar() {
           </div>
           <SidebarGroupContent>
             <SidebarMenu className="px-4 py-2">
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === "/channel"}
+                  tooltip="guko channel"
+                  className="flex items-center gap-3 px-4 py-7 rounded-2xl transition-all duration-300 bg-primary/10 text-primary hover:bg-primary/20 mb-4 border border-primary/20 shadow-sm lowercase"
+                >
+                  <Link href="/channel">
+                    <Radio className="h-6 w-6 animate-pulse" />
+                    <span className="font-bold text-base">guko channel</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild

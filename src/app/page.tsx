@@ -4,7 +4,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { CheckSquare, Layers, StickyNote, TrendingUp, ArrowRight, Sparkles, GraduationCap, Clock, AlertCircle } from "lucide-react";
+import { 
+  CheckSquare, 
+  Layers, 
+  StickyNote, 
+  TrendingUp, 
+  ArrowRight, 
+  Sparkles, 
+  GraduationCap, 
+  Clock, 
+  AlertCircle,
+  Radio,
+  Globe
+} from "lucide-react";
 import Link from "next/link";
 import { useUser, useAuth, initiateAnonymousSignIn, useDoc, useFirestore, useMemoFirebase, useCollection } from "@/firebase";
 import { doc, collection, query, orderBy } from 'firebase/firestore';
@@ -167,7 +179,7 @@ function DashboardPage({ user, profile }: { user: any, profile?: any }) {
   const displayName = user.isAnonymous ? "guest" : (profile?.displayName || user.displayName || user.email?.split('@')[0]);
 
   return (
-    <div className="space-y-8 animate-smooth-slow">
+    <div className="space-y-8 animate-smooth-slow pb-20">
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h1 className="font-headline text-4xl font-bold tracking-tight text-foreground lowercase">welcome back, {displayName}!</h1>
@@ -181,10 +193,46 @@ function DashboardPage({ user, profile }: { user: any, profile?: any }) {
         </div>
       </header>
 
+      {/* Guko Channel Hero Portal */}
+      <Link href="/channel" className="block">
+        <Card className="border-none shadow-xl rounded-[48px] bg-gradient-to-r from-primary/20 via-indigo-50 to-primary/20 overflow-hidden group hover:scale-[1.01] transition-all duration-500 relative">
+          <div className="absolute inset-0 opacity-10 bg-[url('https://picsum.photos/seed/pattern/1200/400')] bg-cover mix-blend-overlay" />
+          <CardContent className="p-10 flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
+            <div className="flex items-center gap-6">
+              <div className="h-20 w-20 rounded-[32px] bg-white shadow-lg flex items-center justify-center group-hover:rotate-12 transition-transform duration-500">
+                <Radio className="h-10 w-10 text-primary animate-pulse" />
+              </div>
+              <div>
+                <h2 className="text-3xl font-bold font-headline lowercase flex items-center gap-2">
+                  enter the guko channel
+                  <Badge className="bg-primary text-primary-foreground border-none text-[10px] uppercase tracking-widest px-3 py-1">online</Badge>
+                </h2>
+                <p className="text-muted-foreground text-lg lowercase mt-1">join the global study plaza. connect with buddies now.</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="flex -space-x-4">
+                {[1,2,3].map(i => (
+                  <div key={i} className="h-12 w-12 rounded-full border-4 border-white bg-muted overflow-hidden">
+                    <img src={`https://picsum.photos/seed/${i+10}/100/100`} alt="buddy" className="w-full h-full object-cover" />
+                  </div>
+                ))}
+                <div className="h-12 w-12 rounded-full border-4 border-white bg-primary flex items-center justify-center text-xs font-bold text-primary-foreground">
+                  +12
+                </div>
+              </div>
+              <Button size="lg" className="rounded-2xl px-10 h-16 font-bold shadow-xl shadow-primary/20 bg-primary hover:bg-primary/90 text-primary-foreground transition-all group-hover:translate-x-2">
+                go online <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </Link>
+
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         {(focus === 'all' || focus === 'tasks') && (
           <Link href="/tasks" className="block">
-            <Card className="hover:shadow-lg transition-all duration-500 border-none bg-primary/10 group cursor-pointer h-full">
+            <Card className="hover:shadow-lg transition-all duration-500 border-none bg-primary/10 group cursor-pointer h-full rounded-[32px]">
               <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
                 <span className="text-sm font-semibold uppercase tracking-wider text-primary-foreground/70">tasks</span>
                 <CheckSquare className="h-5 w-5 text-primary" />
@@ -198,7 +246,7 @@ function DashboardPage({ user, profile }: { user: any, profile?: any }) {
         )}
         {(focus === 'all' || focus === 'flashcards') && (
           <Link href="/flashcards" className="block">
-            <Card className="hover:shadow-lg transition-all duration-500 border-none bg-accent/20 group cursor-pointer h-full">
+            <Card className="hover:shadow-lg transition-all duration-500 border-none bg-accent/20 group cursor-pointer h-full rounded-[32px]">
               <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
                 <span className="text-sm font-semibold uppercase tracking-wider text-accent-foreground/70">subjects</span>
                 <Layers className="h-5 w-5 text-accent-foreground" />
@@ -212,7 +260,7 @@ function DashboardPage({ user, profile }: { user: any, profile?: any }) {
         )}
         {(focus === 'all' || focus === 'notebooks') && (
           <Link href="/notebooks" className="block">
-            <Card className="hover:shadow-lg transition-all duration-500 border-none bg-secondary/50 group cursor-pointer h-full">
+            <Card className="hover:shadow-lg transition-all duration-500 border-none bg-secondary/50 group cursor-pointer h-full rounded-[32px]">
               <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
                 <span className="text-sm font-semibold uppercase tracking-wider text-secondary-foreground/70">notebooks</span>
                 <StickyNote className="h-5 w-5 text-secondary-foreground" />
@@ -225,7 +273,7 @@ function DashboardPage({ user, profile }: { user: any, profile?: any }) {
           </Link>
         )}
         <Link href="/tracker" className="block">
-          <Card className="hover:shadow-lg transition-all duration-500 border-none bg-muted group cursor-pointer h-full">
+          <Card className="hover:shadow-lg transition-all duration-500 border-none bg-muted group cursor-pointer h-full rounded-[32px]">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
               <span className="text-sm font-semibold uppercase tracking-wider text-muted-foreground/70">grades</span>
               <TrendingUp className="h-5 w-5 text-muted-foreground" />
@@ -239,8 +287,8 @@ function DashboardPage({ user, profile }: { user: any, profile?: any }) {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="lg:col-span-4 border-none shadow-sm overflow-hidden bg-white rounded-[32px]">
-          <CardHeader className="flex flex-row items-center justify-between">
+        <Card className="lg:col-span-4 border-none shadow-sm overflow-hidden bg-white rounded-[40px]">
+          <CardHeader className="flex flex-row items-center justify-between p-8">
             <div>
               <CardTitle className="font-headline text-2xl lowercase">recent tasks</CardTitle>
               <p className="text-muted-foreground lowercase text-sm">keep track of your deadlines</p>
@@ -249,28 +297,30 @@ function DashboardPage({ user, profile }: { user: any, profile?: any }) {
               view all <ArrowRight className="h-4 w-4" />
             </Link>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="px-8 pb-8 space-y-4">
             {recentTasks.length > 0 ? (
               recentTasks.map((task: any) => (
-                <div key={task.id} className="flex items-center justify-between p-4 rounded-2xl bg-muted/30 hover:bg-muted/50 transition-colors">
+                <div key={task.id} className="flex items-center justify-between p-5 rounded-3xl bg-muted/30 hover:bg-muted/50 transition-colors border border-transparent hover:border-border">
                   <div className="flex items-center gap-4">
-                    <CheckSquare className="h-5 w-5 text-muted-foreground" />
+                    <div className="h-10 w-10 rounded-2xl bg-white shadow-sm flex items-center justify-center">
+                      <CheckSquare className="h-5 w-5 text-muted-foreground" />
+                    </div>
                     <div>
-                      <p className="font-semibold text-foreground lowercase">{task.title}</p>
-                      <p className="text-sm text-muted-foreground lowercase flex items-center gap-1.5">
+                      <p className="font-bold text-foreground lowercase">{task.title}</p>
+                      <p className="text-xs text-muted-foreground lowercase flex items-center gap-1.5 mt-0.5">
                         <Clock className="h-3 w-3" /> due {isToday(parseISO(task.dueDate)) ? 'today' : format(parseISO(task.dueDate), 'MMM d')}
                       </p>
                     </div>
                   </div>
-                  <Badge variant={task.priority === 'high' ? 'destructive' : task.priority === 'medium' ? 'default' : 'secondary'} className="rounded-full lowercase">
+                  <Badge variant={task.priority === 'high' ? 'destructive' : task.priority === 'medium' ? 'default' : 'secondary'} className="rounded-full px-4 lowercase">
                     {task.priority}
                   </Badge>
                 </div>
               ))
             ) : (
-              <div className="py-8 text-center space-y-3">
-                <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mx-auto opacity-20">
-                  <CheckSquare className="h-6 w-6" />
+              <div className="py-12 text-center space-y-3">
+                <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mx-auto opacity-20">
+                  <CheckSquare className="h-8 w-8" />
                 </div>
                 <p className="text-muted-foreground lowercase text-sm">no upcoming tasks. take a break!</p>
               </div>
@@ -278,26 +328,29 @@ function DashboardPage({ user, profile }: { user: any, profile?: any }) {
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-3 border-none shadow-sm bg-gradient-to-br from-primary/5 to-accent/5 rounded-[32px]">
-          <CardHeader>
+        <Card className="lg:col-span-3 border-none shadow-sm bg-gradient-to-br from-primary/5 to-accent/5 rounded-[40px]">
+          <CardHeader className="p-8">
             <CardTitle className="font-headline text-2xl lowercase">progress</CardTitle>
             <p className="text-muted-foreground text-sm lowercase">current semester average: {avgGrade}%</p>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="px-8 pb-8 space-y-8">
             {courses && courses.length > 0 ? (
               courses.slice(0, 3).map((course: any) => (
-                <div key={course.id} className="space-y-2">
-                  <div className="flex justify-between text-sm font-medium lowercase">
-                    <span>{course.name}</span>
-                    <span>{course.grade}%</span>
+                <div key={course.id} className="space-y-3">
+                  <div className="flex justify-between text-sm font-bold lowercase">
+                    <span className="flex items-center gap-2">
+                      <div className="h-2 w-2 rounded-full bg-primary" />
+                      {course.name}
+                    </span>
+                    <span className="text-muted-foreground">{course.grade}%</span>
                   </div>
-                  <Progress value={parseFloat(course.grade) || 0} className="h-3 bg-white/50" />
+                  <Progress value={parseFloat(course.grade) || 0} className="h-3 bg-white/50 rounded-full" />
                 </div>
               ))
             ) : (
-              <div className="py-10 text-center">
+              <div className="py-12 text-center">
                 <p className="text-sm text-muted-foreground lowercase">no courses tracked yet.</p>
-                <Button variant="link" asChild className="mt-2 text-primary lowercase">
+                <Button variant="link" asChild className="mt-2 text-primary font-bold lowercase">
                   <Link href="/tracker">add your first course</Link>
                 </Button>
               </div>
