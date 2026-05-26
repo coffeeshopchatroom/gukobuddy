@@ -5,10 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { CheckSquare, Layers, StickyNote, TrendingUp, ArrowRight, Sparkles, GraduationCap } from "lucide-react";
+import { CheckSquare, Layers, StickyNote, TrendingUp, ArrowRight, Sparkles, GraduationCap, Clock, AlertCircle } from "lucide-react";
 import Link from "next/link";
-import { useUser, useAuth, initiateAnonymousSignIn, useDoc, useFirestore, useMemoFirebase } from "@/firebase";
-import { doc } from 'firebase/firestore';
+import { useUser, useAuth, initiateAnonymousSignIn, useDoc, useFirestore, useMemoFirebase, useCollection } from "@/firebase";
+import { doc, collection, query, where, orderBy, limit } from 'firebase/firestore';
+import * as React from 'react';
+import { format, isToday, parseISO } from "date-fns";
 
 export default function Page() {
   const { user, isUserLoading } = useUser();
@@ -49,10 +51,8 @@ function LandingPage() {
             muted 
             loop 
             playsInline 
-            preload="auto"
             className="w-full h-full object-cover"
           >
-            <source src="/hero-video.mp4" type="video/mp4" />
             <source src="https://cdn.pixabay.com/video/2020/09/10/49416-457333068_large.mp4" type="video/mp4" />
           </video>
           <div className="absolute inset-0 bg-background/40 backdrop-blur-[1px]" />
@@ -121,10 +121,62 @@ function FeatureCard({ icon, title, description, color }: { icon: React.ReactNod
 }
 
 function DashboardPage({ user, profile }: { user: any, profile?: any }) {
-  const displayName = user.isAnonymous ? "guest" : (profile?.displayName || user.displayName || user.email?.split('@')[0]);
+  const db = useFirestore();
   const isHighSchool = profile?.studentType === 'high-school';
   const categoryLabel = isHighSchool ? "classes" : "courses";
   const focus = profile?.focus || 'all';
+
+  // 1. Fetch Active Tasks
+  const tasksQuery = useMemoFirebase(() => {
+    if (!db || !user) return null;
+    return query(collection(db, "users", user.uid, "tasks"), where("completed", "==", false), orderBy("dueDate", "asc"));
+  }, [db, user]);
+  const { data: activeTasks } = useCollection(tasksQuery);
+
+  // 2. Fetch Recent Tasks (for the list)
+  const recentTasksQuery = useMemoFirebase(() => {
+    if (!db || !user) return null;
+    return query(collection(db, "users", user.uid, "tasks"), where("completed", "==", false), orderBy("dueDate", "asc"), limit(3));
+  }, [db, user]);
+  const { data: recentTasks } = useCollection(recentTasksQuery);
+
+  // 3. Fetch Courses for Grades and subjects count
+  const coursesQuery = useMemoFirebase(() => {
+    if (!db || !user) return null;
+    return query(collection(db, "users", user.uid, "courses"), orderBy("createdAt", "desc"));
+  }, [db, user]);
+  const { data: courses } = useCollection(coursesQuery);
+
+  // 4. Fetch Notes count
+  const notesQuery = useMemoFirebase(() => {
+    if (!db || !user) return null;
+    return query(collection(db, "users", user.uid, "notes"));
+  }, [db, user]);
+  const { data: notes } = useCollection(notesQuery);
+
+  // Calculations
+  const gpa = React.useMemo(() => {
+    if (!courses || courses.length === 0) return "0.00";
+    const points: Record<string, number> = {
+      'a+': 4.0, 'a': 4.0, 'a-': 3.7,
+      'b+': 3.3, 'b': 3.0, 'b-': 2.7,
+      'c+': 2.3, 'c': 2.0, 'c-': 1.7,
+      'd+': 1.3, 'd': 1.0, 'f': 0.0
+    }
+    const totalPoints = courses.reduce((acc, c) => {
+      const lg = (c.letterGrade || '').toLowerCase().trim();
+      return acc + (points[lg] || 0);
+    }, 0);
+    return (totalPoints / courses.length).toFixed(2);
+  }, [courses]);
+
+  const avgGrade = React.useMemo(() => {
+    if (!courses || courses.length === 0) return 0;
+    const total = courses.reduce((acc, c) => acc + (parseFloat(c.grade) || 0), 0);
+    return Math.round(total / courses.length);
+  }, [courses]);
+
+  const displayName = user.isAnonymous ? "guest" : (profile?.displayName || user.displayName || user.email?.split('@')[0]);
 
   return (
     <div className="space-y-8 animate-smooth-slow">
@@ -143,51 +195,59 @@ function DashboardPage({ user, profile }: { user: any, profile?: any }) {
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         {(focus === 'all' || focus === 'tasks') && (
-          <Card className="hover:shadow-lg transition-all duration-500 border-none bg-primary/10 group cursor-pointer">
-            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-              <span className="text-sm font-semibold uppercase tracking-wider text-primary-foreground/70">tasks</span>
-              <CheckSquare className="h-5 w-5 text-primary" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold lowercase">12 active</div>
-              <p className="text-xs text-muted-foreground mt-1 lowercase">+2 added today</p>
-            </CardContent>
-          </Card>
+          <Link href="/tasks" className="block">
+            <Card className="hover:shadow-lg transition-all duration-500 border-none bg-primary/10 group cursor-pointer h-full">
+              <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                <span className="text-sm font-semibold uppercase tracking-wider text-primary-foreground/70">tasks</span>
+                <CheckSquare className="h-5 w-5 text-primary" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold lowercase">{activeTasks?.length || 0} active</div>
+                <p className="text-xs text-muted-foreground mt-1 lowercase">manage your workload</p>
+              </CardContent>
+            </Card>
+          </Link>
         )}
         {(focus === 'all' || focus === 'flashcards') && (
-          <Card className="hover:shadow-lg transition-all duration-500 border-none bg-accent/20 group cursor-pointer">
-            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-              <span className="text-sm font-semibold uppercase tracking-wider text-accent-foreground/70">flashcards</span>
-              <Layers className="h-5 w-5 text-accent-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold lowercase">450 cards</div>
-              <p className="text-xs text-muted-foreground mt-1 lowercase">across 8 decks</p>
-            </CardContent>
-          </Card>
+          <Link href="/flashcards" className="block">
+            <Card className="hover:shadow-lg transition-all duration-500 border-none bg-accent/20 group cursor-pointer h-full">
+              <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                <span className="text-sm font-semibold uppercase tracking-wider text-accent-foreground/70">subjects</span>
+                <Layers className="h-5 w-5 text-accent-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold lowercase">{courses?.length || 0} tracked</div>
+                <p className="text-xs text-muted-foreground mt-1 lowercase">flashcards & recall</p>
+              </CardContent>
+            </Card>
+          </Link>
         )}
         {(focus === 'all' || focus === 'notebooks') && (
-          <Card className="hover:shadow-lg transition-all duration-500 border-none bg-secondary/50 group cursor-pointer">
+          <Link href="/notebooks" className="block">
+            <Card className="hover:shadow-lg transition-all duration-500 border-none bg-secondary/50 group cursor-pointer h-full">
+              <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                <span className="text-sm font-semibold uppercase tracking-wider text-secondary-foreground/70">notebooks</span>
+                <StickyNote className="h-5 w-5 text-secondary-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold lowercase">{notes?.length || 0} notes</div>
+                <p className="text-xs text-muted-foreground mt-1 lowercase">organized lecture notes</p>
+              </CardContent>
+            </Card>
+          </Link>
+        )}
+        <Link href="/tracker" className="block">
+          <Card className="hover:shadow-lg transition-all duration-500 border-none bg-muted group cursor-pointer h-full">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-              <span className="text-sm font-semibold uppercase tracking-wider text-secondary-foreground/70">notebooks</span>
-              <StickyNote className="h-5 w-5 text-secondary-foreground" />
+              <span className="text-sm font-semibold uppercase tracking-wider text-muted-foreground/70">grades</span>
+              <TrendingUp className="h-5 w-5 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold lowercase">24 notes</div>
-              <p className="text-xs text-muted-foreground mt-1 lowercase">updated recently</p>
+              <div className="text-3xl font-bold lowercase">{gpa} GPA</div>
+              <p className="text-xs text-muted-foreground mt-1 lowercase">avg: {avgGrade}%</p>
             </CardContent>
           </Card>
-        )}
-        <Card className="hover:shadow-lg transition-all duration-500 border-none bg-muted group cursor-pointer">
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <span className="text-sm font-semibold uppercase tracking-wider text-muted-foreground/70">grades</span>
-            <TrendingUp className="h-5 w-5 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold lowercase">3.82 gpa</div>
-            <p className="text-xs text-muted-foreground mt-1 lowercase">target: 3.90</p>
-          </CardContent>
-        </Card>
+        </Link>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
@@ -202,45 +262,58 @@ function DashboardPage({ user, profile }: { user: any, profile?: any }) {
             </Link>
           </CardHeader>
           <CardContent className="space-y-4">
-            {[
-              { title: "algebra midterm prep", due: "today", priority: "high", color: "destructive" },
-              { title: "history essay draft", due: "tomorrow", priority: "medium", color: "default" },
-              { title: "lab report: chemical bonds", due: "friday", priority: "low", color: "secondary" },
-            ].map((task, i) => (
-              <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-muted/30 hover:bg-muted/50 transition-colors">
-                <div className="flex items-center gap-4">
-                  <CheckSquare className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <p className="font-semibold text-foreground lowercase">{task.title}</p>
-                    <p className="text-sm text-muted-foreground lowercase">due {task.due}</p>
+            {recentTasks && recentTasks.length > 0 ? (
+              recentTasks.map((task: any) => (
+                <div key={task.id} className="flex items-center justify-between p-4 rounded-2xl bg-muted/30 hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center gap-4">
+                    <CheckSquare className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                      <p className="font-semibold text-foreground lowercase">{task.title}</p>
+                      <p className="text-sm text-muted-foreground lowercase flex items-center gap-1.5">
+                        <Clock className="h-3 w-3" /> due {isToday(parseISO(task.dueDate)) ? 'today' : format(parseISO(task.dueDate), 'MMM d')}
+                      </p>
+                    </div>
                   </div>
+                  <Badge variant={task.priority === 'high' ? 'destructive' : task.priority === 'medium' ? 'default' : 'secondary'} className="rounded-full lowercase">
+                    {task.priority}
+                  </Badge>
                 </div>
-                <Badge variant={task.color as any} className="rounded-full lowercase">{task.priority}</Badge>
+              ))
+            ) : (
+              <div className="py-8 text-center space-y-3">
+                <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mx-auto opacity-20">
+                  <CheckSquare className="h-6 w-6" />
+                </div>
+                <p className="text-muted-foreground lowercase text-sm">no upcoming tasks. take a break!</p>
               </div>
-            ))}
+            )}
           </CardContent>
         </Card>
 
         <Card className="lg:col-span-3 border-none shadow-sm bg-gradient-to-br from-primary/5 to-accent/5 rounded-[32px]">
           <CardHeader>
             <CardTitle className="font-headline text-2xl lowercase">progress</CardTitle>
-            <p className="text-muted-foreground text-sm lowercase">current semester average: 88%</p>
+            <p className="text-muted-foreground text-sm lowercase">current semester average: {avgGrade}%</p>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm font-medium lowercase">
-                <span>{isHighSchool ? 'algebra ii' : 'calculus iii'}</span>
-                <span>92%</span>
+            {courses && courses.length > 0 ? (
+              courses.slice(0, 3).map((course: any) => (
+                <div key={course.id} className="space-y-2">
+                  <div className="flex justify-between text-sm font-medium lowercase">
+                    <span>{course.name}</span>
+                    <span>{course.grade}%</span>
+                  </div>
+                  <Progress value={parseFloat(course.grade) || 0} className="h-3 bg-white/50" />
+                </div>
+              ))
+            ) : (
+              <div className="py-10 text-center">
+                <p className="text-sm text-muted-foreground lowercase">no courses tracked yet.</p>
+                <Button variant="link" asChild className="mt-2 text-primary lowercase">
+                  <Link href="/tracker">add your first course</Link>
+                </Button>
               </div>
-              <Progress value={92} className="h-3 bg-white/50" />
-            </div>
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm font-medium lowercase">
-                <span>{isHighSchool ? 'world history' : 'modern history'}</span>
-                <span>85%</span>
-              </div>
-              <Progress value={85} className="h-3 bg-white/50" />
-            </div>
+            )}
           </CardContent>
         </Card>
       </div>
