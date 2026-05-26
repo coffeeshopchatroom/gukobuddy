@@ -113,17 +113,12 @@ export function AppSidebar() {
     <Sidebar className="border-r border-sidebar-border">
       <SidebarHeader className="px-6 py-8">
         <Link href="/" className="flex items-center gap-2">
-            <div className="h-9 w-9 rounded-full bg-primary/20 flex items-center justify-center p-1 flex-shrink-0">
-              <div className="relative w-full h-full">
-                <Image 
-                  src="/devmade-icons/gukologo.png" 
-                  alt="guko logo" 
-                  fill 
-                  className="object-fill" 
-                  sizes="30px" 
-                  unoptimized
-                />
-              </div>
+            <div className="h-9 w-9 rounded-full bg-primary/20 flex items-center justify-center p-1 flex-shrink-0 overflow-hidden">
+              <img 
+                src="/devmade-icons/gukologo.png" 
+                alt="guko logo" 
+                className="w-full h-full object-contain"
+              />
             </div>
             <span className="font-headline text-xl font-bold tracking-tight text-foreground lowercase">guko buddy</span>
         </Link>
