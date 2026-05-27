@@ -309,8 +309,15 @@ export function AppSidebar() {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
 
-              <SidebarMenuItem className="mt-8">
+        <SidebarGroup className="mt-4">
+          <SidebarGroupLabel className="px-6 mb-2 text-[10px] uppercase tracking-widest font-bold opacity-30 group-data-[collapsible=icon]:hidden">online</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu className="px-4 group-data-[collapsible=icon]:px-2">
+              <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
                   isActive={pathname === "/channel"}
