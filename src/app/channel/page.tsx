@@ -3,7 +3,7 @@
 import * as React from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Radio, ArrowLeft, Sparkles, Globe, Zap, smartphoneNfc, Database } from "lucide-react"
+import { Radio, ArrowLeft, Sparkles, Globe, Zap, SmartphoneNfc, Database } from "lucide-react"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 
