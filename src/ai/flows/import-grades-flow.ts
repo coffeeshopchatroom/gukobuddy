@@ -35,7 +35,7 @@ export type ImportGradesOutput = z.infer<typeof ImportGradesOutputSchema>;
 export async function importGrades(input: z.infer<typeof ImportGradesInputSchema>): Promise<ImportGradesOutput> {
   const prompt = ai.definePrompt({
     name: 'importGradesPrompt',
-    model: 'googleai/gemini-2.5-flash',
+    model: 'googleai/gemini-3.1-flash-lite',
     input: { schema: ImportGradesInputSchema },
     output: { schema: ImportGradesOutputSchema },
     prompt: `you are an expert academic data parser. 
