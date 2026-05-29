@@ -1,10 +1,10 @@
 import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/google-genai';
-import * as dotenv from 'dotenv';
 
-dotenv.config();
+// THIS IS A TEMPORARY DEBUGGING STEP. DO NOT LEAVE THE KEY HERE.
+const hardcodedApiKey = 'AIzaSyCggdPmkfXzpgoev2miHfEPrJRYWhFkJMc';
 
 export const ai = genkit({
-  plugins: [googleAI({apiKey: process.env.GEMINI_API_KEY})],
+  plugins: [googleAI({apiKey: hardcodedApiKey})],
   model: 'googleai/gemini-2.5-flash',
 });
