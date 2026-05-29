@@ -8,6 +8,9 @@ import type {NextConfig} from 'next';
         eslint: {
           ignoreDuringBuilds: true,
         },
+        env: {
+          GEMINI_API_KEY: process.env.GEMINI_API_KEY,
+        },
         images: {
           remotePatterns: [
             {
