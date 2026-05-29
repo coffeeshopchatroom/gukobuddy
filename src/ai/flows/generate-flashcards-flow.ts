@@ -51,9 +51,10 @@ export async function generateFlashcardsFromFile(input: z.infer<typeof GenerateF
     task:
     1. analyze the provided document or notes.
     2. identify the most important concepts, definitions, and facts.
-    3. create 5-10 high-quality flashcards.
+    3. create high-quality flashcards. 
     4. for each card, provide a "question" and an "answer".
     5. provide a "searchKeyword" that is a specific, simple noun or concept that can be used to find a clear image online representing the card.
+    6. depending on the amount of information, the grade, and the prompt the user gives, create 5-60 cards.
     
     rules:
     - strictly lowercase: all text content must be in lowercase.
