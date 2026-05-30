@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -110,10 +109,10 @@ export function AppSidebar() {
   const isAdmin = profile?.isAdmin === true;
 
   return (
-    <Sidebar className="border-r border-sidebar-border transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]" collapsible="icon">
+    <Sidebar className="border-r border-sidebar-border" collapsible="icon">
       <SidebarHeader className="px-4 py-8 flex flex-row items-center justify-between group-data-[collapsible=icon]:px-2 group-data-[collapsible=icon]:justify-center">
         <Link href="/" className="flex items-center gap-3 overflow-hidden">
-            <div className="h-9 w-9 rounded-full bg-primary/20 flex items-center justify-center p-1 flex-shrink-0 overflow-hidden transition-all duration-500">
+            <div className="h-9 w-9 rounded-full bg-primary/20 flex items-center justify-center p-1 flex-shrink-0 overflow-hidden">
               <img 
                 src="/devmade-icons/gukologo.png" 
                 alt="guko logo" 
@@ -123,7 +122,7 @@ export function AppSidebar() {
                 }}
               />
             </div>
-            <span className="font-headline text-xl font-bold tracking-tight text-foreground lowercase whitespace-nowrap group-data-[collapsible=icon]:hidden animate-in fade-in duration-500">guko buddy</span>
+            <span className="font-headline text-xl font-bold tracking-tight text-foreground lowercase whitespace-nowrap group-data-[collapsible=icon]:hidden">guko buddy</span>
         </Link>
         <SidebarTrigger className="hidden md:flex h-8 w-8 rounded-lg hover:bg-muted group-data-[collapsible=icon]:flex" />
       </SidebarHeader>
@@ -140,7 +139,7 @@ export function AppSidebar() {
                   asChild
                   isActive={pathname === "/"}
                   tooltip="dashboard"
-                  className="flex items-center gap-3 px-4 py-6 rounded-xl transition-all duration-500 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground lowercase group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
+                  className="flex items-center gap-3 px-4 py-6 rounded-xl transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground lowercase group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
                 >
                   <Link href="/">
                     <LayoutDashboard className="h-5 w-5" />
@@ -153,8 +152,6 @@ export function AppSidebar() {
                 <Collapsible 
                   open={isTasksOpen} 
                   onOpenChange={setIsTasksOpen}
-                  onMouseEnter={() => setIsTasksOpen(true)}
-                  onMouseLeave={() => !isTaskRelated && setIsTasksOpen(false)}
                   className="group/collapsible"
                 >
                   <SidebarMenuItem>
@@ -162,11 +159,11 @@ export function AppSidebar() {
                       <SidebarMenuButton
                         isActive={pathname.startsWith('/tasks')}
                         tooltip="tasks"
-                        className="flex items-center gap-3 px-4 py-6 rounded-xl transition-all duration-500 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground lowercase group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
+                        className="flex items-center gap-3 px-4 py-6 rounded-xl transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground lowercase group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
                       >
                         <CheckSquare className="h-5 w-5" />
                         <span className="font-medium group-data-[collapsible=icon]:hidden">tasks</span>
-                        <ChevronDown className={cn("ml-auto h-4 w-4 transition-transform duration-500 group-data-[collapsible=icon]:hidden", isTasksOpen && "rotate-180")} />
+                        <ChevronDown className={cn("ml-auto h-4 w-4 transition-transform duration-200 group-data-[collapsible=icon]:hidden", isTasksOpen && "rotate-180")} />
                       </SidebarMenuButton>
                     </CollapsibleTrigger>
                     <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up group-data-[collapsible=icon]:hidden">
@@ -206,8 +203,6 @@ export function AppSidebar() {
                 <Collapsible 
                   open={isNotebooksOpen} 
                   onOpenChange={setIsNotebooksOpen}
-                  onMouseEnter={() => setIsNotebooksOpen(true)}
-                  onMouseLeave={() => !isNotebookRelated && setIsNotebooksOpen(false)}
                   className="group/collapsible"
                 >
                   <SidebarMenuItem>
@@ -215,11 +210,11 @@ export function AppSidebar() {
                       <SidebarMenuButton
                         isActive={pathname === "/notebooks"}
                         tooltip="notebooks"
-                        className="flex items-center gap-3 px-4 py-6 rounded-xl transition-all duration-500 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground lowercase group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
+                        className="flex items-center gap-3 px-4 py-6 rounded-xl transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground lowercase group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
                       >
                         <StickyNote className="h-5 w-5" />
                         <span className="font-medium group-data-[collapsible=icon]:hidden">notebooks</span>
-                        <ChevronDown className={cn("ml-auto h-4 w-4 transition-transform duration-500 group-data-[collapsible=icon]:hidden", isNotebooksOpen && "rotate-180")} />
+                        <ChevronDown className={cn("ml-auto h-4 w-4 transition-transform duration-200 group-data-[collapsible=icon]:hidden", isNotebooksOpen && "rotate-180")} />
                       </SidebarMenuButton>
                     </CollapsibleTrigger>
                     <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up group-data-[collapsible=icon]:hidden">
@@ -259,8 +254,6 @@ export function AppSidebar() {
                 <Collapsible 
                   open={isFlashcardsOpen} 
                   onOpenChange={setIsFlashcardsOpen}
-                  onMouseEnter={() => setIsFlashcardsOpen(true)}
-                  onMouseLeave={() => !isFlashcardRelated && setIsFlashcardsOpen(false)}
                   className="group/collapsible"
                 >
                   <SidebarMenuItem>
@@ -268,11 +261,11 @@ export function AppSidebar() {
                       <SidebarMenuButton
                         isActive={pathname === "/flashcards"}
                         tooltip="flashcards"
-                        className="flex items-center gap-3 px-4 py-6 rounded-xl transition-all duration-500 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground lowercase group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
+                        className="flex items-center gap-3 px-4 py-6 rounded-xl transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground lowercase group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
                       >
                         <Layers className="h-5 w-5" />
                         <span className="font-medium group-data-[collapsible=icon]:hidden">flashcards</span>
-                        <ChevronDown className={cn("ml-auto h-4 w-4 transition-transform duration-500 group-data-[collapsible=icon]:hidden", isFlashcardsOpen && "rotate-180")} />
+                        <ChevronDown className={cn("ml-auto h-4 w-4 transition-transform duration-200 group-data-[collapsible=icon]:hidden", isFlashcardsOpen && "rotate-180")} />
                       </SidebarMenuButton>
                     </CollapsibleTrigger>
                     <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up group-data-[collapsible=icon]:hidden">
@@ -305,7 +298,7 @@ export function AppSidebar() {
                     asChild
                     isActive={pathname === "/tracker"}
                     tooltip={trackerLabel}
-                    className="flex items-center gap-3 px-4 py-6 rounded-xl transition-all duration-500 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground lowercase group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
+                    className="flex items-center gap-3 px-4 py-6 rounded-xl transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground lowercase group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
                   >
                     <Link href="/tracker">
                       <GraduationCap className="h-5 w-5" />
@@ -327,7 +320,7 @@ export function AppSidebar() {
                   asChild
                   isActive={pathname === "/channel"}
                   tooltip="guko channel"
-                  className="flex items-center gap-3 px-4 py-7 rounded-2xl transition-all duration-500 bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20 shadow-sm lowercase group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
+                  className="flex items-center gap-3 px-4 py-7 rounded-2xl transition-colors bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20 shadow-sm lowercase group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
                 >
                   <Link href="/channel">
                     <Radio className="h-5 w-5 animate-pulse" />
@@ -346,7 +339,7 @@ export function AppSidebar() {
                   <SidebarMenuButton
                       onClick={handleSignOut}
                       tooltip="sign out"
-                      className="flex items-center gap-3 px-4 py-6 rounded-xl transition-all duration-500 hover:bg-destructive/10 hover:text-destructive group lowercase group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
+                      className="flex items-center gap-3 px-4 py-6 rounded-xl transition-colors hover:bg-destructive/10 hover:text-destructive group lowercase group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
                   >
                       <LogOut className="h-5 w-5 text-muted-foreground group-hover:text-destructive" />
                       <span className="font-medium group-data-[collapsible=icon]:hidden">sign out</span>
@@ -364,13 +357,13 @@ export function AppSidebar() {
                     onClick={() => setIsProfileOpen(true)}
                     className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-secondary/50 backdrop-blur-sm border border-border/30 hover:bg-secondary/70 transition-all group cursor-pointer group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:w-10 group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:justify-center"
                   >
-                    <Avatar className="h-9 w-9 border border-primary/20 shadow-sm transition-transform group-hover:scale-105 group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8">
+                    <Avatar className="h-9 w-9 border border-primary/20 shadow-sm group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8">
                       <AvatarImage src={userPhoto} className="object-cover" />
                       <AvatarFallback className="bg-primary/20 text-primary font-bold text-xs">
                         {userName[0]}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="flex flex-col min-w-0 group-data-[collapsible=icon]:hidden animate-in fade-in duration-500">
+                    <div className="flex flex-col min-w-0 group-data-[collapsible=icon]:hidden">
                       <span className="text-sm font-semibold truncate lowercase">{userName}</span>
                       <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-tighter truncate lowercase">{userRole}</span>
                     </div>
@@ -410,7 +403,7 @@ export function AppSidebar() {
           </div>
         ) : (
           <Button asChild className="w-full rounded-2xl py-6 font-bold gap-2 lowercase group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:h-12 group-data-[collapsible=icon]:w-12 group-data-[collapsible=icon]:justify-center">
-            <Link href="/login"><LogIn className="h-4 w-4" /> <span className="group-data-[collapsible=icon]:hidden animate-in fade-in duration-500">sign in</span></Link>
+            <Link href="/login"><LogIn className="h-4 w-4" /> <span className="group-data-[collapsible=icon]:hidden">sign in</span></Link>
           </Button>
         )}
       </SidebarFooter>
