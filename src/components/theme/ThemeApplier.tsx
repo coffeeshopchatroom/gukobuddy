@@ -1,9 +1,16 @@
-
 'use client';
 
 import * as React from 'react';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
+
+const PRESET_THEMES = {
+  'classic': { primary: '#A7C4A0', bg: '#FFFFFF', accent: '#FFF0F0', foreground: '#1a1c19' },
+  'midnight': { primary: '#3B82F6', bg: '#0F172A', accent: '#1E293B', foreground: '#F8FAFC' },
+  'sunset': { primary: '#F97316', bg: '#FFF7ED', accent: '#FFEDD5', foreground: '#431407' },
+  'matcha': { primary: '#4D7C0F', bg: '#F7FEE7', accent: '#ECFCCB', foreground: '#14532D' },
+  'lavender': { primary: '#8B5CF6', bg: '#F5F3FF', accent: '#EDE9FE', foreground: '#2E1065' },
+};
 
 /**
  * A hidden component that applies theme settings (colors, fonts, backgrounds) 
@@ -21,7 +28,7 @@ export function ThemeApplier() {
     const theme = profile.theme;
     const root = document.documentElement;
 
-    // Helper to convert Hex to HSL for Tailwind compatibility
+    // Helper to convert Hex to HSL for Tailwind compatibility (Space-separated H S L)
     const hexToHsl = (hex: string) => {
       let r = 0, g = 0, b = 0;
       if (hex.length === 4) {
@@ -50,13 +57,40 @@ export function ThemeApplier() {
       return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
     };
 
-    // Apply Fonts
+    // 1. Determine Colors (Custom vs Preset)
+    let colors = theme.customColors;
+    if (theme.activeTheme !== 'custom' && PRESET_THEMES[theme.activeTheme as keyof typeof PRESET_THEMES]) {
+      colors = PRESET_THEMES[theme.activeTheme as keyof typeof PRESET_THEMES];
+    }
+
+    // 2. Apply Colors
+    if (colors) {
+      if (colors.primary) root.style.setProperty('--primary', hexToHsl(colors.primary));
+      if (colors.background) {
+        root.style.setProperty('--background', hexToHsl(colors.background));
+        root.style.setProperty('--card', hexToHsl(colors.background));
+        root.style.setProperty('--popover', hexToHsl(colors.background));
+        root.style.setProperty('--sidebar-background', hexToHsl(colors.background));
+      }
+      if (colors.accent) {
+        root.style.setProperty('--accent', hexToHsl(colors.accent));
+        root.style.setProperty('--secondary', hexToHsl(colors.accent));
+      }
+      if (colors.foreground) {
+        root.style.setProperty('--foreground', hexToHsl(colors.foreground));
+        root.style.setProperty('--card-foreground', hexToHsl(colors.foreground));
+        root.style.setProperty('--popover-foreground', hexToHsl(colors.foreground));
+        root.style.setProperty('--sidebar-foreground', hexToHsl(colors.foreground));
+      }
+    }
+
+    // 3. Apply Fonts
     if (theme.fontFamily) {
       root.style.setProperty('--font-body', theme.fontFamily);
       root.style.setProperty('--font-headline', theme.fontFamily);
     }
 
-    // Apply Font Size
+    // 4. Apply Font Size
     const sizeMap: Record<string, string> = {
       'sm': '14px',
       'base': '16px',
@@ -67,19 +101,7 @@ export function ThemeApplier() {
       root.style.fontSize = sizeMap[theme.fontSize] || '16px';
     }
 
-    // Apply Custom Colors if set
-    if (theme.activeTheme === 'custom' && theme.customColors) {
-      const colors = theme.customColors;
-      if (colors.primary) root.style.setProperty('--primary', hexToHsl(colors.primary));
-      if (colors.background) root.style.setProperty('--background', hexToHsl(colors.background));
-      if (colors.accent) root.style.setProperty('--accent', hexToHsl(colors.accent));
-      if (colors.foreground) root.style.setProperty('--foreground', hexToHsl(colors.foreground));
-    } else {
-      // Revert to defaults based on pre-made theme logic if necessary
-      // This is handled by CSS classes or can be explicitly set here
-    }
-
-    // Apply Background Image
+    // 5. Apply Background Image
     const bgContainer = document.getElementById('global-theme-bg');
     if (bgContainer) {
       if (theme.backgroundImage) {
