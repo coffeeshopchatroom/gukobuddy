@@ -6,11 +6,11 @@ import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 
 const PRESET_THEMES = {
-  'classic': { primary: '#A7C4A0', bg: '#FFFFFF', accent: '#FFF0F0', foreground: '#1a1c19' },
-  'midnight': { primary: '#3B82F6', bg: '#0F172A', accent: '#1E293B', foreground: '#F8FAFC' },
-  'sunset': { primary: '#F97316', bg: '#FFF7ED', accent: '#FFEDD5', foreground: '#431407' },
-  'matcha': { primary: '#4D7C0F', bg: '#F7FEE7', accent: '#ECFCCB', foreground: '#14532D' },
-  'lavender': { primary: '#8B5CF6', bg: '#F5F3FF', accent: '#EDE9FE', foreground: '#2E1065' },
+  'classic': { primary: '#A7C4A0', bg: '#FFFFFF', accent: '#FFF0F0', foreground: '#1a1c19', muted: '#71717a' },
+  'midnight': { primary: '#3B82F6', bg: '#0F172A', accent: '#1E293B', foreground: '#F8FAFC', muted: '#94A3B8' },
+  'sunset': { primary: '#F97316', bg: '#FFF7ED', accent: '#FFEDD5', foreground: '#431407', muted: '#9A3412' },
+  'matcha': { primary: '#4D7C0F', bg: '#F7FEE7', accent: '#ECFCCB', foreground: '#14532D', muted: '#3F6212' },
+  'lavender': { primary: '#8B5CF6', bg: '#F5F3FF', accent: '#EDE9FE', foreground: '#2E1065', muted: '#6D28D9' },
 };
 
 /**
@@ -60,14 +60,15 @@ export function ThemeApplier() {
 
     if (theme) {
       // 1. Determine Colors (Custom vs Preset)
-      let colors = theme.customColors || { primary: '#A7C4A0', background: '#FFFFFF', accent: '#FFF0F0', foreground: '#1a1c19' };
+      let colors = theme.customColors || { primary: '#A7C4A0', background: '#FFFFFF', accent: '#FFF0F0', foreground: '#1a1c19', muted: '#71717a' };
       if (theme.activeTheme !== 'custom' && PRESET_THEMES[theme.activeTheme as keyof typeof PRESET_THEMES]) {
         const preset = PRESET_THEMES[theme.activeTheme as keyof typeof PRESET_THEMES];
         colors = {
           primary: preset.primary,
           background: preset.bg,
           accent: preset.accent,
-          foreground: preset.foreground
+          foreground: preset.foreground,
+          muted: preset.muted
         };
       }
 
@@ -92,6 +93,10 @@ export function ThemeApplier() {
         root.style.setProperty('--popover-foreground', hslFg);
         root.style.setProperty('--sidebar-foreground', hslFg);
       }
+      if (colors.muted) {
+        const hslMuted = hexToHsl(colors.muted);
+        root.style.setProperty('--muted-foreground', hslMuted);
+      }
 
       // 3. Apply Fonts
       if (theme.fontFamily) {
@@ -110,14 +115,16 @@ export function ThemeApplier() {
         root.style.fontSize = sizeMap[theme.fontSize] || '16px';
       }
 
-      // 5. Apply Background Image
+      // 5. Apply Background Image & Blur
       const bgContainer = document.getElementById('global-theme-bg');
       if (bgContainer) {
         if (theme.backgroundImage) {
           bgContainer.style.backgroundImage = `url(${theme.backgroundImage})`;
           bgContainer.style.opacity = (theme.bgOpacity || 20) / 100 + '';
+          bgContainer.style.filter = `blur(${theme.bgBlur || 0}px)`;
         } else {
           bgContainer.style.backgroundImage = 'none';
+          bgContainer.style.filter = 'none';
         }
       }
     }

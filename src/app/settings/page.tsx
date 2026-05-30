@@ -25,7 +25,8 @@ import {
   Image as ImageIcon,
   Type,
   Maximize2,
-  Upload
+  Upload,
+  Tornado
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -34,11 +35,11 @@ import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const PRESET_THEMES = [
-  { id: 'classic', name: 'classic', primary: '#A7C4A0', bg: '#FFFFFF', accent: '#FFF0F0' },
-  { id: 'midnight', name: 'midnight', primary: '#3B82F6', bg: '#0F172A', accent: '#1E293B' },
-  { id: 'sunset', name: 'sunset', primary: '#F97316', bg: '#FFF7ED', accent: '#FFEDD5' },
-  { id: 'matcha', name: 'matcha', primary: '#4D7C0F', bg: '#F7FEE7', accent: '#ECFCCB' },
-  { id: 'lavender', name: 'lavender', primary: '#8B5CF6', bg: '#F5F3FF', accent: '#EDE9FE' },
+  { id: 'classic', name: 'classic', primary: '#A7C4A0', bg: '#FFFFFF', accent: '#FFF0F0', foreground: '#1a1c19', muted: '#71717a' },
+  { id: 'midnight', name: 'midnight', primary: '#3B82F6', bg: '#0F172A', accent: '#1E293B', foreground: '#F8FAFC', muted: '#94A3B8' },
+  { id: 'sunset', name: 'sunset', primary: '#F97316', bg: '#FFF7ED', accent: '#FFEDD5', foreground: '#431407', muted: '#9A3412' },
+  { id: 'matcha', name: 'matcha', primary: '#4D7C0F', bg: '#F7FEE7', accent: '#ECFCCB', foreground: '#14532D', muted: '#3F6212' },
+  { id: 'lavender', name: 'lavender', primary: '#8B5CF6', bg: '#F5F3FF', accent: '#EDE9FE', foreground: '#2E1065', muted: '#6D28D9' },
 ];
 
 const FONTS = [
@@ -68,8 +69,11 @@ export default function SettingsPage() {
   const [primaryColor, setPrimaryColor] = React.useState('#A7C4A0');
   const [bgColor, setBgColor] = React.useState('#FFFFFF');
   const [accentColor, setAccentColor] = React.useState('#FFF0F0');
+  const [fgColor, setFgColor] = React.useState('#1a1c19');
+  const [mutedColor, setMutedColor] = React.useState('#71717a');
   const [bgImage, setBgImage] = React.useState('');
   const [bgOpacity, setBgOpacity] = React.useState(20);
+  const [bgBlur, setBgBlur] = React.useState(0);
   const [fontFamily, setFontFamily] = React.useState('IBM Plex Sans Devanagari');
   const [fontSize, setFontSize] = React.useState('base');
 
@@ -83,8 +87,11 @@ export default function SettingsPage() {
         setPrimaryColor(profile.theme.customColors?.primary || '#A7C4A0');
         setBgColor(profile.theme.customColors?.background || '#FFFFFF');
         setAccentColor(profile.theme.customColors?.accent || '#FFF0F0');
+        setFgColor(profile.theme.customColors?.foreground || '#1a1c19');
+        setMutedColor(profile.theme.customColors?.muted || '#71717a');
         setBgImage(profile.theme.backgroundImage || '');
         setBgOpacity(profile.theme.bgOpacity ?? 20);
+        setBgBlur(profile.theme.bgBlur ?? 0);
         setFontFamily(profile.theme.fontFamily || 'IBM Plex Sans Devanagari');
         setFontSize(profile.theme.fontSize || 'base');
       }
@@ -123,6 +130,8 @@ export default function SettingsPage() {
     setPrimaryColor(theme.primary);
     setBgColor(theme.bg);
     setAccentColor(theme.accent);
+    setFgColor(theme.foreground);
+    setMutedColor(theme.muted);
   };
 
   const handleSave = async () => {
@@ -139,9 +148,12 @@ export default function SettingsPage() {
             primary: primaryColor || '#A7C4A0',
             background: bgColor || '#FFFFFF',
             accent: accentColor || '#FFF0F0',
+            foreground: fgColor || '#1a1c19',
+            muted: mutedColor || '#71717a'
           },
           backgroundImage: bgImage || '',
           bgOpacity: bgOpacity ?? 20,
+          bgBlur: bgBlur ?? 0,
           fontFamily: fontFamily || 'IBM Plex Sans Devanagari',
           fontSize: fontSize || 'base',
         },
@@ -279,7 +291,7 @@ export default function SettingsPage() {
                   >
                     <div className="w-10 h-10 rounded-full border-2 border-white shadow-sm flex overflow-hidden">
                        <div className="flex-1" style={{ backgroundColor: t.primary }} />
-                       <div className="flex-1" style={{ backgroundColor: t.accent }} />
+                       <div className="flex-1" style={{ backgroundColor: t.bg }} />
                     </div>
                     <span className="text-xs font-bold lowercase">{t.name}</span>
                   </button>
@@ -299,26 +311,40 @@ export default function SettingsPage() {
 
             {/* Custom Color Controls (only if custom is active) */}
             {activeTheme === 'custom' && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6 rounded-3xl bg-muted/30 border border-muted animate-in fade-in slide-in-from-top-2">
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6 p-6 rounded-3xl bg-muted/30 border border-muted animate-in fade-in slide-in-from-top-2">
                  <div className="space-y-3">
-                    <Label className="text-[10px] font-bold uppercase tracking-widest">primary color</Label>
+                    <Label className="text-[10px] font-bold uppercase tracking-widest">primary</Label>
                     <div className="flex items-center gap-3">
-                       <input type="color" value={primaryColor} onChange={(e) => setPrimaryColor(e.target.value)} className="w-10 h-10 rounded-xl cursor-pointer" />
-                       <span className="text-xs font-mono uppercase opacity-60">{primaryColor}</span>
+                       <input type="color" value={primaryColor} onChange={(e) => setPrimaryColor(e.target.value)} className="w-8 h-8 rounded-xl cursor-pointer" />
+                       <span className="text-[10px] font-mono uppercase opacity-60">{primaryColor}</span>
                     </div>
                  </div>
                  <div className="space-y-3">
-                    <Label className="text-[10px] font-bold uppercase tracking-widest">background</Label>
+                    <Label className="text-[10px] font-bold uppercase tracking-widest">bg</Label>
                     <div className="flex items-center gap-3">
-                       <input type="color" value={bgColor} onChange={(e) => setBgColor(e.target.value)} className="w-10 h-10 rounded-xl cursor-pointer" />
-                       <span className="text-xs font-mono uppercase opacity-60">{bgColor}</span>
+                       <input type="color" value={bgColor} onChange={(e) => setBgColor(e.target.value)} className="w-8 h-8 rounded-xl cursor-pointer" />
+                       <span className="text-[10px] font-mono uppercase opacity-60">{bgColor}</span>
                     </div>
                  </div>
                  <div className="space-y-3">
-                    <Label className="text-[10px] font-bold uppercase tracking-widest">accent color</Label>
+                    <Label className="text-[10px] font-bold uppercase tracking-widest">accent</Label>
                     <div className="flex items-center gap-3">
-                       <input type="color" value={accentColor} onChange={(e) => setAccentColor(e.target.value)} className="w-10 h-10 rounded-xl cursor-pointer" />
-                       <span className="text-xs font-mono uppercase opacity-60">{accentColor}</span>
+                       <input type="color" value={accentColor} onChange={(e) => setAccentColor(e.target.value)} className="w-8 h-8 rounded-xl cursor-pointer" />
+                       <span className="text-[10px] font-mono uppercase opacity-60">{accentColor}</span>
+                    </div>
+                 </div>
+                 <div className="space-y-3">
+                    <Label className="text-[10px] font-bold uppercase tracking-widest">text</Label>
+                    <div className="flex items-center gap-3">
+                       <input type="color" value={fgColor} onChange={(e) => setFgColor(e.target.value)} className="w-8 h-8 rounded-xl cursor-pointer" />
+                       <span className="text-[10px] font-mono uppercase opacity-60">{fgColor}</span>
+                    </div>
+                 </div>
+                 <div className="space-y-3">
+                    <Label className="text-[10px] font-bold uppercase tracking-widest">subtext</Label>
+                    <div className="flex items-center gap-3">
+                       <input type="color" value={mutedColor} onChange={(e) => setMutedColor(e.target.value)} className="w-8 h-8 rounded-xl cursor-pointer" />
+                       <span className="text-[10px] font-mono uppercase opacity-60">{mutedColor}</span>
                     </div>
                  </div>
               </div>
@@ -391,12 +417,22 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                <div className={cn("space-y-3 transition-all", !bgImage && "opacity-20 pointer-events-none")}>
-                  <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center justify-between">
-                    background intensity
-                    <span className="font-mono">{bgOpacity}%</span>
-                  </Label>
-                  <Slider value={[bgOpacity]} max={100} onValueChange={(v) => setBgOpacity(v[0])} />
+                <div className={cn("space-y-4 transition-all", !bgImage && "opacity-20 pointer-events-none")}>
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center justify-between">
+                      intensity
+                      <span className="font-mono">{bgOpacity}%</span>
+                    </Label>
+                    <Slider value={[bgOpacity]} max={100} onValueChange={(v) => setBgOpacity(v[0])} />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center justify-between">
+                      <span className="flex items-center gap-1.5"><Tornado className="h-3 w-3" /> blur</span>
+                      <span className="font-mono">{bgBlur}px</span>
+                    </Label>
+                    <Slider value={[bgBlur]} max={20} step={1} onValueChange={(v) => setBgBlur(v[0])} />
+                  </div>
                 </div>
               </div>
             </div>

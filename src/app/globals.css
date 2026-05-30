@@ -44,6 +44,34 @@
   }
 }
 
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--primary) / 0.2);
+  border-radius: 20px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--primary) / 0.4);
+  background-clip: padding-box;
+}
+
+/* For Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--primary) / 0.2) transparent;
+}
+
 /* Force all text elements to lowercase globally */
 *, button, input, textarea, label, span, p, h1, h2, h3, h4, h5, h6, div, li, a, strong, em, b, i, u, small {
   text-transform: lowercase !important;
@@ -112,7 +140,7 @@
   @apply mb-2 leading-relaxed;
 }
 
-/* Custom scrollbar */
+/* Custom scrollbar class for components */
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
 }

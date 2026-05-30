@@ -59,11 +59,13 @@
                 "primary": { "type": "string" },
                 "background": { "type": "string" },
                 "accent": { "type": "string" },
-                "foreground": { "type": "string" }
+                "foreground": { "type": "string" },
+                "muted": { "type": "string" }
               }
             },
             "backgroundImage": { "type": "string" },
             "bgOpacity": { "type": "number" },
+            "bgBlur": { "type": "number" },
             "fontFamily": { "type": "string" },
             "fontSize": { "type": "string", "enum": ["sm", "base", "lg", "xl"] }
           }
