@@ -149,7 +149,7 @@ export default function TasksPage() {
       </div>
 
       <div className="grid gap-6">
-        <div className="flex items-center gap-4 bg-white p-2 rounded-2xl border border-border shadow-sm">
+        <div className="flex items-center gap-4 bg-card p-2 rounded-2xl border border-border shadow-sm">
           <div className="relative flex-1">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input 
@@ -163,10 +163,10 @@ export default function TasksPage() {
 
         <Tabs defaultValue="all" className="w-full">
           <TabsList className="bg-muted/50 p-1 h-auto rounded-2xl mb-6">
-            <TabsTrigger value="all" className="px-8 py-3 rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm font-medium lowercase">all</TabsTrigger>
-            <TabsTrigger value="today" className="px-8 py-3 rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm font-medium lowercase">today</TabsTrigger>
-            <TabsTrigger value="upcoming" className="px-8 py-3 rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm font-medium lowercase">upcoming</TabsTrigger>
-            <TabsTrigger value="completed" className="px-8 py-3 rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm font-medium lowercase">completed</TabsTrigger>
+            <TabsTrigger value="all" className="px-8 py-3 rounded-xl data-[state=active]:bg-card data-[state=active]:shadow-sm font-medium lowercase">all</TabsTrigger>
+            <TabsTrigger value="today" className="px-8 py-3 rounded-xl data-[state=active]:bg-card data-[state=active]:shadow-sm font-medium lowercase">today</TabsTrigger>
+            <TabsTrigger value="upcoming" className="px-8 py-3 rounded-xl data-[state=active]:bg-card data-[state=active]:shadow-sm font-medium lowercase">upcoming</TabsTrigger>
+            <TabsTrigger value="completed" className="px-8 py-3 rounded-xl data-[state=active]:bg-card data-[state=active]:shadow-sm font-medium lowercase">completed</TabsTrigger>
           </TabsList>
           
           <TabsContent value="all" className="space-y-6">
@@ -254,7 +254,7 @@ function TaskItem({ task, onToggle, onDelete }: any) {
 
   return (
     <Card className={cn(
-      "group border-none shadow-sm hover:shadow-md transition-all duration-300 rounded-[24px] overflow-hidden bg-white",
+      "group border-none shadow-sm hover:shadow-md transition-all duration-300 rounded-[24px] overflow-hidden bg-card",
       task.completed && "opacity-60"
     )}>
       <CardContent className="p-6 flex items-center justify-between">
@@ -323,38 +323,38 @@ function AddTaskDialog({ user, db, onClose }: any) {
   }
 
   return (
-    <DialogContent className="rounded-[32px] border-none shadow-2xl">
+    <DialogContent className="rounded-[32px] border-none shadow-2xl bg-card">
       <DialogHeader>
-        <DialogTitle className="font-headline text-2xl lowercase">new academic task</DialogTitle>
-        <DialogDescription className="lowercase">add a deadline or to-do to your manager.</DialogDescription>
+        <DialogTitle className="font-headline text-2xl lowercase text-foreground">new academic task</DialogTitle>
+        <DialogDescription className="lowercase text-muted-foreground">add a deadline or to-do to your manager.</DialogDescription>
       </DialogHeader>
       <div className="grid gap-6 py-4">
         <div className="space-y-2">
-          <Label className="lowercase ml-1">task title</Label>
+          <Label className="lowercase ml-1 text-foreground">task title</Label>
           <Input 
             value={title} 
             onChange={(e) => setTitle(e.target.value)} 
             placeholder="e.g. review calculus chapter 4" 
-            className="rounded-xl h-12 lowercase" 
+            className="rounded-xl h-12 lowercase bg-background border-border text-foreground" 
           />
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label className="lowercase ml-1">due date</Label>
+            <Label className="lowercase ml-1 text-foreground">due date</Label>
             <Input 
               type="date" 
               value={dueDate} 
               onChange={(e) => setDueDate(e.target.value)} 
-              className="rounded-xl h-12 lowercase" 
+              className="rounded-xl h-12 lowercase bg-background border-border text-foreground" 
             />
           </div>
           <div className="space-y-2">
-            <Label className="lowercase ml-1">priority</Label>
+            <Label className="lowercase ml-1 text-foreground">priority</Label>
             <Select value={priority} onValueChange={setPriority}>
-              <SelectTrigger className="rounded-xl h-12 lowercase">
+              <SelectTrigger className="rounded-xl h-12 lowercase bg-background border-border text-foreground">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-card border-border">
                 <SelectItem value="low">low</SelectItem>
                 <SelectItem value="medium">medium</SelectItem>
                 <SelectItem value="high">high</SelectItem>
@@ -364,7 +364,7 @@ function AddTaskDialog({ user, db, onClose }: any) {
         </div>
       </div>
       <DialogFooter>
-        <Button variant="ghost" onClick={onClose} className="rounded-xl lowercase font-bold">cancel</Button>
+        <Button variant="ghost" onClick={onClose} className="rounded-xl lowercase font-bold text-muted-foreground">cancel</Button>
         <Button onClick={handleAdd} disabled={!title} className="rounded-xl bg-primary text-primary-foreground font-bold px-8 lowercase">add task</Button>
       </DialogFooter>
     </DialogContent>

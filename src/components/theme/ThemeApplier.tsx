@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -58,10 +57,21 @@ export function ThemeApplier() {
       return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
     };
 
+    // Helper for contrast (black or white foreground)
+    const getContrastColor = (hex: string) => {
+      if (!hex) return '0 0% 100%';
+      const cleanHex = hex.replace('#', '');
+      const r = parseInt(cleanHex.slice(0, 2), 16);
+      const g = parseInt(cleanHex.slice(2, 4), 16);
+      const b = parseInt(cleanHex.slice(4, 6), 16);
+      const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+      return (yiq >= 128) ? '0 0% 0%' : '0 0% 100%';
+    };
+
     if (theme) {
       // 1. Determine Colors (Custom vs Preset)
       let colors = theme.customColors || { primary: '#A7C4A0', background: '#FFFFFF', accent: '#FFF0F0', foreground: '#1a1c19', muted: '#71717a' };
-      if (theme.activeTheme !== 'custom' && PRESET_THEMES[theme.activeTheme as keyof typeof PRESET_THEMES]) {
+      if (theme.activeTheme && theme.activeTheme !== 'custom' && PRESET_THEMES[theme.activeTheme as keyof typeof PRESET_THEMES]) {
         const preset = PRESET_THEMES[theme.activeTheme as keyof typeof PRESET_THEMES];
         colors = {
           primary: preset.primary,
@@ -72,39 +82,57 @@ export function ThemeApplier() {
         };
       }
 
-      // 2. Apply Colors
-      if (colors.primary) root.style.setProperty('--primary', hexToHsl(colors.primary));
-      if (colors.background) {
-        const hslBg = hexToHsl(colors.background);
-        root.style.setProperty('--background', hslBg);
-        root.style.setProperty('--card', hslBg);
-        root.style.setProperty('--popover', hslBg);
-        root.style.setProperty('--sidebar-background', hslBg);
-      }
-      if (colors.accent) {
-        const hslAccent = hexToHsl(colors.accent);
-        root.style.setProperty('--accent', hslAccent);
-        root.style.setProperty('--secondary', hslAccent);
-      }
-      if (colors.foreground) {
-        const hslFg = hexToHsl(colors.foreground);
-        root.style.setProperty('--foreground', hslFg);
-        root.style.setProperty('--card-foreground', hslFg);
-        root.style.setProperty('--popover-foreground', hslFg);
-        root.style.setProperty('--sidebar-foreground', hslFg);
-      }
-      if (colors.muted) {
-        const hslMuted = hexToHsl(colors.muted);
-        root.style.setProperty('--muted-foreground', hslMuted);
-      }
+      const hslBg = hexToHsl(colors.background);
+      const hslFg = hexToHsl(colors.foreground);
+      const hslPrimary = hexToHsl(colors.primary);
+      const hslAccent = hexToHsl(colors.accent);
+      const hslMutedText = hexToHsl(colors.muted);
+      
+      // Calculate a readable muted background: slightly different from main background
+      const mutedBgHex = colors.background.toLowerCase() === '#ffffff' ? '#f4f4f5' : '#1e293b'; 
+      const hslMutedBg = hexToHsl(mutedBgHex);
 
-      // 3. Apply Fonts
+      // 2. Apply Core Variables
+      root.style.setProperty('--background', hslBg);
+      root.style.setProperty('--foreground', hslFg);
+      root.style.setProperty('--card', hslBg);
+      root.style.setProperty('--card-foreground', hslFg);
+      root.style.setProperty('--popover', hslBg);
+      root.style.setProperty('--popover-foreground', hslFg);
+      
+      root.style.setProperty('--primary', hslPrimary);
+      root.style.setProperty('--primary-foreground', getContrastColor(colors.primary));
+      
+      root.style.setProperty('--secondary', hslAccent);
+      root.style.setProperty('--secondary-foreground', hslFg);
+      
+      root.style.setProperty('--muted', hslMutedBg);
+      root.style.setProperty('--muted-foreground', hslMutedText);
+      
+      root.style.setProperty('--accent', hslAccent);
+      root.style.setProperty('--accent-foreground', hslFg);
+      
+      root.style.setProperty('--border', `0 0% 50% / 0.15`); // slightly stronger transparent border
+      root.style.setProperty('--input', `0 0% 50% / 0.1`);
+      root.style.setProperty('--ring', hslPrimary);
+
+      // 3. Apply Sidebar Variables
+      root.style.setProperty('--sidebar-background', hslBg);
+      root.style.setProperty('--sidebar-foreground', hslFg);
+      root.style.setProperty('--sidebar-primary', hslPrimary);
+      root.style.setProperty('--sidebar-primary-foreground', getContrastColor(colors.primary));
+      root.style.setProperty('--sidebar-accent', hslAccent);
+      root.style.setProperty('--sidebar-accent-foreground', hslFg);
+      root.style.setProperty('--sidebar-border', `0 0% 50% / 0.1`);
+      root.style.setProperty('--sidebar-ring', hslPrimary);
+
+      // 4. Apply Fonts
       if (theme.fontFamily) {
         root.style.setProperty('--font-body', theme.fontFamily);
         root.style.setProperty('--font-headline', theme.fontFamily);
       }
 
-      // 4. Apply Font Size
+      // 5. Apply Font Size
       const sizeMap: Record<string, string> = {
         'sm': '14px',
         'base': '16px',
@@ -115,7 +143,7 @@ export function ThemeApplier() {
         root.style.fontSize = sizeMap[theme.fontSize] || '16px';
       }
 
-      // 5. Apply Background Image & Blur
+      // 6. Apply Background Image & Blur
       const bgContainer = document.getElementById('global-theme-bg');
       if (bgContainer) {
         if (theme.backgroundImage) {

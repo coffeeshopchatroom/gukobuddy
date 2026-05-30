@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -117,7 +116,7 @@ export default function TrackerPage() {
           />
           <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline" className="bg-white border-2 font-bold py-6 px-8 rounded-2xl shadow-sm transition-all hover:scale-105 lowercase">
+              <Button variant="outline" className="bg-card border-2 font-bold py-6 px-8 rounded-2xl shadow-sm transition-all hover:scale-105 lowercase">
                 <Plus className="h-5 w-5 mr-2" /> add course
               </Button>
             </DialogTrigger>
@@ -201,10 +200,10 @@ export default function TrackerPage() {
               add your subjects manually or import them from a screenshot to get started.
             </p>
             <div className="flex gap-4 mt-6">
-              <Button onClick={() => setIsImportOpen(true)} className="rounded-xl lowercase">
+              <Button onClick={() => setIsImportOpen(true)} className="rounded-xl lowercase bg-primary text-primary-foreground">
                 <Upload className="h-5 w-5 mr-2" /> Import Grades
               </Button>
-              <Button variant="secondary" onClick={() => setIsAddOpen(true)} className="rounded-xl lowercase">
+              <Button variant="secondary" onClick={() => setIsAddOpen(true)} className="rounded-xl lowercase bg-muted text-muted-foreground">
                 <Plus className="h-5 w-5 mr-2" /> Add Manually
               </Button>
             </div>
@@ -221,7 +220,7 @@ function CourseItem({ course, onDelete }: { course: any, onDelete: () => void })
   const textClass = grade >= 90 ? 'text-primary' : grade >= 80 ? 'text-accent-foreground' : 'text-muted-foreground'
 
   return (
-    <Card className="group border-none shadow-sm hover:shadow-md transition-all duration-300 rounded-[32px] overflow-hidden bg-white">
+    <Card className="group border-none shadow-sm hover:shadow-md transition-all duration-300 rounded-[32px] overflow-hidden bg-card">
       <CardContent className="p-8 flex items-center gap-6">
         <div className={cn("h-16 w-16 rounded-[20px] flex items-center justify-center shrink-0", colorClass)}>
           <GraduationCap className={cn("h-8 w-8", textClass)} />
@@ -330,8 +329,8 @@ function ImportGradesDialog({ isOpen, setIsOpen, user, db }: any) {
           <Upload className="h-5 w-5 mr-2" /> import grades
         </Button>
       </DialogTrigger>
-      <DialogContent className="rounded-[32px] sm:max-w-xl p-0 overflow-hidden border-none bg-background shadow-2xl">
-        <DialogHeader className="p-8 pb-4 text-left bg-primary/5">
+      <DialogContent className="rounded-[32px] sm:max-w-xl p-0 overflow-hidden border-none bg-card shadow-2xl">
+        <DialogHeader className="p-8 pb-4 text-left bg-muted/10">
           <DialogTitle className="font-headline text-2xl font-bold flex items-center gap-2 text-foreground lowercase">
             <School className="h-6 w-6 text-primary" /> grade portal import
           </DialogTitle>
@@ -344,14 +343,14 @@ function ImportGradesDialog({ isOpen, setIsOpen, user, db }: any) {
           {isProcessing ? (
             <div className="py-12 flex flex-col items-center gap-6">
               <Loader2 className="h-12 w-12 text-primary animate-spin" />
-              <p className="font-bold text-lg lowercase">{status}</p>
+              <p className="font-bold text-lg lowercase text-foreground">{status}</p>
             </div>
           ) : (
             <>
               <div className="space-y-4">
                 <div 
                   className={cn(
-                    "border-2 border-dashed rounded-3xl p-8 flex flex-col items-center justify-center transition-all cursor-pointer hover:bg-primary/5",
+                    "border-2 border-dashed rounded-3xl p-8 flex flex-col items-center justify-center transition-all cursor-pointer hover:bg-muted/20",
                     file ? "border-primary bg-primary/5" : "border-muted"
                   )}
                   onClick={() => document.getElementById('grade-upload')?.click()}
@@ -382,13 +381,13 @@ function ImportGradesDialog({ isOpen, setIsOpen, user, db }: any) {
                     placeholder="copy and paste your grades table here..." 
                     value={rawText}
                     onChange={(e) => setRawText(e.target.value)}
-                    className="rounded-2xl min-h-[120px] lowercase no-focus-ring"
+                    className="rounded-2xl min-h-[120px] lowercase bg-background border-border text-foreground"
                   />
                 </div>
               </div>
 
               <div className="flex gap-3">
-                <Button variant="ghost" onClick={() => setIsOpen(false)} className="flex-1 rounded-2xl py-6 font-bold lowercase">cancel</Button>
+                <Button variant="ghost" onClick={() => setIsOpen(false)} className="flex-1 rounded-2xl py-6 font-bold lowercase text-muted-foreground">cancel</Button>
                 <Button 
                   disabled={!file && !rawText} 
                   onClick={handleImport}
@@ -429,39 +428,39 @@ function AddCourseContent({ onClose, user, db }: any) {
   }
 
   return (
-    <DialogContent className="rounded-[32px] border-none shadow-2xl">
+    <DialogContent className="rounded-[32px] border-none shadow-2xl bg-card">
       <DialogHeader>
-        <DialogTitle className="font-headline text-2xl lowercase">add new course</DialogTitle>
-        <DialogDescription className="lowercase">track a class manually in your dashboard.</DialogDescription>
+        <DialogTitle className="font-headline text-2xl lowercase text-foreground">add new course</DialogTitle>
+        <DialogDescription className="lowercase text-muted-foreground">track a class manually in your dashboard.</DialogDescription>
       </DialogHeader>
       <div className="grid gap-4 py-4">
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label className="lowercase ml-1">course name</Label>
-            <Input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. physics 1" className="rounded-xl lowercase" />
+            <Label className="lowercase ml-1 text-foreground">course name</Label>
+            <Input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. physics 1" className="rounded-xl lowercase bg-background border-border text-foreground" />
           </div>
           <div className="space-y-2">
-            <Label className="lowercase ml-1">course code</Label>
-            <Input value={code} onChange={e => setCode(e.target.value)} placeholder="e.g. PHYS 101" className="rounded-xl lowercase" />
+            <Label className="lowercase ml-1 text-foreground">course code</Label>
+            <Input value={code} onChange={e => setCode(e.target.value)} placeholder="e.g. PHYS 101" className="rounded-xl lowercase bg-background border-border text-foreground" />
           </div>
         </div>
         <div className="grid grid-cols-3 gap-4">
           <div className="space-y-2">
-            <Label className="lowercase ml-1">grade %</Label>
-            <Input type="number" value={grade} onChange={e => setGrade(e.target.value)} placeholder="95" className="rounded-xl lowercase" />
+            <Label className="lowercase ml-1 text-foreground">grade %</Label>
+            <Input type="number" value={grade} onChange={e => setGrade(e.target.value)} placeholder="95" className="rounded-xl lowercase bg-background border-border text-foreground" />
           </div>
           <div className="space-y-2">
-            <Label className="lowercase ml-1">letter</Label>
-            <Input value={letterGrade} onChange={e => setLetterGrade(e.target.value)} placeholder="A" className="rounded-xl lowercase" />
+            <Label className="lowercase ml-1 text-foreground">letter</Label>
+            <Input value={letterGrade} onChange={e => setLetterGrade(e.target.value)} placeholder="A" className="rounded-xl lowercase bg-background border-border text-foreground" />
           </div>
           <div className="space-y-2">
-            <Label className="lowercase ml-1">credits</Label>
-            <Input type="number" value={credits} onChange={e => setCredits(e.target.value)} placeholder="3" className="rounded-xl lowercase" />
+            <Label className="lowercase ml-1 text-foreground">credits</Label>
+            <Input type="number" value={credits} onChange={e => setCredits(e.target.value)} placeholder="3" className="rounded-xl lowercase bg-background border-border text-foreground" />
           </div>
         </div>
       </div>
       <DialogFooter>
-        <Button variant="outline" onClick={onClose} className="rounded-xl lowercase">cancel</Button>
+        <Button variant="outline" onClick={onClose} className="rounded-xl lowercase text-muted-foreground border-border">cancel</Button>
         <Button onClick={handleAdd} className="rounded-xl bg-primary text-primary-foreground lowercase">add class</Button>
       </DialogFooter>
     </DialogContent>

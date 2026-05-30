@@ -1,4 +1,3 @@
-
 'use client'
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -93,7 +92,7 @@ function LandingPage() {
             <Button 
               variant="outline" 
               onClick={handleGuestSignIn}
-              className="rounded-2xl py-8 px-10 text-lg font-bold border-2 transition-all hover:bg-muted bg-white/80 backdrop-blur-sm"
+              className="rounded-2xl py-8 px-10 text-lg font-bold border-2 transition-all hover:bg-muted bg-card/80 backdrop-blur-sm"
             >
               continue as guest
             </Button>
@@ -127,7 +126,7 @@ function LandingPage() {
 
 function FeatureCard({ icon, title, description, color }: { icon: React.ReactNode, title: string, description: string, color: string }) {
   return (
-    <Card className="border-none shadow-sm rounded-[32px] p-8 space-y-4 hover:shadow-xl transition-all group bg-white">
+    <Card className="border-none shadow-sm rounded-[32px] p-8 space-y-4 hover:shadow-xl transition-all group bg-card">
       <div className={`w-14 h-14 rounded-2xl ${color} text-white flex items-center justify-center shadow-lg transition-transform group-hover:scale-110`}>
         {icon}
       </div>
@@ -143,8 +142,7 @@ function DashboardPage({ user, profile, profileRef }: { user: any, profile?: any
   const isHobbyist = profile?.studentType === 'hobbyist';
   
   const categoryLabel = isHobbyist ? "interests" : (isHighSchool ? "classes" : "courses");
-  const focus = profile?.focus || 'all';
-
+  
   // Use simple queries
   const tasksQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
@@ -317,7 +315,7 @@ function DashboardPage({ user, profile, profileRef }: { user: any, profile?: any
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="lg:col-span-4 border-none shadow-sm overflow-hidden bg-white rounded-[40px]">
+        <Card className="lg:col-span-4 border-none shadow-sm overflow-hidden bg-card rounded-[40px]">
           <CardHeader className="flex flex-row items-center justify-between p-8">
             <div>
               <CardTitle className="font-headline text-2xl lowercase">recent tasks</CardTitle>
@@ -332,7 +330,7 @@ function DashboardPage({ user, profile, profileRef }: { user: any, profile?: any
               recentTasks.map((task: any) => (
                 <div key={task.id} className="flex items-center justify-between p-5 rounded-3xl bg-muted/30 hover:bg-muted/50 transition-colors border border-transparent hover:border-border">
                   <div className="flex items-center gap-4">
-                    <div className="h-10 w-10 rounded-2xl bg-white shadow-sm flex items-center justify-center">
+                    <div className="h-10 w-10 rounded-2xl bg-card shadow-sm flex items-center justify-center">
                       <CheckSquare className="h-5 w-5 text-muted-foreground" />
                     </div>
                     <div>
@@ -371,7 +369,7 @@ function DashboardPage({ user, profile, profileRef }: { user: any, profile?: any
           <CardContent className="px-8 pb-8 flex-1">
             {isHobbyist ? (
               <div className="h-full flex flex-col gap-4">
-                <div className="flex-1 bg-white/40 backdrop-blur-sm rounded-3xl p-6 border-2 border-dashed border-muted relative overflow-hidden group">
+                <div className="flex-1 bg-card/40 backdrop-blur-sm rounded-3xl p-6 border-2 border-dashed border-muted relative overflow-hidden group">
                   <Textarea 
                     placeholder="what's on your mind?..." 
                     value={stickyNote}
@@ -383,12 +381,12 @@ function DashboardPage({ user, profile, profileRef }: { user: any, profile?: any
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <Button variant="outline" className="rounded-2xl h-14 font-bold lowercase border-muted hover:bg-white" asChild>
+                  <Button variant="outline" className="rounded-2xl h-14 font-bold lowercase border-muted hover:bg-card" asChild>
                     <Link href="/notebooks">
                       <BookOpen className="h-4 w-4 mr-2" /> all notes
                     </Link>
                   </Button>
-                  <Button variant="outline" className="rounded-2xl h-14 font-bold lowercase border-muted hover:bg-white" asChild>
+                  <Button variant="outline" className="rounded-2xl h-14 font-bold lowercase border-muted hover:bg-card" asChild>
                     <Link href="/channel">
                       <Radio className="h-4 w-4 mr-2" /> plaza
                     </Link>
@@ -407,7 +405,7 @@ function DashboardPage({ user, profile, profileRef }: { user: any, profile?: any
                         </span>
                         <span className="text-muted-foreground">{course.grade}%</span>
                       </div>
-                      <Progress value={parseFloat(course.grade) || 0} className="h-3 bg-white/50 rounded-full" />
+                      <Progress value={parseFloat(course.grade) || 0} className="h-3 bg-card/50 rounded-full" />
                     </div>
                   ))
                 ) : (
@@ -428,7 +426,7 @@ function DashboardPage({ user, profile, profileRef }: { user: any, profile?: any
         <Card className="border-none shadow-md rounded-[32px] bg-primary/5 hover:bg-primary/10 transition-all group overflow-hidden relative">
           <CardContent className="p-8 flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-4">
-              <div className="h-12 w-12 rounded-2xl bg-white shadow-sm flex items-center justify-center group-hover:rotate-6 transition-transform">
+              <div className="h-12 w-12 rounded-2xl bg-card shadow-sm flex items-center justify-center group-hover:rotate-6 transition-transform">
                 <Radio className="h-6 w-6 text-primary animate-pulse" />
               </div>
               <div>
