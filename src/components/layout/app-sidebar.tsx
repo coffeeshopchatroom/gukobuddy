@@ -314,20 +314,6 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               )}
-
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={pathname === "/settings"}
-                  tooltip="settings"
-                  className="flex items-center gap-3 px-4 py-6 rounded-xl transition-all duration-500 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground lowercase group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
-                >
-                  <Link href="/settings">
-                    <Settings className="h-5 w-5" />
-                    <span className="font-medium group-data-[collapsible=icon]:hidden">settings</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -392,18 +378,34 @@ export function AppSidebar() {
                 </ProfileCustomizer>
               </div>
 
-              {isAdmin && (
-                <AdminPanelDialog open={isAdminPanelOpen} onOpenChange={setIsAdminPanelOpen}>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    onClick={() => setIsAdminPanelOpen(true)}
-                    className="h-10 w-10 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-all group-data-[collapsible=icon]:hidden"
-                  >
-                    <Shield className="h-5 w-5" />
-                  </Button>
-                </AdminPanelDialog>
-              )}
+              <div className="flex items-center gap-1 group-data-[collapsible=icon]:hidden">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  asChild
+                  className={cn(
+                    "h-10 w-10 rounded-xl transition-all",
+                    pathname === '/settings' ? "bg-accent text-accent-foreground" : "bg-muted/50 hover:bg-muted"
+                  )}
+                >
+                  <Link href="/settings">
+                    <Settings className="h-5 w-5 text-muted-foreground" />
+                  </Link>
+                </Button>
+
+                {isAdmin && (
+                  <AdminPanelDialog open={isAdminPanelOpen} onOpenChange={setIsAdminPanelOpen}>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => setIsAdminPanelOpen(true)}
+                      className="h-10 w-10 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-all"
+                    >
+                      <Shield className="h-5 w-5" />
+                    </Button>
+                  </AdminPanelDialog>
+                )}
+              </div>
             </div>
           </div>
         ) : (
