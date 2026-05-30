@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -23,22 +24,22 @@ export function ThemeApplier() {
   const { data: profile } = useDoc(profileRef);
 
   React.useEffect(() => {
-    if (!profile?.theme) return;
-
-    const theme = profile.theme;
+    const theme = profile?.theme;
     const root = document.documentElement;
 
     // Helper to convert Hex to HSL for Tailwind compatibility (Space-separated H S L)
     const hexToHsl = (hex: string) => {
+      if (!hex) return '0 0% 0%';
       let r = 0, g = 0, b = 0;
-      if (hex.length === 4) {
-        r = parseInt(hex[1] + hex[1], 16);
-        g = parseInt(hex[2] + hex[2], 16);
-        b = parseInt(hex[3] + hex[3], 16);
-      } else if (hex.length === 7) {
-        r = parseInt(hex.slice(1, 3), 16);
-        g = parseInt(hex.slice(3, 5), 16);
-        b = parseInt(hex.slice(5, 7), 16);
+      const cleanHex = hex.replace('#', '');
+      if (cleanHex.length === 3) {
+        r = parseInt(cleanHex[0] + cleanHex[0], 16);
+        g = parseInt(cleanHex[1] + cleanHex[1], 16);
+        b = parseInt(cleanHex[2] + cleanHex[2], 16);
+      } else if (cleanHex.length === 6) {
+        r = parseInt(cleanHex.slice(0, 2), 16);
+        g = parseInt(cleanHex.slice(2, 4), 16);
+        b = parseInt(cleanHex.slice(4, 6), 16);
       }
       r /= 255; g /= 255; b /= 255;
       let max = Math.max(r, g, b), min = Math.min(r, g, b);
@@ -57,58 +58,67 @@ export function ThemeApplier() {
       return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
     };
 
-    // 1. Determine Colors (Custom vs Preset)
-    let colors = theme.customColors;
-    if (theme.activeTheme !== 'custom' && PRESET_THEMES[theme.activeTheme as keyof typeof PRESET_THEMES]) {
-      colors = PRESET_THEMES[theme.activeTheme as keyof typeof PRESET_THEMES];
-    }
+    if (theme) {
+      // 1. Determine Colors (Custom vs Preset)
+      let colors = theme.customColors || { primary: '#A7C4A0', background: '#FFFFFF', accent: '#FFF0F0', foreground: '#1a1c19' };
+      if (theme.activeTheme !== 'custom' && PRESET_THEMES[theme.activeTheme as keyof typeof PRESET_THEMES]) {
+        const preset = PRESET_THEMES[theme.activeTheme as keyof typeof PRESET_THEMES];
+        colors = {
+          primary: preset.primary,
+          background: preset.bg,
+          accent: preset.accent,
+          foreground: preset.foreground
+        };
+      }
 
-    // 2. Apply Colors
-    if (colors) {
+      // 2. Apply Colors
       if (colors.primary) root.style.setProperty('--primary', hexToHsl(colors.primary));
       if (colors.background) {
-        root.style.setProperty('--background', hexToHsl(colors.background));
-        root.style.setProperty('--card', hexToHsl(colors.background));
-        root.style.setProperty('--popover', hexToHsl(colors.background));
-        root.style.setProperty('--sidebar-background', hexToHsl(colors.background));
+        const hslBg = hexToHsl(colors.background);
+        root.style.setProperty('--background', hslBg);
+        root.style.setProperty('--card', hslBg);
+        root.style.setProperty('--popover', hslBg);
+        root.style.setProperty('--sidebar-background', hslBg);
       }
       if (colors.accent) {
-        root.style.setProperty('--accent', hexToHsl(colors.accent));
-        root.style.setProperty('--secondary', hexToHsl(colors.accent));
+        const hslAccent = hexToHsl(colors.accent);
+        root.style.setProperty('--accent', hslAccent);
+        root.style.setProperty('--secondary', hslAccent);
       }
       if (colors.foreground) {
-        root.style.setProperty('--foreground', hexToHsl(colors.foreground));
-        root.style.setProperty('--card-foreground', hexToHsl(colors.foreground));
-        root.style.setProperty('--popover-foreground', hexToHsl(colors.foreground));
-        root.style.setProperty('--sidebar-foreground', hexToHsl(colors.foreground));
+        const hslFg = hexToHsl(colors.foreground);
+        root.style.setProperty('--foreground', hslFg);
+        root.style.setProperty('--card-foreground', hslFg);
+        root.style.setProperty('--popover-foreground', hslFg);
+        root.style.setProperty('--sidebar-foreground', hslFg);
       }
-    }
 
-    // 3. Apply Fonts
-    if (theme.fontFamily) {
-      root.style.setProperty('--font-body', theme.fontFamily);
-      root.style.setProperty('--font-headline', theme.fontFamily);
-    }
+      // 3. Apply Fonts
+      if (theme.fontFamily) {
+        root.style.setProperty('--font-body', theme.fontFamily);
+        root.style.setProperty('--font-headline', theme.fontFamily);
+      }
 
-    // 4. Apply Font Size
-    const sizeMap: Record<string, string> = {
-      'sm': '14px',
-      'base': '16px',
-      'lg': '18px',
-      'xl': '20px'
-    };
-    if (theme.fontSize) {
-      root.style.fontSize = sizeMap[theme.fontSize] || '16px';
-    }
+      // 4. Apply Font Size
+      const sizeMap: Record<string, string> = {
+        'sm': '14px',
+        'base': '16px',
+        'lg': '18px',
+        'xl': '20px'
+      };
+      if (theme.fontSize) {
+        root.style.fontSize = sizeMap[theme.fontSize] || '16px';
+      }
 
-    // 5. Apply Background Image
-    const bgContainer = document.getElementById('global-theme-bg');
-    if (bgContainer) {
-      if (theme.backgroundImage) {
-        bgContainer.style.backgroundImage = `url(${theme.backgroundImage})`;
-        bgContainer.style.opacity = (theme.bgOpacity || 20) / 100 + '';
-      } else {
-        bgContainer.style.backgroundImage = 'none';
+      // 5. Apply Background Image
+      const bgContainer = document.getElementById('global-theme-bg');
+      if (bgContainer) {
+        if (theme.backgroundImage) {
+          bgContainer.style.backgroundImage = `url(${theme.backgroundImage})`;
+          bgContainer.style.opacity = (theme.bgOpacity || 20) / 100 + '';
+        } else {
+          bgContainer.style.backgroundImage = 'none';
+        }
       }
     }
 

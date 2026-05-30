@@ -111,7 +111,7 @@ export default function SettingsPage() {
     try {
       const response = await fetch(`/api/upload?filename=${filename}`, { method: 'POST', body: file });
       const blob = await response.json();
-      setBgImage(blob.url);
+      setBgImage(blob.url || '');
       toast({ title: "background uploaded", description: "save settings to apply permanently." });
     } catch (error) {
       console.error("upload failed", error);
@@ -134,16 +134,16 @@ export default function SettingsPage() {
         studentType,
         useAi,
         theme: {
-          activeTheme,
+          activeTheme: activeTheme || 'classic',
           customColors: {
-            primary: primaryColor,
-            background: bgColor,
-            accent: accentColor,
+            primary: primaryColor || '#A7C4A0',
+            background: bgColor || '#FFFFFF',
+            accent: accentColor || '#FFF0F0',
           },
-          backgroundImage: bgImage,
-          bgOpacity: bgOpacity,
-          fontFamily,
-          fontSize,
+          backgroundImage: bgImage || '',
+          bgOpacity: bgOpacity ?? 20,
+          fontFamily: fontFamily || 'IBM Plex Sans Devanagari',
+          fontSize: fontSize || 'base',
         },
         updatedAt: new Date().toISOString()
       }, { merge: true });

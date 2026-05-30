@@ -1,3 +1,4 @@
+
 import type {Config} from 'tailwindcss';
 
 export default {
@@ -10,8 +11,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        body: ['IBM Plex Sans Devanagari', 'sans-serif'],
-        headline: ['Plus Jakarta Sans', 'sans-serif'],
+        body: ['var(--font-body)', 'IBM Plex Sans Devanagari', 'sans-serif'],
+        headline: ['var(--font-headline)', 'Plus Jakarta Sans', 'sans-serif'],
         code: ['monospace'],
       },
       colors: {
