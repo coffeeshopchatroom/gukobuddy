@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge"
 export default function GukoChannelPage() {
   return (
     <div className="min-h-[75vh] flex items-center justify-center p-4">
-      <Card className="max-w-3xl w-full border-none shadow-2xl rounded-[64px] overflow-hidden bg-white text-center relative">
+      <Card className="max-w-3xl w-full border-none shadow-2xl rounded-[64px] overflow-hidden bg-card text-center relative">
         <div className="absolute top-0 left-0 w-full h-3 bg-gradient-to-r from-primary via-indigo-200 to-primary animate-pulse" />
         
         <CardContent className="p-12 md:p-24 space-y-10 flex flex-col items-center">

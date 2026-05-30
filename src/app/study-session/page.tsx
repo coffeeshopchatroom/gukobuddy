@@ -5,11 +5,12 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Coffee, ArrowLeft, Sparkles, Clock, Star } from "lucide-react"
 import Link from "next/link"
+import { cn } from "@/lib/utils"
 
 export default function StudySessionPage() {
   return (
     <div className="min-h-[70vh] flex items-center justify-center p-4">
-      <Card className="max-w-2xl w-full border-none shadow-2xl rounded-[48px] overflow-hidden bg-white text-center">
+      <Card className="max-w-2xl w-full border-none shadow-2xl rounded-[48px] overflow-hidden bg-card text-center relative">
         <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary via-accent to-primary" />
         
         <CardContent className="p-16 space-y-8 flex flex-col items-center">
@@ -58,5 +59,3 @@ function Badge({ children, className }: { children: React.ReactNode, className?:
     </div>
   )
 }
-
-import { cn } from "@/lib/utils"

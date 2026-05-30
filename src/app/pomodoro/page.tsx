@@ -89,7 +89,7 @@ export default function PomodoroPage() {
 
       <div className="grid gap-12 lg:grid-cols-5 items-start">
         {/* Timer Section */}
-        <Card className="lg:col-span-3 border-none shadow-2xl rounded-[48px] overflow-hidden bg-white relative">
+        <Card className="lg:col-span-3 border-none shadow-2xl rounded-[48px] overflow-hidden bg-card relative">
           <div className={cn(
             "absolute inset-0 opacity-[0.03] pointer-events-none transition-colors duration-1000",
             mode === 'work' ? "bg-primary" : "bg-accent"
@@ -160,7 +160,7 @@ export default function PomodoroPage() {
 
         {/* Task List Section */}
         <div className="lg:col-span-2 space-y-6">
-          <Card className="border-none shadow-xl rounded-[40px] bg-white overflow-hidden">
+          <Card className="border-none shadow-xl rounded-[40px] bg-card overflow-hidden">
             <CardHeader className="p-8 pb-4">
               <CardTitle className="font-headline text-2xl lowercase flex items-center justify-between">
                 current tasks
