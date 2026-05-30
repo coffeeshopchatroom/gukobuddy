@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -279,10 +280,10 @@ export default function FlashcardsPage() {
           <Layers className="h-12 w-12 text-primary" />
         </div>
         <div className="text-center">
-          <h2 className="text-3xl font-bold font-headline">flashcard central</h2>
-          <p className="text-muted-foreground mt-2 text-lg">sign in to start creating your study decks.</p>
+          <h2 className="text-3xl font-bold font-headline lowercase">flashcard central</h2>
+          <p className="text-muted-foreground mt-2 text-lg lowercase">sign in to start creating your study decks.</p>
         </div>
-        <Button onClick={() => initiateAnonymousSignIn(auth)} className="rounded-2xl py-6 px-8 font-bold gap-2">
+        <Button onClick={() => initiateAnonymousSignIn(auth)} className="rounded-2xl py-6 px-8 font-bold gap-2 lowercase">
           <LogIn className="h-5 w-5" /> start studying (guest)
         </Button>
       </div>
@@ -349,7 +350,7 @@ export default function FlashcardsPage() {
             <Dialog open={isModeSelectorOpen} onOpenChange={setIsModeSelectorOpen}>
               <DialogTrigger asChild>
                 <Button 
-                  className="bg-primary text-primary-foreground font-bold py-6 px-8 rounded-2xl shadow-lg transition-all hover:scale-105"
+                  className="bg-primary text-primary-foreground font-bold py-6 px-8 rounded-2xl shadow-lg transition-all hover:scale-105 lowercase"
                 >
                   <Play className="h-5 w-5 mr-2" /> study now
                 </Button>
@@ -362,7 +363,7 @@ export default function FlashcardsPage() {
                 <div className="grid gap-4">
                   <Button 
                     variant="outline" 
-                    className="flex items-center justify-between p-6 h-auto rounded-2xl border-2 hover:border-primary hover:bg-primary/5 transition-all text-left group"
+                    className="flex items-center justify-between p-6 h-auto rounded-2xl border-2 hover:border-primary hover:bg-primary/5 transition-all text-left group lowercase"
                     onClick={() => handleStartStudy('classic')}
                   >
                     <div className="flex items-center gap-4">
@@ -370,8 +371,8 @@ export default function FlashcardsPage() {
                         <RotateCcw className="h-6 w-6 text-muted-foreground group-hover:text-primary" />
                       </div>
                       <div>
-                        <div className="font-bold text-lg lowercase">classic mode</div>
-                        <div className="text-sm text-muted-foreground lowercase">standard flip and review.</div>
+                        <div className="font-bold text-lg">classic mode</div>
+                        <div className="text-sm text-muted-foreground">standard flip and review.</div>
                       </div>
                     </div>
                     <ChevronRight className="h-5 w-5 text-muted-foreground" />
@@ -379,7 +380,7 @@ export default function FlashcardsPage() {
 
                   <Button 
                     variant="outline" 
-                    className="flex items-center justify-between p-6 h-auto rounded-2xl border-2 hover:border-accent hover:bg-accent/5 transition-all text-left group"
+                    className="flex items-center justify-between p-6 h-auto rounded-2xl border-2 hover:border-accent hover:bg-accent/5 transition-all text-left group lowercase"
                     onClick={() => handleStartStudy('tracking')}
                   >
                     <div className="flex items-center gap-4">
@@ -387,8 +388,8 @@ export default function FlashcardsPage() {
                         <Activity className="h-6 w-6 text-muted-foreground group-hover:text-accent-foreground" />
                       </div>
                       <div>
-                        <div className="font-bold text-lg lowercase">tracking mode</div>
-                        <div className="text-sm text-muted-foreground lowercase">track mastery with got it/need review.</div>
+                        <div className="font-bold text-lg">tracking mode</div>
+                        <div className="text-sm text-muted-foreground">track mastery with got it/need review.</div>
                       </div>
                     </div>
                     <ChevronRight className="h-5 w-5 text-muted-foreground" />
@@ -396,7 +397,7 @@ export default function FlashcardsPage() {
 
                   <Button 
                     variant="outline" 
-                    className="flex items-center justify-between p-6 h-auto rounded-2xl border-2 hover:border-indigo-500 hover:bg-indigo-50 transition-all text-left group"
+                    className="flex items-center justify-between p-6 h-auto rounded-2xl border-2 hover:border-indigo-500 hover:bg-indigo-50 transition-all text-left group lowercase"
                     onClick={() => handleStartStudy('quiz')}
                   >
                     <div className="flex items-center gap-4">
@@ -404,8 +405,8 @@ export default function FlashcardsPage() {
                         <FileText className="h-6 w-6 text-muted-foreground group-hover:text-indigo-600" />
                       </div>
                       <div>
-                        <div className="font-bold text-lg lowercase">quiz mode</div>
-                        <div className="text-sm text-muted-foreground lowercase">test yourself with questions.</div>
+                        <div className="font-bold text-lg">quiz mode</div>
+                        <div className="text-sm text-muted-foreground">test yourself with questions.</div>
                       </div>
                     </div>
                     <ChevronRight className="h-5 w-5 text-muted-foreground" />
@@ -413,7 +414,7 @@ export default function FlashcardsPage() {
 
                   <Button 
                     variant="outline" 
-                    className="flex items-center justify-between p-6 h-auto rounded-2xl border-2 hover:border-orange-500 hover:bg-orange-50 transition-all text-left group"
+                    className="flex items-center justify-between p-6 h-auto rounded-2xl border-2 hover:border-orange-500 hover:bg-orange-50 transition-all text-left group lowercase"
                     onClick={() => handleStartStudy('matching')}
                   >
                     <div className="flex items-center gap-4">
@@ -421,8 +422,8 @@ export default function FlashcardsPage() {
                         <Puzzle className="h-6 w-6 text-muted-foreground group-hover:text-orange-600" />
                       </div>
                       <div>
-                        <div className="font-bold text-lg lowercase">matching mode</div>
-                        <div className="text-sm text-muted-foreground lowercase">pair questions with answers.</div>
+                        <div className="font-bold text-lg">matching mode</div>
+                        <div className="text-sm text-muted-foreground">pair questions with answers.</div>
                       </div>
                     </div>
                     <ChevronRight className="h-5 w-5 text-muted-foreground" />
@@ -457,8 +458,8 @@ export default function FlashcardsPage() {
                           </Button>
                         </div>
                       )}
-                      <div className="border rounded-2xl bg-white p-6 shadow-sm transition-all">
-                        <EditorContent editor={questionEditor} className="tiptap-editor min-h-[100px]" />
+                      <div className="border rounded-2xl bg-card p-6 shadow-sm transition-all">
+                        <EditorContent editor={questionEditor} className="tiptap-editor min-h-[100px] lowercase" />
                         <RichFormattingToolbar
                           editor={questionEditor}
                           imageUrl={cardImageUrl}
@@ -480,8 +481,8 @@ export default function FlashcardsPage() {
                           </Button>
                         </div>
                       )}
-                      <div className="border rounded-2xl bg-white p-6 shadow-sm transition-all">
-                        <EditorContent editor={answerEditor} className="tiptap-editor min-h-[100px]" />
+                      <div className="border rounded-2xl bg-card p-6 shadow-sm transition-all">
+                        <EditorContent editor={answerEditor} className="tiptap-editor min-h-[100px] lowercase" />
                         <RichFormattingToolbar
                           editor={answerEditor}
                           imageUrl={cardAnswerImageUrl}
@@ -511,7 +512,7 @@ export default function FlashcardsPage() {
         ) : cards && cards.length > 0 ? (
           <div className="grid gap-4">
             {cards.map((card) => (
-              <Card key={card.id} className="border-none shadow-sm hover:shadow-md transition-all rounded-2xl overflow-hidden group bg-white">
+              <Card key={card.id} className="border-none shadow-sm hover:shadow-md transition-all rounded-2xl overflow-hidden group bg-card">
                 <CardContent className="p-6 flex items-center justify-between gap-6">
                   <div className="flex-1 grid md:grid-cols-2 gap-6 items-center">
                     <div className="border-r border-border/50 pr-6 flex gap-4 items-start">
@@ -585,7 +586,7 @@ export default function FlashcardsPage() {
                 <Plus className="h-5 w-5 mr-2" /> new deck
               </Button>
             </DialogTrigger>
-            <DialogContent className="rounded-3xl border-none shadow-2xl">
+            <DialogContent className="rounded-3xl border-none shadow-2xl bg-card">
               <DialogHeader>
                 <DialogTitle className="font-headline text-2xl lowercase">create new deck</DialogTitle>
                 <DialogDescription className="lowercase">
@@ -594,13 +595,13 @@ export default function FlashcardsPage() {
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name" className="lowercase">deck name</Label>
+                  <Label htmlFor="name" className="lowercase ml-1">deck name</Label>
                   <Input 
                     id="name" 
                     placeholder="e.g. history: the industrial revolution" 
                     value={newDeckName}
                     onChange={(e) => setNewDeckName(e.target.value)}
-                    className="rounded-xl no-focus-ring lowercase"
+                    className="rounded-xl no-focus-ring lowercase bg-background border-border"
                   />
                 </div>
               </div>
@@ -848,7 +849,7 @@ function AiGeneratorDialog({ isOpen, setIsOpen, isHighSchool, user, activeCourse
                       placeholder="e.g. physics study guide" 
                       value={deckName}
                       onChange={(e) => setDeckName(e.target.value)}
-                      className="rounded-xl lowercase no-focus-ring"
+                      className="rounded-xl lowercase no-focus-ring bg-background border-border"
                     />
                   </div>
                   <div className="space-y-2">
@@ -857,7 +858,7 @@ function AiGeneratorDialog({ isOpen, setIsOpen, isHighSchool, user, activeCourse
                       placeholder={isHighSchool ? "e.g. 11th grade" : "e.g. psych 101"} 
                       value={gradeLevel}
                       onChange={(e) => setGradeLevel(e.target.value)}
-                      className="rounded-xl lowercase no-focus-ring"
+                      className="rounded-xl lowercase no-focus-ring bg-background border-border"
                     />
                   </div>
                 </div>
@@ -868,7 +869,7 @@ function AiGeneratorDialog({ isOpen, setIsOpen, isHighSchool, user, activeCourse
                     placeholder="e.g. focus on vocabulary terms" 
                     value={instructions}
                     onChange={(e) => setInstructions(e.target.value)}
-                    className="rounded-2xl min-h-[80px] lowercase no-focus-ring"
+                    className="rounded-2xl min-h-[80px] lowercase no-focus-ring bg-background border-border"
                   />
                 </div>
               </div>
@@ -1135,7 +1136,7 @@ function MatchingView({ deckName, cards, onExit }: { deckName: string, cards: an
                 isMatched && "opacity-0 scale-95 pointer-events-none",
                 isSelected && "border-orange-500 bg-orange-50 ring-4 ring-orange-200",
                 isIncorrect && "border-destructive bg-destructive/5 animate-shake",
-                !isSelected && !isMatched && !isIncorrect && "hover:border-orange-200 hover:bg-muted/30"
+                !isSelected && !isMatched && !isIncorrect && "hover:border-orange-200 hover:bg-muted/30 bg-card"
               )}
             >
               <div className="absolute top-3 left-1/2 -translate-x-1/2">
@@ -1266,7 +1267,7 @@ function QuizView({
 
         <div className="w-full grid gap-3 text-left">
           {results.map((res, i) => (
-            <div key={i} className="p-4 rounded-2xl bg-white border border-border flex items-start gap-4">
+            <div key={i} className="p-4 rounded-2xl bg-card border border-border flex items-start gap-4">
               <div className={cn("p-2 rounded-full", res.isCorrect ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600")}>
                 {res.isCorrect ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
               </div>
@@ -1302,7 +1303,7 @@ function QuizView({
         <div className="w-24" />
       </div>
 
-      <Card className="border-none shadow-2xl rounded-[40px] overflow-hidden bg-white p-10 md:p-16">
+      <Card className="border-none shadow-2xl rounded-[40px] overflow-hidden bg-card p-10 md:p-16">
         <div className="space-y-10">
           <div className="space-y-6">
             <Badge className="bg-indigo-100 text-indigo-700 hover:bg-indigo-100 border-none px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest">
@@ -1328,7 +1329,7 @@ function QuizView({
                   placeholder="type your answer here..."
                   value={userAnswer}
                   onChange={(e) => setUserAnswer(e.target.value)}
-                  className="rounded-2xl h-16 text-lg px-6 no-focus-ring border-2 border-muted hover:border-indigo-200 transition-all lowercase"
+                  className="rounded-2xl h-16 text-lg px-6 no-focus-ring border-2 border-muted hover:border-indigo-200 transition-all lowercase bg-background"
                   onKeyDown={(e) => e.key === 'Enter' && !isEvaluating && handleNext()}
                 />
                 <p className="text-xs text-muted-foreground text-center italic lowercase">
@@ -1383,7 +1384,7 @@ function QuizView({
       </Card>
       
       {isEvaluating && (
-        <div className="fixed inset-0 z-50 bg-white/60 backdrop-blur-sm flex items-center justify-center animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-50 bg-background/60 backdrop-blur-sm flex items-center justify-center animate-in fade-in duration-300">
           <div className="flex flex-col items-center gap-4">
             <div className="relative">
               <RefreshCw className="h-12 w-12 text-indigo-600 animate-spin" />
@@ -1556,7 +1557,7 @@ function StudyView({
     <div className="relative min-h-[85vh] flex flex-col items-center justify-center">
       <div className="max-w-3xl w-full space-y-8 animate-smooth-slow relative z-10 px-4">
         <div className="flex items-center justify-between">
-          <Button variant="ghost" size="sm" onClick={onExit} className="rounded-xl gap-2 font-bold text-muted-foreground hover:text-foreground bg-white/50 backdrop-blur-sm lowercase">
+          <Button variant="ghost" size="sm" onClick={onExit} className="rounded-xl gap-2 font-bold text-muted-foreground hover:text-foreground bg-card/50 backdrop-blur-sm lowercase">
             <ChevronLeft className="h-4 w-4" /> exit study
           </Button>
           <div className="text-center">
@@ -1579,7 +1580,7 @@ function StudyView({
             className="relative w-full aspect-[3/2] max-h-[500px] cursor-pointer perspective-1000 group"
           >
             <div className={`relative w-full h-full transition-all duration-500 transform-style-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
-              <Card className={`absolute inset-0 backface-hidden border-none shadow-2xl rounded-[32px] flex flex-col items-center justify-center p-12 bg-white ${isFlipped ? 'pointer-events-none opacity-0' : 'opacity-100'}`}>
+              <Card className={`absolute inset-0 backface-hidden border-none shadow-2xl rounded-[32px] flex flex-col items-center justify-center p-12 bg-card ${isFlipped ? 'pointer-events-none opacity-0' : 'opacity-100'}`}>
                 <div className="w-full h-full flex flex-col items-center justify-center gap-6 overflow-hidden">
                   {currentCard?.imageUrl && (
                     <div className="w-full flex-1 min-h-0 relative">
@@ -1620,7 +1621,7 @@ function StudyView({
                 variant="outline" 
                 size="icon" 
                 onClick={handlePrev}
-                className="h-14 w-14 rounded-full border-none shadow-md hover:scale-110 transition-transform bg-white"
+                className="h-14 w-14 rounded-full border-none shadow-md hover:scale-110 transition-transform bg-card"
               >
                 <ChevronLeft className="h-6 w-6" />
               </Button>
@@ -1638,7 +1639,7 @@ function StudyView({
                 variant="outline" 
                 size="icon" 
                 onClick={handleNext}
-                className="h-14 w-14 rounded-full border-none shadow-md hover:scale-110 transition-transform bg-white"
+                className="h-14 w-14 rounded-full border-none shadow-md hover:scale-110 transition-transform bg-card"
               >
                 <ChevronRight className="h-6 w-6" />
               </Button>
@@ -1657,7 +1658,7 @@ function StudyView({
                 variant="outline" 
                 size="icon" 
                 onClick={() => setIsFlipped(!isFlipped)}
-                className="h-14 w-14 rounded-full border-none shadow-md hover:scale-110 transition-transform bg-white/80 backdrop-blur-sm"
+                className="h-14 w-14 rounded-full border-none shadow-md hover:scale-110 transition-transform bg-card/80 backdrop-blur-sm"
               >
                 <RotateCcw className="h-5 w-5 text-muted-foreground" />
               </Button>
@@ -1674,7 +1675,7 @@ function StudyView({
         </div>
         
         <div className="pt-8">
-          <div className="h-2 w-full bg-white/30 backdrop-blur-sm rounded-full overflow-hidden">
+          <div className="h-2 w-full bg-card/30 backdrop-blur-sm rounded-full overflow-hidden">
             <div 
               className="h-full bg-primary transition-all duration-500" 
               style={{ width: `${((currentIndex + 1) / sessionCards.length) * 100}%` }}
@@ -1690,7 +1691,7 @@ function DeckCard({ deck, onDelete, onEdit, onStudy }: { deck: any, onDelete: ()
   const mastery = 0; 
   
   return (
-    <Card className="group border-none shadow-sm hover:shadow-xl transition-all duration-500 rounded-[32px] overflow-hidden bg-white flex flex-col">
+    <Card className="group border-none shadow-sm hover:shadow-xl transition-all duration-500 rounded-[32px] overflow-hidden bg-card flex flex-col">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
           <div className="p-3 rounded-2xl bg-primary/10">
@@ -1724,7 +1725,7 @@ function DeckCard({ deck, onDelete, onEdit, onStudy }: { deck: any, onDelete: ()
           <div className="flex justify-between text-sm items-center">
             <div className="flex flex-col">
               <span className="text-muted-foreground uppercase text-[10px] font-bold tracking-widest">created</span>
-              <span className="text-muted-foreground font-medium">
+              <span className="text-muted-foreground font-medium lowercase">
                 {new Date(deck.createdAt).toLocaleDateString()}
               </span>
             </div>

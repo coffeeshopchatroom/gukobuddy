@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -91,7 +92,7 @@ export default function SignupPage() {
         <p className="text-muted-foreground text-lg lowercase">lets get your study experience ready.</p>
       </div>
 
-      <Card className="w-full max-w-lg border-none shadow-2xl rounded-[40px] overflow-hidden bg-white p-2">
+      <Card className="w-full max-w-lg border-none shadow-2xl rounded-[40px] overflow-hidden bg-card p-2">
         <div className="p-8">
           {step === 'account' && (
             <div className="space-y-6">
@@ -110,7 +111,7 @@ export default function SignupPage() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="name@example.com"
-                      className="pl-10 rounded-2xl h-14 no-focus-ring border-muted"
+                      className="pl-10 rounded-2xl h-14 no-focus-ring border-muted bg-background"
                     />
                   </div>
                 </div>
@@ -123,7 +124,7 @@ export default function SignupPage() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="pl-10 rounded-2xl h-14 no-focus-ring border-muted"
+                      className="pl-10 rounded-2xl h-14 no-focus-ring border-muted bg-background"
                     />
                   </div>
                 </div>
@@ -138,7 +139,7 @@ export default function SignupPage() {
               <Button 
                 onClick={handleCreateAccount} 
                 disabled={isProcessing || !email || !password}
-                className="w-full rounded-2xl h-16 text-lg font-bold shadow-xl shadow-primary/20 transition-all hover:scale-[1.02]"
+                className="w-full rounded-2xl h-16 text-lg font-bold shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] lowercase"
               >
                 {isProcessing ? <Loader2 className="h-5 w-5 animate-spin" /> : "create account"}
               </Button>
@@ -165,7 +166,7 @@ export default function SignupPage() {
                       <GraduationCap className={cn("h-6 w-6", studentType === 'college' ? "text-primary" : "text-muted-foreground")} />
                     </div>
                     <div>
-                      <div className="font-bold text-lg">college student</div>
+                      <div className="font-bold text-lg lowercase">college student</div>
                       <div className="text-sm text-muted-foreground lowercase">experience organized by courses.</div>
                     </div>
                   </div>
@@ -184,7 +185,7 @@ export default function SignupPage() {
                       <School className={cn("h-6 w-6", studentType === 'high-school' ? "text-primary" : "text-muted-foreground")} />
                     </div>
                     <div>
-                      <div className="font-bold text-lg">high school student</div>
+                      <div className="font-bold text-lg lowercase">high school student</div>
                       <div className="text-sm text-muted-foreground lowercase">experience organized by classes.</div>
                     </div>
                   </div>
@@ -192,7 +193,7 @@ export default function SignupPage() {
                 </Label>
               </RadioGroup>
 
-              <Button onClick={() => setStep('preferences')} className="w-full rounded-2xl h-16 text-lg font-bold shadow-xl shadow-primary/20">
+              <Button onClick={() => setStep('preferences')} className="w-full rounded-2xl h-16 text-lg font-bold shadow-xl shadow-primary/20 lowercase">
                 continue <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </div>
@@ -212,7 +213,7 @@ export default function SignupPage() {
                       <Sparkles className="h-6 w-6 text-indigo-600" />
                     </div>
                     <div>
-                      <div className="font-bold text-lg">smart assistance</div>
+                      <div className="font-bold text-lg lowercase">smart assistance</div>
                       <div className="text-sm text-muted-foreground lowercase">enable smart tools.</div>
                     </div>
                   </div>
@@ -234,7 +235,7 @@ export default function SignupPage() {
                         type="button"
                         onClick={() => setFocus(item.id as any)}
                         className={cn(
-                          "h-24 rounded-3xl flex flex-col gap-2 border-2",
+                          "h-24 rounded-3xl flex flex-col gap-2 border-2 lowercase",
                           focus === item.id ? "border-primary bg-primary/5 text-primary-foreground" : "border-muted"
                         )}
                       >
@@ -253,10 +254,10 @@ export default function SignupPage() {
               )}
 
               <div className="flex gap-4">
-                <Button variant="ghost" onClick={() => setStep('profile')} className="rounded-2xl h-16 font-bold flex-1">
+                <Button variant="ghost" onClick={() => setStep('profile')} className="rounded-2xl h-16 font-bold flex-1 lowercase">
                   <ArrowLeft className="mr-2 h-5 w-5" /> back
                 </Button>
-                <Button onClick={handleSaveProfile} disabled={isProcessing} className="rounded-2xl h-16 text-lg font-bold shadow-xl shadow-primary/20 flex-[2]">
+                <Button onClick={handleSaveProfile} disabled={isProcessing} className="rounded-2xl h-16 text-lg font-bold shadow-xl shadow-primary/20 flex-[2] lowercase">
                   {isProcessing ? <Loader2 className="h-5 w-5 animate-spin" /> : "finish setup"}
                 </Button>
               </div>

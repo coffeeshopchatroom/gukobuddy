@@ -144,7 +144,7 @@ export default function ProfilePage() {
       </div>
 
       <div className="grid gap-8 md:grid-cols-3">
-        <Card className="md:col-span-1 border-none shadow-sm rounded-[40px] bg-white overflow-hidden h-fit">
+        <Card className="md:col-span-1 border-none shadow-sm rounded-[40px] bg-card overflow-hidden h-fit">
           <CardContent className="p-8 flex flex-col items-center gap-6 text-center">
             <div className="relative group">
               <Avatar className="h-32 w-32 border-4 border-primary/20 shadow-xl transition-transform group-hover:scale-105">
@@ -182,7 +182,7 @@ export default function ProfilePage() {
         </Card>
 
         <div className="md:col-span-2 space-y-6">
-          <Card className="border-none shadow-sm rounded-[40px] bg-white">
+          <Card className="border-none shadow-sm rounded-[40px] bg-card">
             <CardHeader className="p-8 pb-4">
               <h2 className="text-2xl font-bold font-headline lowercase">personal info</h2>
             </CardHeader>
@@ -193,7 +193,7 @@ export default function ProfilePage() {
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   placeholder="your name"
-                  className="rounded-2xl h-14 no-focus-ring border-muted lowercase"
+                  className="rounded-2xl h-14 no-focus-ring border-muted bg-background lowercase"
                 />
               </div>
 
@@ -227,7 +227,7 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
 
-          <Card className="border-none shadow-sm rounded-[40px] bg-white">
+          <Card className="border-none shadow-sm rounded-[40px] bg-card">
             <CardHeader className="p-8 pb-4">
               <h2 className="text-2xl font-bold font-headline lowercase">preferences</h2>
             </CardHeader>
@@ -260,12 +260,12 @@ export default function ProfilePage() {
                       type="button"
                       onClick={() => setFocus(item.id as any)}
                       className={cn(
-                        "h-24 rounded-3xl flex flex-col gap-2 border-2 transition-all",
+                        "h-24 rounded-3xl flex flex-col gap-2 border-2 transition-all lowercase",
                         focus === item.id ? "border-primary bg-primary/5 ring-2 ring-primary/10" : "border-muted"
                       )}
                     >
                       <item.icon className="h-5 w-5" />
-                      <span className="font-bold lowercase">{item.label}</span>
+                      <span className="font-bold">{item.label}</span>
                     </Button>
                   ))}
                 </div>

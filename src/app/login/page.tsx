@@ -49,7 +49,7 @@ export default function LoginPage() {
         <p className="text-muted-foreground text-lg lowercase">your personalized study companion.</p>
       </div>
 
-      <Card className="w-full max-w-md border-none shadow-2xl rounded-[40px] overflow-hidden bg-white">
+      <Card className="w-full max-w-md border-none shadow-2xl rounded-[40px] overflow-hidden bg-card">
         <CardHeader className="p-8 pb-4">
           <CardTitle className="text-2xl font-bold font-headline lowercase">sign in</CardTitle>
           <CardDescription className="lowercase">enter your details to access your notebooks and flashcards.</CardDescription>
@@ -66,7 +66,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@example.com"
-                  className="pl-10 rounded-2xl h-14 no-focus-ring border-muted"
+                  className="pl-10 rounded-2xl h-14 no-focus-ring border-muted bg-background"
                 />
               </div>
             </div>
@@ -80,7 +80,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="pl-10 rounded-2xl h-14 no-focus-ring border-muted"
+                  className="pl-10 rounded-2xl h-14 no-focus-ring border-muted bg-background"
                 />
               </div>
             </div>
@@ -89,7 +89,7 @@ export default function LoginPage() {
           <Button 
             onClick={handleSignIn} 
             disabled={isProcessing || !email || !password}
-            className="w-full rounded-2xl h-14 font-bold shadow-xl shadow-primary/20"
+            className="w-full rounded-2xl h-14 font-bold shadow-xl shadow-primary/20 lowercase"
           >
             {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : "sign in"}
           </Button>
@@ -113,7 +113,7 @@ export default function LoginPage() {
             variant="secondary" 
             onClick={handleGuestSignIn}
             disabled={isProcessing}
-            className="w-full rounded-2xl h-14 font-bold bg-muted hover:bg-muted/80 text-muted-foreground border-none transition-all gap-2"
+            className="w-full rounded-2xl h-14 font-bold bg-muted hover:bg-muted/80 text-muted-foreground border-none transition-all gap-2 lowercase"
           >
             <UserCircle className="h-5 w-5" />
             continue as guest
