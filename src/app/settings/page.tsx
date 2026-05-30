@@ -200,7 +200,7 @@ export default function SettingsPage() {
 
       <div className="grid gap-8">
         {/* Membership Section */}
-        <Card className="border-none shadow-sm rounded-[40px] bg-white/80 backdrop-blur-md overflow-hidden">
+        <Card className="border-none shadow-sm rounded-[40px] bg-card/80 backdrop-blur-md overflow-hidden">
           <CardHeader className="p-8 pb-4">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-xl bg-primary/10">
@@ -208,7 +208,7 @@ export default function SettingsPage() {
               </div>
               <div>
                 <CardTitle className="text-2xl font-bold font-headline lowercase">membership mode</CardTitle>
-                <CardDescription className="lowercase">choose how guko buddy organizes your experience.</CardDescription>
+                <CardDescription className="lowercase text-muted-foreground">choose how guko buddy organizes your experience.</CardDescription>
               </div>
             </div>
           </CardHeader>
@@ -263,7 +263,7 @@ export default function SettingsPage() {
         </Card>
 
         {/* Theme Engine Section */}
-        <Card className="border-none shadow-sm rounded-[40px] bg-white/80 backdrop-blur-md overflow-hidden">
+        <Card className="border-none shadow-sm rounded-[40px] bg-card/80 backdrop-blur-md overflow-hidden">
           <CardHeader className="p-8 pb-4">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-xl bg-accent/10">
@@ -271,7 +271,7 @@ export default function SettingsPage() {
               </div>
               <div>
                 <CardTitle className="text-2xl font-bold font-headline lowercase">theming & appearance</CardTitle>
-                <CardDescription className="lowercase">style the app exactly how you want it.</CardDescription>
+                <CardDescription className="lowercase text-muted-foreground">style the app exactly how you want it.</CardDescription>
               </div>
             </div>
           </CardHeader>
@@ -289,7 +289,7 @@ export default function SettingsPage() {
                       activeTheme === t.id ? "border-primary bg-primary/5" : "border-muted"
                     )}
                   >
-                    <div className="w-10 h-10 rounded-full border-2 border-white shadow-sm flex overflow-hidden">
+                    <div className="w-10 h-10 rounded-full border-2 border-background shadow-sm flex overflow-hidden">
                        <div className="flex-1" style={{ backgroundColor: t.primary }} />
                        <div className="flex-1" style={{ backgroundColor: t.bg }} />
                     </div>
@@ -358,10 +358,10 @@ export default function SettingsPage() {
                     <Type className="h-3 w-3" /> typography
                   </Label>
                   <Select value={fontFamily} onValueChange={setFontFamily}>
-                    <SelectTrigger className="rounded-2xl h-12">
+                    <SelectTrigger className="rounded-2xl h-12 bg-background border-border text-foreground">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-card border-border">
                       {FONTS.map(f => (
                         <SelectItem key={f.id} value={f.id} style={{ fontFamily: f.id }}>{f.name}</SelectItem>
                       ))}
@@ -380,7 +380,7 @@ export default function SettingsPage() {
                         htmlFor={`fs-${s}`}
                         className={cn(
                           "flex-1 text-center py-2 rounded-lg cursor-pointer text-xs font-bold transition-all",
-                          fontSize === s ? "bg-white shadow-sm" : "opacity-40 hover:opacity-100"
+                          fontSize === s ? "bg-card shadow-sm text-foreground" : "opacity-40 hover:opacity-100 text-muted-foreground"
                         )}
                       >
                         {s}
@@ -400,7 +400,7 @@ export default function SettingsPage() {
                     <div className="relative flex-1 group">
                       <div className={cn(
                         "h-12 w-full rounded-2xl border-2 border-dashed flex items-center justify-center text-xs font-bold transition-all",
-                        bgImage ? "border-primary bg-primary/5" : "border-muted"
+                        bgImage ? "border-primary bg-primary/5 text-primary" : "border-muted text-muted-foreground"
                       )}>
                         {bgImage ? "image active" : "no background"}
                       </div>
@@ -412,7 +412,7 @@ export default function SettingsPage() {
                       />
                     </div>
                     {bgImage && (
-                      <Button variant="ghost" onClick={() => setBgImage('')} className="rounded-xl h-12 lowercase text-destructive">clear</Button>
+                      <Button variant="ghost" onClick={() => setBgImage('')} className="rounded-xl h-12 lowercase text-destructive hover:bg-destructive/10">clear</Button>
                     )}
                   </div>
                 </div>
@@ -440,7 +440,7 @@ export default function SettingsPage() {
         </Card>
 
         {/* Interface Preferences */}
-        <Card className="border-none shadow-sm rounded-[40px] bg-white/80 backdrop-blur-md">
+        <Card className="border-none shadow-sm rounded-[40px] bg-card/80 backdrop-blur-md">
           <CardHeader className="p-8 pb-4">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-xl bg-indigo-100">
@@ -448,7 +448,7 @@ export default function SettingsPage() {
               </div>
               <div>
                 <CardTitle className="text-2xl font-bold font-headline lowercase">interface preferences</CardTitle>
-                <CardDescription className="lowercase">customize your interaction with the platform.</CardDescription>
+                <CardDescription className="lowercase text-muted-foreground">customize your interaction with the platform.</CardDescription>
               </div>
             </div>
           </CardHeader>
@@ -498,7 +498,7 @@ export default function SettingsPage() {
               </div>
               <div>
                 <CardTitle className="text-2xl font-bold font-headline lowercase text-destructive">system & data</CardTitle>
-                <CardDescription className="lowercase">dangerous actions and data management.</CardDescription>
+                <CardDescription className="lowercase text-destructive/70">dangerous actions and data management.</CardDescription>
               </div>
             </div>
           </CardHeader>
@@ -526,3 +526,4 @@ export default function SettingsPage() {
     </div>
   );
 }
+
