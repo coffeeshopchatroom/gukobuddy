@@ -1,3 +1,4 @@
+
 'use client'
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,13 +16,18 @@ import {
   Clock, 
   AlertCircle,
   Radio,
-  Globe
+  Zap,
+  BookOpen,
+  Calendar,
+  Flame,
+  MousePointer2
 } from "lucide-react";
 import Link from "next/link";
-import { useUser, useAuth, initiateAnonymousSignIn, useDoc, useFirestore, useMemoFirebase, useCollection } from "@/firebase";
+import { useUser, useAuth, initiateAnonymousSignIn, useDoc, useFirestore, useMemoFirebase, useCollection, updateDocumentNonBlocking } from "@/firebase";
 import { doc, collection, query, orderBy } from 'firebase/firestore';
 import * as React from 'react';
 import { format, isToday, parseISO } from "date-fns";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function Page() {
   const { user, isUserLoading } = useUser();
@@ -41,7 +47,7 @@ export default function Page() {
     return <LandingPage />;
   }
 
-  return <DashboardPage user={user} profile={profile} />;
+  return <DashboardPage user={user} profile={profile} profileRef={profileRef} />;
 }
 
 function LandingPage() {
@@ -131,13 +137,15 @@ function FeatureCard({ icon, title, description, color }: { icon: React.ReactNod
   )
 }
 
-function DashboardPage({ user, profile }: { user: any, profile?: any }) {
+function DashboardPage({ user, profile, profileRef }: { user: any, profile?: any, profileRef: any }) {
   const db = useFirestore();
   const isHighSchool = profile?.studentType === 'high-school';
-  const categoryLabel = isHighSchool ? "classes" : "courses";
+  const isHobbyist = profile?.studentType === 'hobbyist';
+  
+  const categoryLabel = isHobbyist ? "interests" : (isHighSchool ? "classes" : "courses");
   const focus = profile?.focus || 'all';
 
-  // Use simple queries to avoid missing composite index errors
+  // Use simple queries
   const tasksQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
     return query(collection(db, "users", user.uid, "tasks"), orderBy("dueDate", "asc"));
@@ -150,9 +158,30 @@ function DashboardPage({ user, profile }: { user: any, profile?: any }) {
   }, [db, user]);
   const { data: courses } = useCollection(coursesQuery);
 
-  // In-memory filtering for robustness
   const activeTasks = React.useMemo(() => allTasks?.filter(t => !t.completed) || [], [allTasks]);
   const recentTasks = React.useMemo(() => activeTasks.slice(0, 3), [activeTasks]);
+
+  // Sticky note handler
+  const [stickyNote, setStickyNote] = React.useState(profile?.stickyNote || "");
+  const saveTimeout = React.useRef<NodeJS.Timeout | null>(null);
+
+  React.useEffect(() => {
+    if (profile?.stickyNote !== undefined) {
+      setStickyNote(profile.stickyNote);
+    }
+  }, [profile?.stickyNote]);
+
+  const handleStickyChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const val = e.target.value;
+    setStickyNote(val);
+    
+    if (saveTimeout.current) clearTimeout(saveTimeout.current);
+    saveTimeout.current = setTimeout(() => {
+      if (profileRef) {
+        updateDocumentNonBlocking(profileRef, { stickyNote: val });
+      }
+    }, 1000);
+  };
 
   // Calculations
   const gpa = React.useMemo(() => {
@@ -186,7 +215,9 @@ function DashboardPage({ user, profile }: { user: any, profile?: any }) {
           <p className="text-muted-foreground mt-2 text-lg lowercase">ready to tackle your {categoryLabel} today?</p>
         </div>
         <div className="flex items-center gap-3">
-          <Badge variant="secondary" className="px-4 py-1 rounded-full text-sm font-medium">{isHighSchool ? 'high school' : 'college'}</Badge>
+          <Badge variant="secondary" className="px-4 py-1 rounded-full text-sm font-medium">
+            {isHobbyist ? 'hobbyist' : isHighSchool ? 'high school' : 'college'}
+          </Badge>
           {profile?.useAi && (
             <Badge variant="outline" className="px-4 py-1 rounded-full text-sm font-medium border-indigo-200 text-indigo-600 bg-indigo-50">smart buddy enabled</Badge>
           )}
@@ -194,60 +225,98 @@ function DashboardPage({ user, profile }: { user: any, profile?: any }) {
       </header>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {(focus === 'all' || focus === 'tasks') && (
-          <Link href="/tasks" className="block">
-            <Card className="hover:shadow-lg transition-all duration-500 border-none bg-primary/10 group cursor-pointer h-full rounded-[32px]">
-              <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                <span className="text-sm font-semibold uppercase tracking-wider text-primary-foreground/70">tasks</span>
-                <CheckSquare className="h-5 w-5 text-primary" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold lowercase">{activeTasks.length} active</div>
-                <p className="text-xs text-muted-foreground mt-1 lowercase">manage your workload</p>
-              </CardContent>
-            </Card>
-          </Link>
-        )}
-        {(focus === 'all' || focus === 'flashcards') && (
-          <Link href="/flashcards" className="block">
-            <Card className="hover:shadow-lg transition-all duration-500 border-none bg-accent/20 group cursor-pointer h-full rounded-[32px]">
-              <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                <span className="text-sm font-semibold uppercase tracking-wider text-accent-foreground/70">subjects</span>
-                <Layers className="h-5 w-5 text-accent-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold lowercase">{courses?.length || 0} tracked</div>
-                <p className="text-xs text-muted-foreground mt-1 lowercase">flashcards & recall</p>
-              </CardContent>
-            </Card>
-          </Link>
-        )}
-        {(focus === 'all' || focus === 'notebooks') && (
-          <Link href="/notebooks" className="block">
-            <Card className="hover:shadow-lg transition-all duration-500 border-none bg-secondary/50 group cursor-pointer h-full rounded-[32px]">
-              <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                <span className="text-sm font-semibold uppercase tracking-wider text-secondary-foreground/70">notebooks</span>
-                <StickyNote className="h-5 w-5 text-secondary-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold lowercase">0 notes</div>
-                <p className="text-xs text-muted-foreground mt-1 lowercase">organized lecture notes</p>
-              </CardContent>
-            </Card>
-          </Link>
-        )}
-        <Link href="/tracker" className="block">
-          <Card className="hover:shadow-lg transition-all duration-500 border-none bg-muted group cursor-pointer h-full rounded-[32px]">
+        <Link href="/tasks" className="block">
+          <Card className="hover:shadow-lg transition-all duration-500 border-none bg-primary/10 group cursor-pointer h-full rounded-[32px]">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-              <span className="text-sm font-semibold uppercase tracking-wider text-muted-foreground/70">grades</span>
-              <TrendingUp className="h-5 w-5 text-muted-foreground" />
+              <span className="text-sm font-semibold uppercase tracking-wider text-primary-foreground/70">tasks</span>
+              <CheckSquare className="h-5 w-5 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold lowercase">{gpa} GPA</div>
-              <p className="text-xs text-muted-foreground mt-1 lowercase">avg: {avgGrade}%</p>
+              <div className="text-3xl font-bold lowercase">{activeTasks.length} active</div>
+              <p className="text-xs text-muted-foreground mt-1 lowercase">manage your workload</p>
             </CardContent>
           </Card>
         </Link>
+
+        {isHobbyist ? (
+          <>
+            <Card className="hover:shadow-lg transition-all duration-500 border-none bg-accent/20 group h-full rounded-[32px]">
+              <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                <span className="text-sm font-semibold uppercase tracking-wider text-accent-foreground/70">study streak</span>
+                <Flame className="h-5 w-5 text-accent-foreground animate-pulse" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold lowercase">{profile?.studyStreak || 0} days</div>
+                <p className="text-xs text-muted-foreground mt-1 lowercase">consistency is key</p>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-all duration-500 border-none bg-secondary/50 group h-full rounded-[32px]">
+              <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                <span className="text-sm font-semibold uppercase tracking-wider text-secondary-foreground/70">focus time</span>
+                <Clock className="h-5 w-5 text-secondary-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold lowercase">{profile?.focusHours || 0} hours</div>
+                <p className="text-xs text-muted-foreground mt-1 lowercase">total flow time</p>
+              </CardContent>
+            </Card>
+
+            <Link href="/flashcards" className="block">
+              <Card className="hover:shadow-lg transition-all duration-500 border-none bg-indigo-500/10 group cursor-pointer h-full rounded-[32px] border-2 border-dashed border-indigo-200">
+                <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                  <span className="text-sm font-semibold uppercase tracking-wider text-indigo-700">daily recall</span>
+                  <Zap className="h-5 w-5 text-indigo-600 fill-indigo-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-indigo-700 lowercase">start now</div>
+                  <p className="text-xs text-indigo-600/70 mt-1 lowercase">quick 5min session</p>
+                </CardContent>
+              </Card>
+            </Link>
+          </>
+        ) : (
+          <>
+            <Link href="/flashcards" className="block">
+              <Card className="hover:shadow-lg transition-all duration-500 border-none bg-accent/20 group cursor-pointer h-full rounded-[32px]">
+                <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                  <span className="text-sm font-semibold uppercase tracking-wider text-accent-foreground/70">subjects</span>
+                  <Layers className="h-5 w-5 text-accent-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold lowercase">{courses?.length || 0} tracked</div>
+                  <p className="text-xs text-muted-foreground mt-1 lowercase">flashcards & recall</p>
+                </CardContent>
+              </Card>
+            </Link>
+
+            <Link href="/notebooks" className="block">
+              <Card className="hover:shadow-lg transition-all duration-500 border-none bg-secondary/50 group cursor-pointer h-full rounded-[32px]">
+                <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                  <span className="text-sm font-semibold uppercase tracking-wider text-secondary-foreground/70">notebooks</span>
+                  <StickyNote className="h-5 w-5 text-secondary-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold lowercase">0 notes</div>
+                  <p className="text-xs text-muted-foreground mt-1 lowercase">organized lecture notes</p>
+                </CardContent>
+              </Card>
+            </Link>
+
+            <Link href="/tracker" className="block">
+              <Card className="hover:shadow-lg transition-all duration-500 border-none bg-muted group cursor-pointer h-full rounded-[32px]">
+                <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                  <span className="text-sm font-semibold uppercase tracking-wider text-muted-foreground/70">grades</span>
+                  <TrendingUp className="h-5 w-5 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold lowercase">{gpa} GPA</div>
+                  <p className="text-xs text-muted-foreground mt-1 lowercase">avg: {avgGrade}%</p>
+                </CardContent>
+              </Card>
+            </Link>
+          </>
+        )}
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
@@ -292,38 +361,72 @@ function DashboardPage({ user, profile }: { user: any, profile?: any }) {
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-3 border-none shadow-sm bg-gradient-to-br from-primary/5 to-accent/5 rounded-[40px]">
+        <Card className="lg:col-span-3 border-none shadow-sm bg-gradient-to-br from-primary/5 to-accent/5 rounded-[40px] flex flex-col">
           <CardHeader className="p-8">
-            <CardTitle className="font-headline text-2xl lowercase">progress</CardTitle>
-            <p className="text-muted-foreground text-sm lowercase">current semester average: {avgGrade}%</p>
+            <CardTitle className="font-headline text-2xl lowercase flex items-center justify-between">
+              {isHobbyist ? 'quick thoughts' : 'progress'}
+              {isHobbyist && <MousePointer2 className="h-5 w-5 text-muted-foreground/30" />}
+            </CardTitle>
+            <p className="text-muted-foreground text-sm lowercase">
+              {isHobbyist ? 'jot down ideas instantly' : `current semester average: ${avgGrade}%`}
+            </p>
           </CardHeader>
-          <CardContent className="px-8 pb-8 space-y-8">
-            {courses && courses.length > 0 ? (
-              courses.slice(0, 3).map((course: any) => (
-                <div key={course.id} className="space-y-3">
-                  <div className="flex justify-between text-sm font-bold lowercase">
-                    <span className="flex items-center gap-2">
-                      <div className="h-2 w-2 rounded-full bg-primary" />
-                      {course.name}
-                    </span>
-                    <span className="text-muted-foreground">{course.grade}%</span>
+          <CardContent className="px-8 pb-8 flex-1">
+            {isHobbyist ? (
+              <div className="h-full flex flex-col gap-4">
+                <div className="flex-1 bg-white/40 backdrop-blur-sm rounded-3xl p-6 border-2 border-dashed border-muted relative overflow-hidden group">
+                  <Textarea 
+                    placeholder="what's on your mind?..." 
+                    value={stickyNote}
+                    onChange={handleStickyChange}
+                    className="w-full h-full resize-none border-none bg-transparent focus-visible:ring-0 p-0 text-lg lowercase leading-relaxed placeholder:italic"
+                  />
+                  <div className="absolute bottom-4 right-6 text-[9px] font-bold uppercase tracking-widest text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
+                    auto-saving to cloud
                   </div>
-                  <Progress value={parseFloat(course.grade) || 0} className="h-3 bg-white/50 rounded-full" />
                 </div>
-              ))
+                <div className="grid grid-cols-2 gap-3">
+                  <Button variant="outline" className="rounded-2xl h-14 font-bold lowercase border-muted hover:bg-white" asChild>
+                    <Link href="/notebooks">
+                      <BookOpen className="h-4 w-4 mr-2" /> all notes
+                    </Link>
+                  </Button>
+                  <Button variant="outline" className="rounded-2xl h-14 font-bold lowercase border-muted hover:bg-white" asChild>
+                    <Link href="/channel">
+                      <Radio className="h-4 w-4 mr-2" /> plaza
+                    </Link>
+                  </Button>
+                </div>
+              </div>
             ) : (
-              <div className="py-12 text-center">
-                <p className="text-sm text-muted-foreground lowercase">no courses tracked yet.</p>
-                <Button variant="link" asChild className="mt-2 text-primary font-bold lowercase">
-                  <Link href="/tracker">add your first course</Link>
-                </Button>
+              <div className="space-y-8">
+                {courses && courses.length > 0 ? (
+                  courses.slice(0, 3).map((course: any) => (
+                    <div key={course.id} className="space-y-3">
+                      <div className="flex justify-between text-sm font-bold lowercase">
+                        <span className="flex items-center gap-2">
+                          <div className="h-2 w-2 rounded-full bg-primary" />
+                          {course.name}
+                        </span>
+                        <span className="text-muted-foreground">{course.grade}%</span>
+                      </div>
+                      <Progress value={parseFloat(course.grade) || 0} className="h-3 bg-white/50 rounded-full" />
+                    </div>
+                  ))
+                ) : (
+                  <div className="py-12 text-center">
+                    <p className="text-sm text-muted-foreground lowercase">no courses tracked yet.</p>
+                    <Button variant="link" asChild className="mt-2 text-primary font-bold lowercase">
+                      <Link href="/tracker">add your first course</Link>
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
         </Card>
       </div>
 
-      {/* Guko Channel Entry Portal */}
       <Link href="/channel" className="block pt-8">
         <Card className="border-none shadow-md rounded-[32px] bg-primary/5 hover:bg-primary/10 transition-all group overflow-hidden relative">
           <CardContent className="p-8 flex flex-col md:flex-row items-center justify-between gap-6">

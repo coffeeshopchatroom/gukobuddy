@@ -36,6 +36,18 @@
         "isAdmin": {
           "type": "boolean",
           "description": "Whether the user has administrative privileges."
+        },
+        "focusHours": {
+          "type": "number",
+          "description": "Total hours spent focusing (for hobbyists)."
+        },
+        "studyStreak": {
+          "type": "number",
+          "description": "Consecutive days of engagement (for hobbyists)."
+        },
+        "stickyNote": {
+          "type": "string",
+          "description": "Quick dashboard thoughts (for hobbyists)."
         }
       },
       "required": [
