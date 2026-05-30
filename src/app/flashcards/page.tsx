@@ -111,6 +111,7 @@ export default function FlashcardsPage() {
   const profileRef = useMemoFirebase(() => user ? doc(db, 'users', user.uid, 'profile', 'settings') : null, [user, db]);
   const { data: profile } = useDoc(profileRef);
   const isHighSchool = profile?.studentType === 'high-school';
+  const useAi = profile?.useAi !== false; // Default to true unless explicitly false
 
   const questionEditor = useEditor({
     extensions: [
@@ -261,6 +262,9 @@ export default function FlashcardsPage() {
   }
 
   const handleStartStudy = (mode: StudyMode) => {
+    if (mode === 'quiz' && !useAi) {
+      return // Should not be reachable if hidden correctly
+    }
     setActiveStudyMode(mode)
     setIsModeSelectorOpen(false)
   }
@@ -395,22 +399,24 @@ export default function FlashcardsPage() {
                     <ChevronRight className="h-5 w-5 text-muted-foreground" />
                   </Button>
 
-                  <Button 
-                    variant="outline" 
-                    className="flex items-center justify-between p-6 h-auto rounded-2xl border-2 hover:border-indigo-500 hover:bg-indigo-50 transition-all text-left group lowercase"
-                    onClick={() => handleStartStudy('quiz')}
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 rounded-xl bg-muted group-hover:bg-indigo-100 transition-colors">
-                        <FileText className="h-6 w-6 text-muted-foreground group-hover:text-indigo-600" />
+                  {useAi && (
+                    <Button 
+                      variant="outline" 
+                      className="flex items-center justify-between p-6 h-auto rounded-2xl border-2 hover:border-indigo-500 hover:bg-indigo-50 transition-all text-left group lowercase"
+                      onClick={() => handleStartStudy('quiz')}
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 rounded-xl bg-muted group-hover:bg-indigo-100 transition-colors">
+                          <FileText className="h-6 w-6 text-muted-foreground group-hover:text-indigo-600" />
+                        </div>
+                        <div>
+                          <div className="font-bold text-lg">quiz mode</div>
+                          <div className="text-sm text-muted-foreground">test yourself with questions.</div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="font-bold text-lg">quiz mode</div>
-                        <div className="text-sm text-muted-foreground">test yourself with questions.</div>
-                      </div>
-                    </div>
-                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                  </Button>
+                      <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                    </Button>
+                  )}
 
                   <Button 
                     variant="outline" 
@@ -554,7 +560,18 @@ export default function FlashcardsPage() {
             <Plus className="h-12 w-12 text-muted-foreground mb-4 opacity-20" />
             <h3 className="text-xl font-bold font-headline lowercase">no cards yet</h3>
             <p className="text-muted-foreground mt-2 lowercase">start adding cards to this deck to begin studying.</p>
-            <Button onClick={() => setIsCreateCardOpen(true)} className="mt-6 rounded-xl lowercase">add first card</Button>
+            <div className="flex gap-4 mt-6">
+              <Button onClick={() => setIsCreateCardOpen(true)} className="rounded-xl lowercase">add first card</Button>
+              {useAi && (
+                <Button 
+                  onClick={() => setIsAiGeneratorOpen(true)}
+                  variant="outline"
+                  className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground border-none lowercase"
+                >
+                  <FileText className="h-4 w-4 mr-2" /> create from notes
+                </Button>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -571,14 +588,16 @@ export default function FlashcardsPage() {
           </p>
         </div>
         <div className="flex gap-3">
-          <AiGeneratorDialog 
-            isOpen={isAiGeneratorOpen} 
-            setIsOpen={setIsAiGeneratorOpen} 
-            isHighSchool={isHighSchool}
-            user={user}
-            activeCourse={activeCourse}
-            db={db}
-          />
+          {useAi && (
+            <AiGeneratorDialog 
+              isOpen={isAiGeneratorOpen} 
+              setIsOpen={setIsAiGeneratorOpen} 
+              isHighSchool={isHighSchool}
+              user={user}
+              activeCourse={activeCourse}
+              db={db}
+            />
+          )}
           
           <Dialog open={isCreateDeckOpen} onOpenChange={setIsCreateDeckOpen}>
             <DialogTrigger asChild>
@@ -660,12 +679,14 @@ export default function FlashcardsPage() {
             >
               <Plus className="h-4 w-4 mr-2" /> create first deck
             </Button>
-            <Button 
-              onClick={() => setIsAiGeneratorOpen(true)}
-              className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground lowercase"
-            >
-              <FileText className="h-4 w-4 mr-2" /> create from notes
-            </Button>
+            {useAi && (
+              <Button 
+                onClick={() => setIsAiGeneratorOpen(true)}
+                className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground lowercase"
+              >
+                <FileText className="h-4 w-4 mr-2" /> create from notes
+              </Button>
+            )}
           </div>
         </div>
       )}

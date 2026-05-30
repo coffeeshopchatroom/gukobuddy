@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -48,6 +49,7 @@ export default function TrackerPage() {
   const profileRef = useMemoFirebase(() => user ? doc(db, 'users', user.uid, 'profile', 'settings') : null, [user, db]);
   const { data: profile } = useDoc(profileRef);
   const isHighSchool = profile?.studentType === 'high-school';
+  const useAi = profile?.useAi !== false;
 
   const coursesQuery = useMemoFirebase(() => {
     if (!db || !user) return null
@@ -108,12 +110,14 @@ export default function TrackerPage() {
           </p>
         </div>
         <div className="flex gap-3">
-          <ImportGradesDialog 
-            isOpen={isImportOpen} 
-            setIsOpen={setIsImportOpen} 
-            user={user} 
-            db={db} 
-          />
+          {useAi && (
+            <ImportGradesDialog 
+              isOpen={isImportOpen} 
+              setIsOpen={setIsImportOpen} 
+              user={user} 
+              db={db} 
+            />
+          )}
           <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" className="bg-card border-2 font-bold py-6 px-8 rounded-2xl shadow-sm transition-all hover:scale-105 lowercase">
@@ -200,9 +204,11 @@ export default function TrackerPage() {
               add your subjects manually or import them from a screenshot to get started.
             </p>
             <div className="flex gap-4 mt-6">
-              <Button onClick={() => setIsImportOpen(true)} className="rounded-xl lowercase bg-primary text-primary-foreground">
-                <Upload className="h-5 w-5 mr-2" /> Import Grades
-              </Button>
+              {useAi && (
+                <Button onClick={() => setIsImportOpen(true)} className="rounded-xl lowercase bg-primary text-primary-foreground">
+                  <Upload className="h-5 w-5 mr-2" /> Import Grades
+                </Button>
+              )}
               <Button variant="secondary" onClick={() => setIsAddOpen(true)} className="rounded-xl lowercase bg-muted text-muted-foreground">
                 <Plus className="h-5 w-5 mr-2" /> Add Manually
               </Button>
