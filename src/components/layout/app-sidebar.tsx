@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -20,7 +21,8 @@ import {
   Palette,
   ClipboardCheck,
   Bell,
-  Radio
+  Radio,
+  Settings
 } from "lucide-react"
 
 import {
@@ -40,7 +42,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
-import { useFirebase, useUser, useDoc, useMemoFirebase, useCollection } from "@/firebase"
+import { useFirebase, useUser, useDoc, useMemoFirebase } from "@/firebase"
 import { signOut } from "firebase/auth"
 import { doc, collection, query, orderBy } from 'firebase/firestore'
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -66,6 +68,7 @@ import {
 import { addDays, isPast, parseISO } from "date-fns"
 import { cn } from "@/lib/utils"
 import { useToast } from "@/hooks/use-toast"
+import { useCollection } from "@/firebase/firestore/use-collection"
 
 export function AppSidebar() {
   const pathname = usePathname()
@@ -103,7 +106,7 @@ export function AppSidebar() {
 
   const userName = user?.isAnonymous ? "guest" : (profile?.displayName || user?.displayName || user?.email?.split('@')[0] || "student");
   const userPhoto = profile?.photoUrl || user?.photoURL || "";
-  const userRole = user?.isAnonymous ? "guest session" : (isHighSchool ? "high school" : "college member");
+  const userRole = user?.isAnonymous ? "guest session" : (profile?.studentType?.replace('-', ' ') || "student");
   const isAdmin = profile?.isAdmin === true;
 
   return (
@@ -296,16 +299,32 @@ export function AppSidebar() {
                 </Collapsible>
               )}
 
+              {profile?.studentType !== 'hobbyist' && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname === "/tracker"}
+                    tooltip={trackerLabel}
+                    className="flex items-center gap-3 px-4 py-6 rounded-xl transition-all duration-500 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground lowercase group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
+                  >
+                    <Link href="/tracker">
+                      <GraduationCap className="h-5 w-5" />
+                      <span className="font-medium group-data-[collapsible=icon]:hidden">{trackerLabel}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
+
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
-                  isActive={pathname === "/tracker"}
-                  tooltip={trackerLabel}
+                  isActive={pathname === "/settings"}
+                  tooltip="settings"
                   className="flex items-center gap-3 px-4 py-6 rounded-xl transition-all duration-500 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground lowercase group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
                 >
-                  <Link href="/tracker">
-                    <GraduationCap className="h-5 w-5" />
-                    <span className="font-medium group-data-[collapsible=icon]:hidden">{trackerLabel}</span>
+                  <Link href="/settings">
+                    <Settings className="h-5 w-5" />
+                    <span className="font-medium group-data-[collapsible=icon]:hidden">settings</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

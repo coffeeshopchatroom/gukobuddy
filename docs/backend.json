@@ -17,8 +17,8 @@
         },
         "studentType": {
           "type": "string",
-          "enum": ["high-school", "college"],
-          "description": "The educational level of the user."
+          "enum": ["high-school", "college", "hobbyist"],
+          "description": "The educational level or usage mode of the user."
         },
         "blackbaudConnected": {
           "type": "boolean",
