@@ -1,3 +1,4 @@
+
 import type {Metadata} from 'next';
 import './globals.css';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
@@ -7,6 +8,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { NotificationManager } from '@/components/NotificationManager';
 import { PomodoroProvider } from '@/components/pomodoro/pomodoro-context';
 import { FloatingTimer } from '@/components/pomodoro/floating-timer';
+import { ThemeApplier } from '@/components/theme/ThemeApplier';
 
 export const metadata: Metadata = {
   title: 'guko buddy',
@@ -23,16 +25,17 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700&family=IBM+Plex+Sans+Devanagari:wght@400;500;600&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700&family=IBM+Plex+Sans+Devanagari:wght@400;500;600&family=Inter:wght@400;700&family=Crimson+Pro:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased">
         <FirebaseClientProvider>
+          <ThemeApplier />
           <PomodoroProvider>
             <NotificationManager />
             <SidebarProvider>
-              <div className="flex min-h-screen w-full">
+              <div className="flex min-h-screen w-full relative">
                 <AppSidebar />
-                <main className="flex-1 overflow-auto bg-background/50 backdrop-blur-sm px-4 py-6 md:px-8 md:py-8">
+                <main className="flex-1 overflow-auto bg-background/50 backdrop-blur-sm px-4 py-6 md:px-8 md:py-8 transition-colors duration-500">
                   {/* Mobile Header with Sidebar Trigger */}
                   <header className="flex items-center gap-3 mb-8 md:hidden px-2 py-4 bg-white/80 backdrop-blur-md rounded-[32px] shadow-sm border border-border/40">
                     <SidebarTrigger className="h-10 w-10 rounded-xl hover:bg-muted" />
@@ -48,7 +51,7 @@ export default function RootLayout({
                     </div>
                   </header>
                   
-                  <div className="max-w-7xl mx-auto animate-smooth-slow">
+                  <div className="max-w-7xl mx-auto">
                     {children}
                   </div>
                 </main>
