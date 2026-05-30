@@ -218,9 +218,6 @@ function DashboardPage({ user, profile, profileRef }: { user: any, profile?: any
           <Badge variant="secondary" className="px-4 py-1 rounded-full text-sm font-medium">
             {isHobbyist ? 'hobbyist' : isHighSchool ? 'high school' : 'college'}
           </Badge>
-          {profile?.useAi && (
-            <Badge variant="outline" className="px-4 py-1 rounded-full text-sm font-medium border-indigo-200 text-indigo-600 bg-indigo-50">smart buddy enabled</Badge>
-          )}
         </div>
       </header>
 
