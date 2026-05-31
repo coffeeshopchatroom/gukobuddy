@@ -6,5 +6,5 @@ const hardcodedApiKey = 'AIzaSyCggdPmkfXzpgoev2miHfEPrJRYWhFkJMc';
 
 export const ai = genkit({
   plugins: [googleAI({apiKey: hardcodedApiKey})],
-  model: 'googleai/gemini-3.1-flash-lite',
+  model: 'googleai/gemini-2.5-flash',
 });
