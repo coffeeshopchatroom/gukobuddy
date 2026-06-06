@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -21,7 +22,8 @@ import {
   ClipboardCheck,
   Bell,
   Radio,
-  Settings
+  Settings,
+  Gamepad2
 } from "lucide-react"
 
 import {
@@ -459,14 +461,25 @@ function AdminPanelDialog({ children, open, onOpenChange }: { children: React.Re
         <div className="grid gap-4 py-4">
           <div className="space-y-4">
             <h4 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">system diagnostics</h4>
-            <Button 
-              onClick={handleTestNotification}
-              className="w-full h-14 rounded-2xl font-bold gap-2 shadow-lg shadow-primary/10 lowercase"
-            >
-              <Terminal className="h-5 w-5" /> test task notification
-            </Button>
+            <div className="grid grid-cols-1 gap-3">
+              <Button 
+                onClick={handleTestNotification}
+                className="w-full h-14 rounded-2xl font-bold gap-2 shadow-lg shadow-primary/10 lowercase"
+              >
+                <Terminal className="h-5 w-5" /> test task notification
+              </Button>
+              <Button 
+                variant="outline"
+                asChild
+                className="w-full h-14 rounded-2xl font-bold gap-2 border-2 border-primary/20 hover:bg-primary/5 shadow-sm lowercase"
+              >
+                <Link href="/admin/wii-test">
+                  <Gamepad2 className="h-5 w-5 text-primary" /> test wii theme
+                </Link>
+              </Button>
+            </div>
             <p className="text-xs text-muted-foreground text-center lowercase px-4">
-              this will trigger an immediate native browser notification if permissions are granted.
+              these tools are for internal testing of experimental global themes and notifications.
             </p>
           </div>
         </div>
