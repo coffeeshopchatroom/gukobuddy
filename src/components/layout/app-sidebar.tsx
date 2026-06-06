@@ -468,15 +468,26 @@ function AdminPanelDialog({ children, open, onOpenChange }: { children: React.Re
               >
                 <Terminal className="h-5 w-5" /> test task notification
               </Button>
-              <Button 
-                variant="outline"
-                asChild
-                className="w-full h-14 rounded-2xl font-bold gap-2 border-2 border-primary/20 hover:bg-primary/5 shadow-sm lowercase"
-              >
-                <Link href="/admin/wii-test">
-                  <Gamepad2 className="h-5 w-5 text-primary" /> test wii theme
-                </Link>
-              </Button>
+              <div className="grid grid-cols-2 gap-3">
+                <Button 
+                  variant="outline"
+                  asChild
+                  className="w-full h-14 rounded-2xl font-bold gap-2 border-2 border-primary/20 hover:bg-primary/5 shadow-sm lowercase"
+                >
+                  <Link href="/admin/wii-test">
+                    <Gamepad2 className="h-5 w-5 text-primary" /> wii theme
+                  </Link>
+                </Button>
+                <Button 
+                  variant="outline"
+                  asChild
+                  className="w-full h-14 rounded-2xl font-bold gap-2 border-2 border-indigo-200 hover:bg-indigo-50 shadow-sm lowercase"
+                >
+                  <Link href="/admin/xbox-test">
+                    <Gamepad2 className="h-5 w-5 text-indigo-500" /> xbox theme
+                  </Link>
+                </Button>
+              </div>
             </div>
             <p className="text-xs text-muted-foreground text-center lowercase px-4">
               these tools are for internal testing of experimental global themes and notifications.
