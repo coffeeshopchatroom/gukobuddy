@@ -1,184 +1,211 @@
+
 "use client"
 
 import * as React from "react"
-import { ArrowLeft, Disc, ShoppingBag, Sun, Newspaper, Home, Mail } from "lucide-react"
-import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { ChevronRight, Mail, Home } from "lucide-react"
 import { cn } from "@/lib/utils"
+import Link from "next/link"
 
-/**
- * @fileOverview A pixel-perfect replica of the Wii Home Menu.
- * Features the signature "bulging" channels, specific wave footer, and real-time clock.
- */
 export default function WiiThemeReplica() {
-  const [time, setTime] = React.useState<Date | null>(null)
+  const [mounted, setMounted] = React.useState(false)
+  const [time, setTime] = React.useState(new Date())
 
   React.useEffect(() => {
-    // Prevent hydration mismatch
-    setTime(new Date())
+    setMounted(true)
     const timer = setInterval(() => setTime(new Date()), 1000)
     return () => clearInterval(timer)
   }, [])
 
-  const formattedTime = time ? time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : ""
-  const formattedDate = time ? time.toLocaleDateString([], { weekday: 'short', month: 'numeric', day: 'numeric' }) : ""
+  if (!mounted) return null
+
+  const formattedTime = time.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  })
+  const formattedDate = time.toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'numeric',
+    day: 'numeric'
+  }).replace(',', '')
+
+  // Custom SVG path for the "bulging" channel shape
+  const channelClipPath = "path('M 12,2 C 50,-2 138,-2 176,2 C 188,4 188,14 188,14 C 192,50 192,62 188,98 C 188,98 188,108 176,110 C 138,114 50,114 12,110 C 0,108 0,98 0,98 C -4,62 -4,50 0,14 C 0,14 0,4 12,2 Z')"
+
+  const channels = [
+    { type: 'disc', color: 'bg-slate-100', icon: <DiscIcon /> },
+    { type: 'mii', color: 'bg-orange-50', image: 'https://picsum.photos/seed/mii/200/120' },
+    { type: 'photo', color: 'bg-amber-50', image: 'https://picsum.photos/seed/photo/200/120' },
+    { type: 'shop', color: 'bg-emerald-50', icon: <ShopIcon /> },
+    { type: 'forecast', color: 'bg-sky-500', name: 'forecast channel', icon: <SunIcon /> },
+    { type: 'news', color: 'bg-green-600', name: 'news channel' },
+    { type: 'empty', color: 'bg-slate-200/30' },
+    { type: 'empty', color: 'bg-slate-200/30' },
+    { type: 'mario64', color: 'bg-black', image: 'https://picsum.photos/seed/sm64/200/120', name: 'super mario 64' },
+    { type: 'mariobros', color: 'bg-sky-100', image: 'https://picsum.photos/seed/smb/200/120', name: 'super mario bros.' },
+    { type: 'empty', color: 'bg-slate-200/30' },
+    { type: 'homebrew', color: 'bg-cyan-500', name: 'the homebrew channel', icon: <WaveIcon /> },
+  ]
 
   return (
-    <div className="fixed inset-0 z-[100] bg-[#f0f4f6] overflow-hidden flex flex-col font-sans select-none items-center justify-center">
-      {/* Background CRT Scanline overlay */}
-      <div className="absolute inset-0 opacity-[0.02] pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_3px,3px_100%]" />
+    <div className="fixed inset-0 bg-[#f2f2f2] flex flex-col items-center justify-center overflow-hidden font-sans select-none">
+      {/* Background soft gradients */}
+      <div className="absolute inset-0 bg-gradient-to-b from-white/40 via-transparent to-black/5 pointer-events-none" />
+      
+      {/* Top light bar */}
+      <div className="absolute top-0 left-0 w-full h-[15%] bg-gradient-to-b from-white to-transparent opacity-60" />
 
-      {/* Main Channel Grid */}
-      <div className="relative w-full max-w-7xl aspect-[16/9] px-16 md:px-32 flex flex-col items-center justify-start pt-12 pb-32">
-        <div className="grid grid-cols-4 grid-rows-3 gap-x-12 gap-y-10 w-full h-full">
-          <WiiChannel icon={<Disc className="h-14 w-14 text-slate-300" />} type="disc" />
-          <WiiChannel imageUrl="https://picsum.photos/seed/mii/400/300" />
-          <WiiChannel imageUrl="https://picsum.photos/seed/photos/400/300" />
-          <WiiChannel icon={<ShoppingBag className="h-14 w-14 text-white" />} bgColor="bg-[#7fb5d1]" />
-          
-          <WiiChannel icon={<Sun className="h-14 w-14 text-yellow-400 fill-yellow-400" />} bgColor="bg-gradient-to-b from-[#00b0ff] to-[#0070cc]" />
-          <WiiChannel icon={<Newspaper className="h-14 w-14 text-white/70" />} bgColor="bg-gradient-to-b from-[#4caf50] to-[#2e7d32]" />
-          <WiiChannel empty />
-          <WiiChannel empty />
-          
-          <WiiChannel imageUrl="https://picsum.photos/seed/mario64/400/300" />
-          <WiiChannel imageUrl="https://picsum.photos/seed/mariobros/400/300" />
-          <WiiChannel empty />
-          <WiiChannel bgColor="bg-gradient-to-b from-[#00d0e0] to-[#0090a0]" icon={<Home className="h-14 w-14 text-white" />} />
-        </div>
-
-        {/* Right Navigation Arrow */}
-        <div className="absolute right-6 top-[40%] group cursor-pointer pointer-events-auto">
-            <div className="h-24 w-12 bg-white/60 border border-slate-200 rounded-xl flex items-center justify-center hover:bg-white transition-all shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
-                <div className="w-0 h-0 border-t-[12px] border-t-transparent border-l-[18px] border-l-[#00c0ff] border-b-[12px] border-b-transparent ml-1" />
-            </div>
-        </div>
-      </div>
-
-      {/* Repositioned System Clock (Above footer wave) */}
-      <div className="absolute bottom-[230px] left-1/2 -translate-x-1/2 flex flex-col items-center min-h-[80px]">
-        {time && (
-          <div className="text-[96px] font-light tracking-[0.15em] text-slate-400/60 font-mono leading-none flex items-baseline animate-in fade-in duration-700">
-            {formattedTime.split(' ')[0]} <span className="text-xl ml-4 font-sans tracking-normal opacity-50 font-bold uppercase">{formattedTime.split(' ')[1]}</span>
-          </div>
-        )}
-      </div>
-
-      {/* Bottom Dashboard Interface */}
-      <div className="absolute bottom-0 left-0 w-full h-[260px] pointer-events-none">
-        {/* The Signature Wave SVG */}
-        <div className="absolute inset-0 flex items-end">
-            <svg viewBox="0 0 1440 260" preserveAspectRatio="none" className="w-full h-full fill-white drop-shadow-[0_-10px_25px_rgba(0,200,255,0.1)]">
-                <path d="M0,180 C360,80 1080,80 1440,180 V260 H0 Z" />
-                <path d="M0,180 C360,80 1080,80 1440,180" fill="none" stroke="#00c0ff" strokeWidth="4" strokeOpacity="0.25" />
-            </svg>
-        </div>
-
-        {/* System Date (Low on the wave) */}
-        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 text-4xl font-medium text-slate-300/80 tracking-tight lowercase">
-            {time && <span className="animate-in fade-in duration-700">{formattedDate}</span>}
-        </div>
-
-        {/* Interactive Bottom Buttons */}
-        <div className="absolute bottom-10 left-0 w-full px-16 md:px-32 flex items-center justify-between max-w-8xl mx-auto pointer-events-auto">
-          <div className="flex items-center gap-10">
-             {/* Main Wii Menu Button */}
-             <button className="h-32 w-32 rounded-full bg-white border-[6px] border-[#f8f8f8] shadow-[inset_0_4px_10px_rgba(0,0,0,0.02),0_15px_35px_rgba(0,0,0,0.08)] flex items-center justify-center hover:scale-105 transition-transform active:scale-95 group">
-                <span className="text-[#00c0ff] font-bold text-5xl tracking-tighter opacity-80 group-hover:opacity-100">Wii</span>
-             </button>
-             
-             {/* SD Card Slot */}
-             <div className="h-20 w-16 bg-white border-2 border-[#f0f0f0] rounded-xl flex items-center justify-center shadow-lg cursor-pointer hover:bg-slate-50 transition-colors relative group">
-                <div className="w-10 h-13 border-2 border-slate-200 rounded-sm relative overflow-hidden flex flex-col items-center justify-center bg-slate-50/50">
-                    <div className="absolute top-[-4px] right-[-4px] w-6 h-6 bg-[#f0f0f0] rotate-45" />
-                    <span className="text-[10px] font-black text-slate-300 mt-2 tracking-tighter">SD</span>
+      {/* Channel Grid */}
+      <div className="grid grid-cols-4 gap-x-8 gap-y-6 z-10 scale-90 md:scale-100">
+        {channels.map((channel, i) => (
+          <div
+            key={i}
+            className={cn(
+              "relative w-[188px] h-[112px] transition-all duration-200 hover:scale-110 hover:z-20 cursor-pointer group shadow-[0_4px_10px_rgba(0,0,0,0.1)]",
+              channel.color
+            )}
+            style={{ clipPath: channelClipPath }}
+          >
+            {/* Glossy Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/30 via-transparent to-black/10 z-10" />
+            
+            {/* Content */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-2">
+              {channel.image ? (
+                <img src={channel.image} className="w-full h-full object-cover" alt="" />
+              ) : (
+                <div className="text-white drop-shadow-md">
+                  {channel.icon}
                 </div>
-                <div className="absolute bottom-2 right-2 h-2 w-2 rounded-full bg-[#00c0ff] shadow-[0_0_8px_#00c0ff] opacity-40 group-hover:opacity-100" />
-             </div>
-          </div>
+              )}
+              
+              {channel.name && (
+                <div className="absolute top-2 left-2 text-[10px] font-bold text-white drop-shadow-sm lowercase">
+                  {channel.name}
+                </div>
+              )}
+            </div>
 
-          {/* Mail / Message Button */}
-          <button className="h-32 w-32 rounded-full bg-white border-[6px] border-[#f8f8f8] shadow-[inset_0_4px_10px_rgba(0,0,0,0.02),0_15px_35px_rgba(0,0,0,0.08)] flex items-center justify-center hover:scale-105 transition-transform active:scale-95 group">
-              <Mail className="h-14 w-14 text-slate-200 group-hover:text-slate-300" />
-          </button>
+            {/* Selection Border (Cyan Glow) */}
+            <div className="absolute inset-0 border-4 border-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity rounded-[24px]" style={{ clipPath: channelClipPath }} />
+          </div>
+        ))}
+      </div>
+
+      {/* Navigation Arrow */}
+      <div className="absolute right-8 top-1/2 -translate-y-1/2 z-10">
+        <button className="h-12 w-8 bg-cyan-400 flex items-center justify-center shadow-lg transition-transform hover:scale-110 active:scale-95" style={{ clipPath: "polygon(0% 0%, 100% 50%, 0% 100%)" }}>
+          <ChevronRight className="text-white h-6 w-6 ml-[-4px]" />
+        </button>
+      </div>
+
+      {/* Clock Display (Repositioned precisely above wave) */}
+      <div className="absolute bottom-[145px] left-1/2 -translate-x-1/2 z-20 flex flex-col items-center">
+        <div className="text-[64px] font-light tracking-[0.2em] text-slate-400 font-mono leading-none flex items-baseline">
+          {formattedTime.split(' ')[0]} <span className="text-lg ml-3 font-sans tracking-normal opacity-60 uppercase">{formattedTime.split(' ')[1]}</span>
         </div>
       </div>
 
-      {/* Exit testing helper */}
-      <Link href="/" className="absolute bottom-8 left-8 flex items-center gap-2 text-slate-300 hover:text-slate-500 transition-colors z-[200]">
-          <ArrowLeft className="h-4 w-4" /> 
-          <span className="text-xs font-bold uppercase tracking-widest">exit test</span>
-      </Link>
+      {/* Bottom Footer Wave */}
+      <div className="absolute bottom-0 left-0 w-full h-[180px] z-10">
+        <svg viewBox="0 0 1000 180" className="w-full h-full drop-shadow-[0_-5px_15px_rgba(0,240,255,0.1)]">
+          {/* Neon cyan edge path */}
+          <path 
+            d="M0,180 V80 Q250,110 500,50 Q750,110 1000,80 V180 Z" 
+            fill="white" 
+            stroke="#00f0ff" 
+            strokeWidth="1.5"
+          />
+        </svg>
+
+        {/* Date Display (Within the white area) */}
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-2xl font-medium text-slate-500/80 tracking-widest lowercase">
+          {formattedDate}
+        </div>
+
+        {/* Footer Buttons */}
+        <div className="absolute bottom-6 left-8 flex items-end gap-6">
+          {/* Wii Button */}
+          <Link href="/">
+            <div className="relative h-20 w-20 rounded-full bg-white border border-slate-200 shadow-xl flex items-center justify-center group cursor-pointer active:scale-95 transition-transform">
+              <div className="absolute inset-0 border-2 border-cyan-400/30 rounded-full animate-pulse" />
+              <span className="text-xl font-bold text-slate-400 group-hover:text-cyan-500 transition-colors">Wii</span>
+            </div>
+          </Link>
+
+          {/* SD Card slot */}
+          <div className="h-16 w-12 bg-white border border-slate-200 rounded-md shadow-lg flex flex-col items-center justify-center p-1 cursor-not-allowed opacity-80">
+             <div className="w-full h-1 bg-slate-200 mb-auto rounded-full" />
+             <div className="text-[8px] font-bold text-slate-300 uppercase tracking-tighter">SD</div>
+             <div className="w-6 h-8 border border-slate-100 rounded-sm mt-1" />
+          </div>
+        </div>
+
+        <div className="absolute bottom-6 right-8">
+          {/* Message Button */}
+          <div className="h-20 w-20 rounded-full bg-white border border-slate-200 shadow-xl flex items-center justify-center cursor-pointer hover:bg-slate-50 transition-colors active:scale-95 group">
+            <Mail className="h-10 w-10 text-slate-300 group-hover:text-cyan-400 transition-colors" />
+          </div>
+        </div>
+      </div>
 
       <style jsx global>{`
+        @font-face {
+          font-family: 'WiiFont';
+          src: local('Arial');
+        }
         body {
-          background-color: #f0f4f6 !important;
+          background: #f2f2f2 !important;
         }
       `}</style>
     </div>
   )
 }
 
-/**
- * Individual Wii Menu Channel component.
- * Uses a normalized SVG path to create the exact bulging CRT edge geometry.
- */
-function WiiChannel({ icon, imageUrl, bgColor, empty = false, type }: { icon?: React.ReactNode, imageUrl?: string, bgColor?: string, empty?: boolean, type?: string }) {
-  // Cubic Bezier path for a rectangle where sides curve OUTWARDS (Barrel Distortion)
-  // M (start) -> C (cubic curve top) -> C (right) -> C (bottom) -> C (left)
-  const barrelPath = "M45,15 C150,-10 250,-10 355,15 C410,100 410,200 355,285 C250,310 150,310 45,285 C-10,200 -10,100 45,15 Z";
-
+function DiscIcon() {
   return (
-    <div className="relative group w-full aspect-[4/3] transition-all duration-500">
-      {/* Visual Shadow Layer (True Drop Shadow on Path) */}
-      <svg className="absolute inset-0 w-full h-full transition-transform duration-500 group-hover:scale-[1.03] group-active:scale-[0.98]" viewBox="0 0 400 300" style={{ filter: 'drop-shadow(0 15px 25px rgba(0,0,0,0.1))' }}>
-        <path 
-          d={barrelPath} 
-          fill={empty ? "#e2e6e9" : "white"} 
-          fillOpacity={empty ? "0.3" : "1"}
-          className={cn(!imageUrl && bgColor ? "fill-transparent" : "")}
-        />
-        
-        {/* Handles background colors/gradients inside the SVG path */}
-        {!imageUrl && bgColor && (
-          <foreignObject x="0" y="0" width="400" height="300" clipPath={`path('${barrelPath}')`}>
-            <div className={cn("w-full h-full", bgColor)} />
-          </foreignObject>
-        )}
-      </svg>
-
-      {/* Channel Content (Clipped to the barrel shape) */}
-      <div 
-        className="absolute inset-0 flex items-center justify-center transition-transform duration-500 group-hover:scale-[1.03] group-active:scale-[0.98] overflow-hidden"
-        style={{ clipPath: `path('${barrelPath}')` }}
-      >
-        {imageUrl && (
-          <img src={imageUrl} alt="" className="w-full h-full object-cover group-hover:opacity-95 transition-opacity" />
-        )}
-        {!imageUrl && icon && (
-          <div className="relative z-10 transform scale-[1.4] opacity-80 group-hover:opacity-100 transition-opacity">{icon}</div>
-        )}
-
-        {/* Disc Channel Inner Decoration */}
-        {type === 'disc' && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.05]">
-              <div className="h-48 w-48 rounded-full border-[15px] border-slate-900" />
-              <div className="h-12 w-12 rounded-full bg-slate-900 absolute" />
-          </div>
-        )}
-
-        {/* CRT Gloss / Shine Effect overlay */}
-        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.4)_0%,transparent_50%,rgba(0,0,0,0.05)_100%)] pointer-events-none" />
-        
-        {/* Active Selection Outline (Blue glow on hover) */}
-        <div className="absolute inset-0 border-0 group-hover:border-[10px] border-[#00c0ff] transition-all duration-150 pointer-events-none" />
+    <div className="w-20 h-20 rounded-full border-4 border-white/20 bg-slate-100/10 relative flex items-center justify-center">
+      <div className="w-16 h-16 rounded-full border-2 border-white/40 flex items-center justify-center">
+        <div className="w-6 h-6 rounded-full border border-white/20" />
       </div>
+      <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent rotate-45" />
+    </div>
+  )
+}
 
-      {/* Subtle empty channel text */}
-      {empty && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-           <div className="text-[10px] font-bold text-slate-400 opacity-10 tracking-[0.3em] uppercase">Wii</div>
-        </div>
-      )}
+function ShopIcon() {
+  return (
+    <div className="flex flex-col items-center">
+      <div className="w-14 h-16 bg-sky-200 rounded-t-lg relative">
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 w-8 h-4 bg-white/40 rounded-sm" />
+        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[8px] font-bold text-sky-700">Wii</div>
+      </div>
+      <span className="text-[10px] font-bold text-sky-600 mt-1">wii shop channel</span>
+    </div>
+  )
+}
+
+function SunIcon() {
+  return (
+    <div className="w-12 h-12 rounded-full bg-yellow-400 shadow-[0_0_20px_rgba(255,255,0,0.5)] relative">
+      {[...Array(8)].map((_, i) => (
+        <div 
+          key={i} 
+          className="absolute w-1 h-3 bg-yellow-300 left-1/2 -translate-x-1/2 origin-[50%_24px]" 
+          style={{ transform: `translateX(-50%) rotate(${i * 45}deg)` }}
+        />
+      ))}
+    </div>
+  )
+}
+
+function WaveIcon() {
+  return (
+    <div className="w-full h-full flex flex-col items-center justify-center gap-1 opacity-80">
+      <div className="w-16 h-2 bg-white/40 rounded-full" />
+      <div className="w-20 h-2 bg-white/60 rounded-full" />
+      <div className="w-16 h-2 bg-white/40 rounded-full" />
     </div>
   )
 }
