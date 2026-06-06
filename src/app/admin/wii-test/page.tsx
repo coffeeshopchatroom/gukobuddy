@@ -6,15 +6,18 @@ import Link from "next/link"
 import { cn } from "@/lib/utils"
 
 export default function WiiThemeReplica() {
-  const [time, setTime] = React.useState(new Date())
+  const [time, setTime] = React.useState<Date | null>(null)
 
   React.useEffect(() => {
+    // Set initial time and start interval only after hydration
+    setTime(new Date())
     const timer = setInterval(() => setTime(new Date()), 1000)
     return () => clearInterval(timer)
   }, [])
 
-  const formattedTime = time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })
-  const formattedDate = time.toLocaleDateString([], { weekday: 'short', month: 'numeric', day: 'numeric' })
+  // Only generate strings if time is set (client-side)
+  const formattedTime = time ? time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : ""
+  const formattedDate = time ? time.toLocaleDateString([], { weekday: 'short', month: 'numeric', day: 'numeric' }) : ""
 
   return (
     <div className="fixed inset-0 z-[100] bg-[#eef2f4] overflow-hidden flex flex-col font-sans select-none items-center justify-center">
@@ -49,10 +52,12 @@ export default function WiiThemeReplica() {
       </div>
 
       {/* Floating Time (Repositioned above the footer curve) */}
-      <div className="absolute bottom-[160px] left-1/2 -translate-x-1/2 flex flex-col items-center">
-        <div className="text-[72px] font-light tracking-[0.2em] text-slate-400/80 font-mono leading-none flex items-baseline">
-          {formattedTime.split(' ')[0]} <span className="text-xl ml-4 font-sans tracking-normal opacity-60">{formattedTime.split(' ')[1]}</span>
-        </div>
+      <div className="absolute bottom-[160px] left-1/2 -translate-x-1/2 flex flex-col items-center min-h-[72px]">
+        {time && (
+          <div className="text-[72px] font-light tracking-[0.2em] text-slate-400/80 font-mono leading-none flex items-baseline animate-in fade-in duration-500">
+            {formattedTime.split(' ')[0]} <span className="text-xl ml-4 font-sans tracking-normal opacity-60">{formattedTime.split(' ')[1]}</span>
+          </div>
+        )}
       </div>
 
       {/* Bottom Interface Container */}
@@ -66,8 +71,8 @@ export default function WiiThemeReplica() {
         </div>
 
         {/* Floating Date (Inside/Below the wave) */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-3xl font-medium text-slate-400 tracking-tight">
-            {formattedDate}
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-3xl font-medium text-slate-400 tracking-tight min-h-[36px]">
+            {time && <span className="animate-in fade-in duration-500">{formattedDate}</span>}
         </div>
 
         {/* Interactive Buttons (Positioned over the wave) */}
