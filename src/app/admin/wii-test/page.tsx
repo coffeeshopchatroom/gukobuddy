@@ -30,8 +30,9 @@ export default function WiiThemeReplica() {
     day: 'numeric'
   }).replace(',', '')
 
-  // Custom SVG path for the "bulging" channel shape
-  const channelClipPath = "path('M 12,2 C 50,-2 138,-2 176,2 C 188,4 188,14 188,14 C 192,50 192,62 188,98 C 188,98 188,108 176,110 C 138,114 50,114 12,110 C 0,108 0,98 0,98 C -4,62 -4,50 0,14 C 0,14 0,4 12,2 Z')"
+  // Custom SVG path for the "bulging" channel shape (barrel distortion)
+  // This path curves all four sides outward while maintaining rounded corners.
+  const channelClipPath = "path('M 12,2 C 50,-4 138,-4 176,2 C 188,4 192,14 192,14 C 196,50 196,62 192,98 C 192,98 188,108 176,110 C 138,116 50,114 12,110 C 0,108 -4,98 -4,98 C -8,62 -8,50 -4,14 C -4,14 0,4 12,2 Z')"
 
   const channels = [
     { type: 'disc', color: 'bg-slate-100', icon: <DiscIcon /> },
@@ -56,22 +57,22 @@ export default function WiiThemeReplica() {
       {/* Top light bar */}
       <div className="absolute top-0 left-0 w-full h-[15%] bg-gradient-to-b from-white to-transparent opacity-60" />
 
-      {/* Channel Grid */}
-      <div className="grid grid-cols-4 gap-x-8 gap-y-6 z-10 scale-90 md:scale-100">
+      {/* Channel Grid - Shifted UP to avoid overlapping clock */}
+      <div className="grid grid-cols-4 gap-x-8 gap-y-6 z-10 scale-90 md:scale-100 -translate-y-16">
         {channels.map((channel, i) => (
           <div
             key={i}
             className={cn(
-              "relative w-[188px] h-[112px] transition-all duration-200 hover:scale-110 hover:z-20 cursor-pointer group shadow-[0_4px_10px_rgba(0,0,0,0.1)]",
+              "relative w-[188px] h-[112px] transition-all duration-200 hover:scale-110 hover:z-20 cursor-pointer group shadow-[0_4px_12px_rgba(0,0,0,0.08)]",
               channel.color
             )}
             style={{ clipPath: channelClipPath }}
           >
             {/* Glossy Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-br from-white/30 via-transparent to-black/10 z-10" />
+            <div className="absolute inset-0 bg-gradient-to-br from-white/40 via-transparent to-black/10 z-10" />
             
             {/* Content */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-2">
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-0">
               {channel.image ? (
                 <img src={channel.image} className="w-full h-full object-cover" alt="" />
               ) : (
@@ -81,68 +82,68 @@ export default function WiiThemeReplica() {
               )}
               
               {channel.name && (
-                <div className="absolute top-2 left-2 text-[10px] font-bold text-white drop-shadow-sm lowercase">
+                <div className="absolute top-2 left-3 text-[9px] font-bold text-white drop-shadow-sm lowercase opacity-70">
                   {channel.name}
                 </div>
               )}
             </div>
 
             {/* Selection Border (Cyan Glow) */}
-            <div className="absolute inset-0 border-4 border-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity rounded-[24px]" style={{ clipPath: channelClipPath }} />
+            <div className="absolute inset-0 border-[6px] border-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity rounded-[24px] pointer-events-none" style={{ clipPath: channelClipPath }} />
           </div>
         ))}
       </div>
 
       {/* Navigation Arrow */}
       <div className="absolute right-8 top-1/2 -translate-y-1/2 z-10">
-        <button className="h-12 w-8 bg-cyan-400 flex items-center justify-center shadow-lg transition-transform hover:scale-110 active:scale-95" style={{ clipPath: "polygon(0% 0%, 100% 50%, 0% 100%)" }}>
-          <ChevronRight className="text-white h-6 w-6 ml-[-4px]" />
+        <button className="h-14 w-10 bg-cyan-400 flex items-center justify-center shadow-lg transition-transform hover:scale-110 active:scale-95" style={{ clipPath: "polygon(0% 0%, 100% 50%, 0% 100%)" }}>
+          <ChevronRight className="text-white h-8 w-8 ml-[-6px]" />
         </button>
       </div>
 
-      {/* Clock Display (Repositioned precisely above wave) */}
-      <div className="absolute bottom-[145px] left-1/2 -translate-x-1/2 z-20 flex flex-col items-center">
-        <div className="text-[64px] font-light tracking-[0.2em] text-slate-400 font-mono leading-none flex items-baseline">
-          {formattedTime.split(' ')[0]} <span className="text-lg ml-3 font-sans tracking-normal opacity-60 uppercase">{formattedTime.split(' ')[1]}</span>
+      {/* Clock Display (Positioned in the space between grid and wave) */}
+      <div className="absolute bottom-[165px] left-1/2 -translate-x-1/2 z-20 flex flex-col items-center">
+        <div className="text-[64px] font-light tracking-[0.25em] text-slate-400/80 font-mono leading-none flex items-baseline">
+          {formattedTime.split(' ')[0]} <span className="text-lg ml-4 font-sans tracking-normal opacity-50 uppercase">{formattedTime.split(' ')[1]}</span>
         </div>
       </div>
 
       {/* Bottom Footer Wave */}
-      <div className="absolute bottom-0 left-0 w-full h-[180px] z-10">
-        <svg viewBox="0 0 1000 180" className="w-full h-full drop-shadow-[0_-5px_15px_rgba(0,240,255,0.1)]">
+      <div className="absolute bottom-0 left-0 w-full h-[200px] z-10">
+        <svg viewBox="0 0 1000 200" className="w-full h-full drop-shadow-[0_-5px_15px_rgba(0,240,255,0.15)]">
           {/* Neon cyan edge path */}
           <path 
-            d="M0,180 V80 Q250,110 500,50 Q750,110 1000,80 V180 Z" 
+            d="M0,200 V100 Q250,130 500,70 Q750,130 1000,100 V200 Z" 
             fill="white" 
             stroke="#00f0ff" 
             strokeWidth="1.5"
           />
         </svg>
 
-        {/* Date Display (Within the white area) */}
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-2xl font-medium text-slate-500/80 tracking-widest lowercase">
+        {/* Date Display (Positioned lower inside the white area) */}
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-2xl font-medium text-slate-500/60 tracking-[0.3em] lowercase">
           {formattedDate}
         </div>
 
         {/* Footer Buttons */}
-        <div className="absolute bottom-6 left-8 flex items-end gap-6">
+        <div className="absolute bottom-8 left-10 flex items-end gap-8">
           {/* Wii Button */}
           <Link href="/">
             <div className="relative h-20 w-20 rounded-full bg-white border border-slate-200 shadow-xl flex items-center justify-center group cursor-pointer active:scale-95 transition-transform">
-              <div className="absolute inset-0 border-2 border-cyan-400/30 rounded-full animate-pulse" />
+              <div className="absolute inset-0 border-2 border-cyan-400/20 rounded-full animate-pulse" />
               <span className="text-xl font-bold text-slate-400 group-hover:text-cyan-500 transition-colors">Wii</span>
             </div>
           </Link>
 
           {/* SD Card slot */}
-          <div className="h-16 w-12 bg-white border border-slate-200 rounded-md shadow-lg flex flex-col items-center justify-center p-1 cursor-not-allowed opacity-80">
+          <div className="h-16 w-12 bg-white border border-slate-200 rounded-md shadow-lg flex flex-col items-center justify-center p-1 cursor-not-allowed opacity-80 mb-2">
              <div className="w-full h-1 bg-slate-200 mb-auto rounded-full" />
              <div className="text-[8px] font-bold text-slate-300 uppercase tracking-tighter">SD</div>
              <div className="w-6 h-8 border border-slate-100 rounded-sm mt-1" />
           </div>
         </div>
 
-        <div className="absolute bottom-6 right-8">
+        <div className="absolute bottom-8 right-10">
           {/* Message Button */}
           <div className="h-20 w-20 rounded-full bg-white border border-slate-200 shadow-xl flex items-center justify-center cursor-pointer hover:bg-slate-50 transition-colors active:scale-95 group">
             <Mail className="h-10 w-10 text-slate-300 group-hover:text-cyan-400 transition-colors" />
@@ -151,12 +152,13 @@ export default function WiiThemeReplica() {
       </div>
 
       <style jsx global>{`
-        @font-face {
-          font-family: 'WiiFont';
-          src: local('Arial');
-        }
         body {
           background: #f2f2f2 !important;
+        }
+        /* Custom shadows and barrel distortion logic */
+        [style*="clipPath"] {
+          backface-visibility: hidden;
+          -webkit-backface-visibility: hidden;
         }
       `}</style>
     </div>
