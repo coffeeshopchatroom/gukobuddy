@@ -42,11 +42,11 @@ const GradientCard = ({
     >
       {/* Reflection */}
       <div 
-        className="absolute top-full left-0 w-full h-1/2 opacity-20 transition-all duration-700 pointer-events-none"
+        className="absolute top-full left-0 w-full h-full opacity-30 transition-all duration-700 pointer-events-none"
         style={{
-          transform: 'scaleY(-1) translateY(40px)',
-          maskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.5), transparent)',
-          WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.5), transparent)',
+          transform: 'scaleY(-1) translateY(20px)',
+          maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, transparent 50%)',
+          WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, transparent 50%)',
         }}
       >
         <div className="w-full h-full rounded-[11px] bg-white/20" />
@@ -139,7 +139,7 @@ export default function Xbox360ThemeReplica() {
           </div>
         </div>
 
-        {/* Massive Half Circle Floor */}
+        {/* Massive Half Circle Floor / Horizon */}
         <div 
           style={{
             width: '5962px',
@@ -187,6 +187,17 @@ export default function Xbox360ThemeReplica() {
               <div className="absolute w-full h-[34.20%] top-[64.75%] left-0 rounded-[11px] [background:radial-gradient(50%_50%_at_74%_50%,rgba(129,129,129,0.01)_70%,rgba(92,92,91,0.31)_100%)]" />
               <div className="absolute w-full h-[29.41%] top-[33.16%] left-0 rounded-b-[11px] bg-[linear-gradient(180deg,rgba(0,0,0,0)_0%,rgba(0,0,0,0.62)_67%,rgba(0,0,0,0.82)_100%)]" />
             </div>
+            {/* Reflection specifically for this hardcoded section */}
+            <div 
+              className="absolute top-full left-0 w-full h-full opacity-30 transition-all duration-700 pointer-events-none"
+              style={{
+                transform: 'scaleY(-1) translateY(20px)',
+                maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, transparent 50%)',
+                WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, transparent 50%)',
+              }}
+            >
+              <div className="w-full h-full rounded-[11px] bg-white/20" />
+            </div>
             <div className="absolute top-[489px] left-12 [text-shadow:0px_4px_4px_#00000040] font-headline text-white text-[50px] lowercase">Open Tray</div>
             <div className="absolute bottom-[320px] left-0 font-normal text-black/40 text-3xl px-12">1 of 8</div>
           </section>
@@ -213,6 +224,17 @@ export default function Xbox360ThemeReplica() {
               <div className="absolute w-full h-[62.57%] top-0 left-0 rounded-[11px] shadow-[36px_4px_22.4px_-24px_#0000006b] [background:radial-gradient(50%_50%_at_74%_49%,rgba(247,255,153,1)_0%,rgba(230,254,100,1)_18%,rgba(222,252,67,1)_33%,rgba(200,239,53,1)_45%,rgba(159,221,33,1)_70%,rgba(141,209,25,1)_100%)]" />
               <div className="absolute w-full h-[34.20%] top-[64.75%] left-0 rounded-[11px] [background:radial-gradient(50%_50%_at_74%_50%,rgba(129,129,129,0.01)_70%,rgba(92,92,91,0.31)_100%)]" />
               <div className="absolute w-full h-[29.41%] top-[33.16%] left-0 rounded-b-[11px] bg-[linear-gradient(180deg,rgba(0,0,0,0)_0%,rgba(0,0,0,0.62)_67%,rgba(0,0,0,0.82)_100%)]" />
+            </div>
+            {/* Reflection specifically for this hardcoded section */}
+            <div 
+              className="absolute top-full left-0 w-full h-full opacity-30 transition-all duration-700 pointer-events-none"
+              style={{
+                transform: 'scaleY(-1) translateY(20px)',
+                maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, transparent 50%)',
+                WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, transparent 50%)',
+              }}
+            >
+              <div className="w-full h-full rounded-[11px] bg-white/20" />
             </div>
             <div className="absolute top-[347px] left-12 font-headline text-white text-[35px] lowercase">Controllers</div>
           </section>
