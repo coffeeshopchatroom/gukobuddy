@@ -18,10 +18,11 @@ type CardProps = {
   onClick?: () => void;
   emotion?: string;
   avatarId?: string;
+  avatarGender?: 'male' | 'female';
 };
 
 const emotions = [
-  { id: 'default', label: 'content' },
+  { id: 'default', label: 'default' },
   { id: 'happy', label: 'happy' },
   { id: 'sad', label: 'sad' },
   { id: 'angry', label: 'angry' },
@@ -39,7 +40,8 @@ const GradientCard = ({
   zIndex,
   onClick,
   emotion = 'default',
-  avatarId = 'mii-m2'
+  avatarId = 'mii-m2',
+  avatarGender = 'male'
 }: CardProps): JSX.Element => {
   return (
     <section
@@ -80,36 +82,37 @@ const GradientCard = ({
           isActive && "animate-float"
         )}>
           <img 
-            src={`/avatars/male/${avatarId}/${avatarId}_${emotion}.png`} 
+            src={`/avatars/${avatarGender}/${avatarId}/${avatarId}_${emotion}.png`} 
             alt={`${emotion} mii`} 
             className="w-full h-full object-cover drop-shadow-2xl"
             onError={(e) => {
-              (e.target as HTMLImageElement).src = '/avatars/male/mii-m2/mii-m2_default.png'
+              const fallbackAvatarId = avatarGender === 'female' ? 'mii-f1' : 'mii-m2';
+              (e.target as HTMLImageElement).src = `/avatars/${avatarGender}/${fallbackAvatarId}/${fallbackAvatarId}_default.png`
             }}
           />
         </div>
       )}
 
       {title && (
-        <div className="absolute top-[51px] left-[42px] font-medium text-white text-[35px] tracking-[-1.05px] leading-normal font-headline lowercase">
+        <div className="absolute top-[51px] left-[42px] font-medium text-white text-[35px] tracking-[-1.05px] leading-normal font-headline ">
           {title}
         </div>
       )}
 
       {subtitle && (
-        <div className="absolute top-[116px] left-[42px] font-medium text-[#ffffffbd] text-[25px] tracking-[-0.75px] leading-normal whitespace-nowrap lowercase">
+        <div className="absolute top-[116px] left-[42px] font-medium text-[#ffffffbd] text-[25px] tracking-[-0.75px] leading-normal whitespace-nowrap ">
           {subtitle}
         </div>
       )}
 
       {activityTitle && (
-        <div className="absolute top-52 left-[42px] font-normal text-white text-[25px] tracking-[-0.75px] leading-normal whitespace-nowrap lowercase">
+        <div className="absolute top-52 left-[42px] font-normal text-white text-[25px] tracking-[-0.75px] leading-normal whitespace-nowrap ">
           {activityTitle}
         </div>
       )}
 
       {activityText && (
-        <div className="absolute top-[278px] left-[42px] font-normal text-[#ffffffab] text-[25px] tracking-[1.25px] leading-normal whitespace-nowrap lowercase">
+        <div className="absolute top-[278px] left-[42px] font-normal text-[#ffffffab] text-[25px] tracking-[1.25px] leading-normal whitespace-nowrap ">
           {activityText}
         </div>
       )}
@@ -139,8 +142,9 @@ export default function Xbox360ThemeReplica() {
   const displayName = user?.isAnonymous ? "guest" : (profile?.displayName || user?.displayName || "whatNot");
   const avatarUrl = profile?.photoUrl || user?.photoURL || "https://picsum.photos/seed/xboxava/200/200";
   const selectedAvatarId = profile?.selectedAvatar || 'mii-m2';
+  const selectedAvatarGender = profile?.avatarGender || 'male';
 
-  const previewAvatarPath = `/avatars/male/${selectedAvatarId}/${selectedAvatarId}_${hoverEmotion || currentEmotion}.png`;
+  const previewAvatarPath = `/avatars/${selectedAvatarGender}/${selectedAvatarId}/${selectedAvatarId}_${hoverEmotion || currentEmotion}.png`;
 
   return (
     <div className="fixed inset-0 bg-[#243d15] flex items-center justify-center overflow-hidden font-sans select-none z-[9999]">
@@ -159,7 +163,7 @@ export default function Xbox360ThemeReplica() {
         <div className="absolute top-32 left-[1812px] flex flex-col items-end gap-2 z-50 animate-fade-in">
           <div className="flex items-center gap-6">
              <div className="text-right">
-                <div className="[text-shadow:0px_4px_4px_#00000040] font-normal text-white text-6xl tracking-tight lowercase font-headline">{displayName}</div>
+                <div className="[text-shadow:0px_4px_4px_#00000040] font-normal text-white text-6xl tracking-tight  font-headline">{displayName}</div>
                 <div className="flex items-center justify-end gap-3 mt-2">
                   <div className="[text-shadow:0px_4px_4px_#00000040] font-normal text-[#dddddd] text-[50px] tracking-wide">700</div>
                   <div className="w-[49px] h-[47px] bg-[#d9d9d9] rounded-full shadow-[0px_4px_4px_#00000040] flex items-center justify-center">
@@ -202,7 +206,7 @@ export default function Xbox360ThemeReplica() {
               key={tab}
               onClick={() => setActiveTab(idx)}
               className={cn(
-                "transition-all duration-500 cursor-pointer font-headline lowercase font-medium",
+                "transition-all duration-500 cursor-pointer font-headline  font-medium",
                 activeTab === idx ? "text-white text-[64px] ml-0" : "text-white/30 text-[35px] ml-24"
               )}
             >
@@ -236,7 +240,7 @@ export default function Xbox360ThemeReplica() {
             >
               <div className="w-full h-full rounded-[11px] bg-white/20" />
             </div>
-            <div className="absolute top-[489px] left-12 [text-shadow:0px_4px_4px_#00000040] font-headline text-white text-[50px] lowercase">Open Tray</div>
+            <div className="absolute top-[489px] left-12 [text-shadow:0px_4px_4px_#00000040] font-headline text-white text-[50px] ">Open Channel</div>
             <div className="absolute bottom-[320px] left-0 font-normal text-black/40 text-3xl px-12">1 of 8</div>
           </section>
 
@@ -251,6 +255,7 @@ export default function Xbox360ThemeReplica() {
             activityText="whoosh.. theres nothing here!"
             emotion={currentEmotion}
             avatarId={selectedAvatarId}
+            avatarGender={selectedAvatarGender}
             onClick={() => setShowEmotionPicker(true)}
           />
 
@@ -276,7 +281,7 @@ export default function Xbox360ThemeReplica() {
             >
               <div className="w-full h-full rounded-[11px] bg-white/20" />
             </div>
-            <div className="absolute top-[347px] left-12 font-headline text-white text-[35px] lowercase">Controllers</div>
+            <div className="absolute top-[347px] left-12 font-headline text-white text-[35px] ">Controllers</div>
           </section>
         </div>
 
@@ -292,7 +297,7 @@ export default function Xbox360ThemeReplica() {
               </button>
 
               <div className="p-16 flex-1 flex flex-col items-center">
-                <h2 className="text-white text-7xl font-headline lowercase mb-12 [text-shadow:0px_4px_4px_#00000040]">Choose Expression</h2>
+                <h2 className="text-white text-7xl font-headline  mb-12 [text-shadow:0px_4px_4px_#00000040]">Choose Expression</h2>
                 
                 <div className="flex items-center justify-between w-full flex-1 gap-20">
                   {/* List */}
@@ -307,7 +312,7 @@ export default function Xbox360ThemeReplica() {
                           setShowEmotionPicker(false);
                         }}
                         className={cn(
-                          "w-full py-8 px-12 rounded-[20px] text-5xl font-medium transition-all duration-300 flex items-center justify-between lowercase font-headline",
+                          "w-full py-8 px-12 rounded-[20px] text-5xl font-medium transition-all duration-300 flex items-center justify-between  font-headline",
                           (hoverEmotion === emo.id || (!hoverEmotion && currentEmotion === emo.id)) 
                             ? "bg-white text-[#243d15] scale-105 shadow-xl" 
                             : "bg-white/5 text-white/60 hover:bg-white/10"
@@ -326,13 +331,14 @@ export default function Xbox360ThemeReplica() {
                       alt="preview" 
                       className="h-[700px] object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)] transform -translate-y-20 animate-in zoom-in duration-300"
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src = '/avatars/male/mii-m2/mii-m2_default.png'
+                        const fallbackAvatarId = selectedAvatarGender === 'female' ? 'mii-f1' : 'mii-m2';
+                        (e.target as HTMLImageElement).src = `/avatars/${selectedAvatarGender}/${fallbackAvatarId}/${fallbackAvatarId}_default.png`
                       }}
                     />
                   </div>
                 </div>
 
-                <div className="mt-12 text-white/30 text-3xl font-headline lowercase">
+                <div className="mt-12 text-white/30 text-3xl font-headline ">
                   Move your cursor to preview, click to select
                 </div>
               </div>
@@ -344,11 +350,11 @@ export default function Xbox360ThemeReplica() {
         <div className="absolute bottom-[100px] left-[134px] z-[100] flex items-center gap-8">
            <div className="flex items-center gap-4 group">
              <div className="w-[50px] h-[50px] bg-green-500 rounded-full flex items-center justify-center text-white font-black text-2xl shadow-lg group-hover:animate-pulse">A</div>
-             <span className="text-white text-3xl lowercase font-medium">select</span>
+             <span className="text-white text-3xl  font-medium">select</span>
            </div>
            <div className="flex items-center gap-4 group">
              <div className="w-[50px] h-[50px] bg-red-500 rounded-full flex items-center justify-center text-white font-black text-2xl shadow-lg group-hover:animate-pulse">B</div>
-             <span className="text-white text-3xl lowercase font-medium">back</span>
+             <span className="text-white text-3xl  font-medium">back</span>
            </div>
         </div>
       </main>

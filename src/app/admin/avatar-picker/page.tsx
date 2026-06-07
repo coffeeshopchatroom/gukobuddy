@@ -14,6 +14,12 @@ const MALE_AVATARS = [
   { id: 'mii-m3'},
 ]
 
+const FEMALE_AVATARS = [
+  { id: 'mii-f1'},
+  { id: 'mii-f2'},
+  { id: 'mii-f3'},
+]
+
 export default function AvatarPickerPage() {
   const { user } = useUser()
   const db = useFirestore()
@@ -21,6 +27,7 @@ export default function AvatarPickerPage() {
   const profileRef = useMemoFirebase(() => user ? doc(db, 'users', user.uid, 'profile', 'settings') : null, [db, user])
   
   const [step, setStep] = React.useState<'gender' | 'selection'>('gender')
+  const [gender, setGender] = React.useState<'male' | 'female' | null>(null)
   const [isUpdating, setIsUpdating] = React.useState(false)
   const [mounted, setMounted] = React.useState(false)
 
@@ -34,7 +41,7 @@ export default function AvatarPickerPage() {
     if (!profileRef) return
     setIsUpdating(true)
     try {
-      await setDoc(profileRef, { selectedAvatar: avatarId }, { merge: true })
+      await setDoc(profileRef, { selectedAvatar: avatarId, avatarGender: gender }, { merge: true })
       router.push('/admin/xbox-test')
     } catch (error) {
       console.error("Failed to update avatar", error)
@@ -42,6 +49,9 @@ export default function AvatarPickerPage() {
       setIsUpdating(false)
     }
   }
+
+  const avatars = gender === 'male' ? MALE_AVATARS : FEMALE_AVATARS
+  const avatarPath = gender === 'male' ? '/avatars/male/headshots/' : '/avatars/female/headshots/'
 
   return (
     <div className="fixed inset-0 bg-[#243d15] flex items-center justify-center overflow-hidden font-sans select-none z-[9999]">
@@ -87,13 +97,13 @@ export default function AvatarPickerPage() {
           {step === 'gender' ? (
             <div className="flex gap-20 mt-40">
               <button 
-                onClick={() => setStep('selection')}
+                onClick={() => { setGender('male'); setStep('selection'); }}
                 className="w-[500px] h-[700px] rounded-[40px] bg-white/5 border-4 border-white/10 hover:bg-white/10 hover:scale-105 hover:border-white/30 transition-all flex items-center justify-center group"
               >
                 <img src="/devmade-icons/maleicon.png" alt="Male" className="w-122 h-full" />
               </button>
               <button 
-                onClick={() => setStep('selection')}
+                onClick={() => { setGender('female'); setStep('selection'); }}
                 className="w-[500px] h-[700px] rounded-[40px] bg-white/5 border-4 border-white/10 hover:bg-white/10 hover:scale-105 hover:border-white/30 transition-all flex items-center justify-center group"
               >
                 <img src="/devmade-icons/femaleicon.png" alt="Female" className="w-122 h-full" />
@@ -101,7 +111,7 @@ export default function AvatarPickerPage() {
             </div>
           ) : (
             <div className="grid grid-cols-3 gap-16 mt-20 w-full max-w-7xl animate-in fade-in slide-in-from-bottom-20 duration-700">
-              {MALE_AVATARS.map((avatar) => (
+              {avatars.map((avatar) => (
                 <button
                   key={avatar.id}
                   onClick={() => handleSelectAvatar(avatar.id)}
@@ -110,7 +120,8 @@ export default function AvatarPickerPage() {
                 >
                   <div className="w-64 h-64 rounded-full overflow-hidden border-8 border-white/10 bg-black/20 group-hover:border-white/40 transition-colors">
                     <img 
-                      src={`/avatars/male/headshots/${avatar.id}.png`} 
+                      src={`${avatarPath}${avatar.id}.png`}
+       
                       className="w-full h-full object-cover"
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = 'https://picsum.photos/seed/avatar/200/200'
