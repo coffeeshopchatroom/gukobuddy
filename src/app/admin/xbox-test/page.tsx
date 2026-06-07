@@ -41,7 +41,7 @@ const GradientCard = ({
       }}
     >
       {/* Reflection */}
-      <div 
+      <div
         className="absolute top-full left-0 w-full h-full opacity-30 transition-all duration-700 pointer-events-none"
         style={{
           transform: 'scaleY(-1) translateY(20px)',
@@ -56,6 +56,11 @@ const GradientCard = ({
         <div className="absolute w-full h-[62.57%] top-0 left-0 rounded-[11px] shadow-[36px_4px_22.4px_-24px_#0000006b] [background:radial-gradient(50%_50%_at_74%_49%,rgba(247,255,153,1)_0%,rgba(230,254,100,1)_18%,rgba(222,252,67,1)_33%,rgba(200,239,53,1)_45%,rgba(159,221,33,1)_70%,rgba(141,209,25,1)_100%)]" />
         <div className="absolute w-full h-[34.20%] top-[64.75%] left-0 rounded-[11px] [background:radial-gradient(50%_50%_at_74%_50%,rgba(129,129,129,0.01)_70%,rgba(92,92,91,0.31)_100%)]" />
         <div className="absolute w-full h-[29.41%] top-[33.16%] left-0 rounded-[0px_0px_11px_11px] bg-[linear-gradient(180deg,rgba(0,0,0,0)_0%,rgba(0,0,0,0.62)_67%,rgba(0,0,0,0.82)_100%)]" />
+      </div>
+
+      {/* AVATAR PHOTO CONTAINER */}
+      <div className="absolute top-[-60px] right-[15px] w-[330px] h-[600px] rounded-t-full rounded-b-full ">
+        <img src="/avatars/male/mii-m2/mii-m2_angry.png" alt="angry mii" className="w-full h-full object-cover" />
       </div>
 
       {title && (
@@ -106,7 +111,7 @@ export default function Xbox360ThemeReplica() {
 
   return (
     <div className="fixed inset-0 bg-[#243d15] flex items-center justify-center overflow-hidden font-sans select-none z-[9999]">
-      <main 
+      <main
         className="relative shrink-0 overflow-hidden shadow-2xl [background:radial-gradient(173.24%_228.65%_at_17.13%_-29.45%,#243D15_0%,#385817_13%,#5F8F20_26%,#8AAB68_45%,#CDE5BA_67%)]"
         style={{
           width: '2393px',
@@ -116,7 +121,7 @@ export default function Xbox360ThemeReplica() {
       >
         {/* Bokeh Overlays */}
         <div className="absolute top-[-108px] left-[784px] w-[1769px] h-[1016px] [background:radial-gradient(106.52%_186.07%_at_68.66%_0%,rgba(0,0,0,0.64)_0%,rgba(0,0,0,0.03)_46%,rgba(0,0,0,0)_63%)]" aria-hidden="true" />
-        
+
         {/* Profile Section */}
         <div className="absolute top-32 left-[1812px] flex flex-col items-end gap-2 z-50">
           <div className="flex items-center gap-6">
@@ -140,7 +145,7 @@ export default function Xbox360ThemeReplica() {
         </div>
 
         {/* Massive Half Circle Floor / Horizon */}
-        <div 
+        <div
           style={{
             width: '5962px',
             height: '1604px',
@@ -160,7 +165,7 @@ export default function Xbox360ThemeReplica() {
         {/* Navigation Sidebar */}
         <nav className="absolute top-[134px] left-[134px] z-50 flex flex-col gap-2 items-start">
           {tabs.map((tab, idx) => (
-            <div 
+            <div
               key={tab}
               onClick={() => setActiveTab(idx)}
               className={cn(
@@ -177,7 +182,7 @@ export default function Xbox360ThemeReplica() {
         {/* Interactive Blade Stack */}
         <div className="absolute inset-0 pointer-events-none z-30">
           {/* Main Card (Open Tray) */}
-          <section 
+          <section
             onClick={() => setActiveTab(2)}
             className={cn("absolute top-[419px] left-[375px] w-[852px] h-[959px] transition-all duration-700 pointer-events-auto", activeTab === 2 ? "translate-x-0" : "-translate-x-[600px] opacity-40")}
             style={{ zIndex: activeTab === 2 ? 100 : 10 }}
@@ -188,7 +193,7 @@ export default function Xbox360ThemeReplica() {
               <div className="absolute w-full h-[29.41%] top-[33.16%] left-0 rounded-b-[11px] bg-[linear-gradient(180deg,rgba(0,0,0,0)_0%,rgba(0,0,0,0.62)_67%,rgba(0,0,0,0.82)_100%)]" />
             </div>
             {/* Reflection specifically for this hardcoded section */}
-            <div 
+            <div
               className="absolute top-full left-0 w-full h-full opacity-30 transition-all duration-700 pointer-events-none"
               style={{
                 transform: 'scaleY(-1) translateY(20px)',
@@ -215,7 +220,7 @@ export default function Xbox360ThemeReplica() {
           />
 
           {/* Tertiary Blade (Controllers) */}
-          <section 
+          <section
             onClick={() => setActiveTab(2)}
             className={cn("absolute top-[522px] left-[1721px] w-[538px] h-[659px] transition-all duration-700 pointer-events-auto", activeTab === 2 ? "translate-x-0" : "translate-x-[400px]")}
             style={{ zIndex: activeTab === 2 ? 80 : 30 }}
@@ -226,7 +231,7 @@ export default function Xbox360ThemeReplica() {
               <div className="absolute w-full h-[29.41%] top-[33.16%] left-0 rounded-b-[11px] bg-[linear-gradient(180deg,rgba(0,0,0,0)_0%,rgba(0,0,0,0.62)_67%,rgba(0,0,0,0.82)_100%)]" />
             </div>
             {/* Reflection specifically for this hardcoded section */}
-            <div 
+            <div
               className="absolute top-full left-0 w-full h-full opacity-30 transition-all duration-700 pointer-events-none"
               style={{
                 transform: 'scaleY(-1) translateY(20px)',
@@ -255,7 +260,7 @@ export default function Xbox360ThemeReplica() {
 
       <style jsx global>{`
         @import url('https://fonts.googleapis.com/css2?family=Cabin:wght@400;500&family=Roboto:wght@400;700&display=swap');
-        
+
         body {
           background: #243d15 !important;
           margin: 0;
