@@ -1,0 +1,154 @@
+
+"use client"
+
+import * as React from "react"
+import { useRouter } from "next/navigation"
+import { cn } from "@/lib/utils"
+import { useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase"
+import { doc, setDoc } from "firebase/firestore"
+import { X, ChevronLeft, Loader2 } from "lucide-react"
+import { Button } from "@/components/ui/button"
+
+const MALE_AVATARS = [
+  { id: 'mii-m1', label: 'Style 1' },
+  { id: 'mii-m2', label: 'Style 2' },
+  { id: 'mii-m3', label: 'Style 3' },
+]
+
+export default function AvatarPickerPage() {
+  const { user } = useUser()
+  const db = useFirestore()
+  const router = useRouter()
+  const profileRef = useMemoFirebase(() => user ? doc(db, 'users', user.uid, 'profile', 'settings') : null, [db, user])
+  
+  const [step, setStep] = React.useState<'gender' | 'selection'>('gender')
+  const [isUpdating, setIsUpdating] = React.useState(false)
+  const [mounted, setMounted] = React.useState(false)
+
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) return null
+
+  const handleSelectAvatar = async (avatarId: string) => {
+    if (!profileRef) return
+    setIsUpdating(true)
+    try {
+      await setDoc(profileRef, { selectedAvatar: avatarId }, { merge: true })
+      router.push('/admin/xbox-test')
+    } catch (error) {
+      console.error("Failed to update avatar", error)
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-[#243d15] flex items-center justify-center overflow-hidden font-sans select-none z-[9999]">
+      <main
+        className="relative shrink-0 overflow-hidden shadow-2xl [background:radial-gradient(173.24%_228.65%_at_17.13%_-29.45%,#243D15_0%,#385817_13%,#5F8F20_26%,#8AAB68_45%,#CDE5BA_67%)]"
+        style={{
+          width: '2393px',
+          height: '1406px',
+          transform: `scale(${typeof window !== 'undefined' ? Math.min(window.innerWidth / 2393, window.innerHeight / 1406) : 1})`,
+        }}
+      >
+        {/* Floor Horizon */}
+        <div
+          style={{
+            width: '5962px',
+            height: '1604px',
+            left: '-1785px',
+            top: '703px',
+            background: 'linear-gradient(180deg, #686868 0%, #939393 100%)',
+            boxShadow: '0px -103px 118.8px 12px rgba(255, 255, 255, 0.44)',
+            outline: '4px solid white'
+          }}
+          className="absolute rounded-full z-10"
+        />
+
+        {/* Content Area */}
+        <div className="absolute inset-0 z-50 flex flex-col items-center pt-40 px-60">
+          <div className="w-full flex items-center justify-between mb-20">
+            <h1 className="text-white text-9xl font-headline lowercase drop-shadow-2xl">
+              {step === 'gender' ? 'what style do you want?' : 'choose your avatar'}
+            </h1>
+            {step === 'selection' && (
+              <button 
+                onClick={() => setStep('gender')}
+                className="flex items-center gap-4 text-white/60 hover:text-white transition-colors"
+              >
+                <ChevronLeft size={80} />
+                <span className="text-5xl font-headline lowercase">back</span>
+              </button>
+            )}
+          </div>
+
+          {step === 'gender' ? (
+            <div className="flex gap-20 mt-40">
+              <button 
+                onClick={() => setStep('selection')}
+                className="w-[500px] h-[700px] rounded-[40px] bg-white/5 border-4 border-white/10 hover:bg-white/10 hover:scale-105 transition-all flex items-center justify-center group"
+              >
+                <svg className="w-64 h-64 text-white/40 group-hover:text-white transition-colors" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm9 7h-6v13h-2v-6h-2v6H9V9H3V7h18v2z"/>
+                </svg>
+              </button>
+              <button className="w-[500px] h-[700px] rounded-[40px] bg-white/5 border-4 border-white/10 opacity-30 cursor-not-allowed flex items-center justify-center">
+                <svg className="w-64 h-64 text-white/40" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm3 10v7h2v-7h1v-4c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v4h1v7h2v-7h5z"/>
+                </svg>
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-16 mt-20 w-full max-w-7xl">
+              {MALE_AVATARS.map((avatar) => (
+                <button
+                  key={avatar.id}
+                  onClick={() => handleSelectAvatar(avatar.id)}
+                  disabled={isUpdating}
+                  className="relative group bg-white/5 border-4 border-white/10 rounded-[60px] p-10 hover:bg-white/20 transition-all hover:scale-110 flex flex-col items-center gap-10"
+                >
+                  <div className="w-64 h-64 rounded-full overflow-hidden border-8 border-white/10 bg-black/20">
+                    <img 
+                      src={`/avatars/male/headshots/${avatar.id}.png`} 
+                      alt={avatar.label}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = 'https://picsum.photos/seed/avatar/200/200'
+                      }}
+                    />
+                  </div>
+                  <span className="text-4xl text-white font-headline lowercase opacity-60 group-hover:opacity-100 transition-opacity">
+                    {avatar.label}
+                  </span>
+                  {isUpdating && <Loader2 className="absolute inset-0 m-auto text-white animate-spin" size={64} />}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Footer Nav Controls */}
+        <div className="absolute bottom-[100px] left-[134px] z-[100] flex items-center gap-8">
+           <div className="flex items-center gap-4">
+             <div className="w-[50px] h-[50px] bg-green-500 rounded-full flex items-center justify-center text-white font-black text-2xl shadow-lg">A</div>
+             <span className="text-white text-3xl lowercase font-medium">select</span>
+           </div>
+           <div className="flex items-center gap-4">
+             <div className="w-[50px] h-[50px] bg-red-500 rounded-full flex items-center justify-center text-white font-black text-2xl shadow-lg">B</div>
+             <span className="text-white text-3xl lowercase font-medium">back</span>
+           </div>
+        </div>
+      </main>
+
+      <style jsx global>{`
+        @import url('https://fonts.googleapis.com/css2?family=Cabin:wght@400;500&family=Roboto:wght@400;700&display=swap');
+        body { background: #243d15 !important; margin: 0; padding: 0; }
+        .font-headline { font-family: 'Cabin', sans-serif !important; }
+        * { font-family: 'Roboto', sans-serif; }
+      `}</style>
+    </div>
+  )
+}

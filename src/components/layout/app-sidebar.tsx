@@ -23,7 +23,8 @@ import {
   Bell,
   Radio,
   Settings,
-  Gamepad2
+  Gamepad2,
+  UserCircle2
 } from "lucide-react"
 
 import {
@@ -303,7 +304,7 @@ export function AppSidebar() {
                     className="flex items-center gap-3 px-4 py-6 rounded-xl transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground lowercase group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
                   >
                     <Link href="/tracker">
-                      <GraduationCap className="h-5 w-5" />
+                      < GraduationCap className="h-5 w-5" />
                       <span className="font-medium group-data-[collapsible=icon]:hidden">{trackerLabel}</span>
                     </Link>
                   </SidebarMenuButton>
@@ -365,7 +366,7 @@ export function AppSidebar() {
                         {userName[0]}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="flex flex-col min-w-0 group-data-[collapsible=icon]:hidden">
+                    <div className="flex flex-col min-0 group-data-[collapsible=icon]:hidden">
                       <span className="text-sm font-semibold truncate lowercase">{userName}</span>
                       <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-tighter truncate lowercase">{userRole}</span>
                     </div>
@@ -488,6 +489,15 @@ function AdminPanelDialog({ children, open, onOpenChange }: { children: React.Re
                   </Link>
                 </Button>
               </div>
+              <Button 
+                variant="outline"
+                asChild
+                className="w-full h-14 rounded-2xl font-bold gap-2 border-2 border-primary hover:bg-primary/5 shadow-sm lowercase"
+              >
+                <Link href="/admin/avatar-picker">
+                  <UserCircle2 className="h-5 w-5 text-primary" /> avatar picker
+                </Link>
+              </Button>
             </div>
             <p className="text-xs text-muted-foreground text-center lowercase px-4">
               these tools are for internal testing of experimental global themes and notifications.

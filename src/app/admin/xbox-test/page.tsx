@@ -17,6 +17,7 @@ type CardProps = {
   zIndex: number;
   onClick?: () => void;
   emotion?: string;
+  avatarId?: string;
 };
 
 const emotions = [
@@ -37,7 +38,8 @@ const GradientCard = ({
   activityText,
   zIndex,
   onClick,
-  emotion = 'default'
+  emotion = 'default',
+  avatarId = 'mii-m2'
 }: CardProps): JSX.Element => {
   return (
     <section
@@ -74,9 +76,12 @@ const GradientCard = ({
       {title && (
         <div className="absolute top-[-60px] right-[15px] w-[330px] h-[600px] rounded-t-full rounded-b-full pointer-events-auto">
           <img 
-            src={`/avatars/male/mii-m2/mii-m2_${emotion}.png`} 
+            src={`/avatars/male/${avatarId}/${avatarId}_${emotion}.png`} 
             alt={`${emotion} mii`} 
-            className="w-full h-full object-cover drop-shadow-2xl" 
+            className="w-full h-full object-cover drop-shadow-2xl"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = '/avatars/male/mii-m2/mii-m2_default.png'
+            }}
           />
         </div>
       )}
@@ -129,9 +134,9 @@ export default function Xbox360ThemeReplica() {
   const tabs = ["Friends", "Study Sessions", "My Channel"];
   const displayName = user?.isAnonymous ? "guest" : (profile?.displayName || user?.displayName || "whatNot");
   const avatarUrl = profile?.photoUrl || user?.photoURL || "https://picsum.photos/seed/xboxava/200/200";
+  const selectedAvatarId = profile?.selectedAvatar || 'mii-m2';
 
-  const activeAvatarPath = `/avatars/male/mii-m2/mii-m2_${currentEmotion}.png`;
-  const previewAvatarPath = `/avatars/male/mii-m2/mii-m2_${hoverEmotion || currentEmotion}.png`;
+  const previewAvatarPath = `/avatars/male/${selectedAvatarId}/${selectedAvatarId}_${hoverEmotion || currentEmotion}.png`;
 
   return (
     <div className="fixed inset-0 bg-[#243d15] flex items-center justify-center overflow-hidden font-sans select-none z-[9999]">
@@ -241,6 +246,7 @@ export default function Xbox360ThemeReplica() {
             activityTitle="Latest Activities"
             activityText="whoosh.. theres nothing here!"
             emotion={currentEmotion}
+            avatarId={selectedAvatarId}
             onClick={() => setShowEmotionPicker(true)}
           />
 
@@ -315,6 +321,9 @@ export default function Xbox360ThemeReplica() {
                       src={previewAvatarPath} 
                       alt="preview" 
                       className="h-[700px] object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)] transform -translate-y-20 animate-in zoom-in duration-300"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/avatars/male/mii-m2/mii-m2_default.png'
+                      }}
                     />
                   </div>
                 </div>

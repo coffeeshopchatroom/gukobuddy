@@ -20,6 +20,10 @@
           "enum": ["high-school", "college", "hobbyist"],
           "description": "The educational level or usage mode of the user."
         },
+        "selectedAvatar": {
+          "type": "string",
+          "description": "The ID of the chosen avatar (e.g., mii-m2)."
+        },
         "blackbaudConnected": {
           "type": "boolean",
           "description": "Whether the user has connected their blackbaud account."
