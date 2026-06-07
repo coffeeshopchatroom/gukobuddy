@@ -111,7 +111,6 @@ export default function AvatarPickerPage() {
                   <div className="w-64 h-64 rounded-full overflow-hidden border-8 border-white/10 bg-black/20 group-hover:border-white/40 transition-colors">
                     <img 
                       src={`/avatars/male/headshots/${avatar.id}.png`} 
-                      alt={avatar.label}
                       className="w-full h-full object-cover"
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = 'https://picsum.photos/seed/avatar/200/200'
