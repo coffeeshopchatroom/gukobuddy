@@ -1,0 +1,213 @@
+import ellipse10 from "./ellipse-10.svg";
+import ellipse11 from "./ellipse-11.svg";
+import image4 from "./image-4.png";
+import image5 from "./image-5.png";
+import image7 from "./image-7.png";
+import image8 from "./image-8.png";
+import image9 from "./image-9.png";
+import rectangle33 from "./rectangle-33.png";
+
+type CardProps = {
+  className: string;
+  widthClass: string;
+  heightClass: string;
+  title?: string;
+  subtitle?: string;
+  footerLabel?: string;
+  activityTitle?: string;
+  activityText?: string;
+  children?: React.ReactNode;
+};
+
+const GradientCard = ({
+  className,
+  widthClass,
+  heightClass,
+  title,
+  subtitle,
+  footerLabel,
+  activityTitle,
+  activityText,
+  children,
+}: CardProps): JSX.Element => {
+  return (
+    <section
+      className={`absolute ${className}`}
+      aria-label={title || footerLabel || "card"}
+    >
+      <div className={`absolute top-0 left-0 ${widthClass} ${heightClass}`}>
+        <div className="absolute w-full h-[62.57%] top-0 left-0 rounded-[11px] shadow-[36px_4px_22.4px_-24px_#0000006b] [background:radial-gradient(50%_50%_at_74%_49%,rgba(247,255,153,1)_0%,rgba(230,254,100,1)_18%,rgba(222,252,67,1)_33%,rgba(200,239,53,1)_45%,rgba(159,221,33,1)_70%,rgba(141,209,25,1)_100%)]" />
+        <div className="absolute w-full h-[34.20%] top-[64.75%] left-0 rounded-[11px] [background:radial-gradient(50%_50%_at_74%_50%,rgba(129,129,129,0.01)_70%,rgba(92,92,91,0.31)_100%)]" />
+        <div className="absolute w-full h-[29.41%] top-[33.16%] left-0 rounded-[0px_0px_11px_11px] bg-[linear-gradient(180deg,rgba(0,0,0,0)_0%,rgba(0,0,0,0.62)_67%,rgba(0,0,0,0.82)_100%)]" />
+      </div>
+      {title ? (
+        <div className="absolute top-[51px] left-[42px] [font-family:'Cabin-Medium',Helvetica] font-medium text-white text-[35px] tracking-[-1.05px] leading-[normal]">
+          {title}
+        </div>
+      ) : null}
+
+      {subtitle ? (
+        <div className="absolute top-[116px] left-[42px] [font-family:'Cabin-Medium',Helvetica] font-medium text-[#ffffffbd] text-[25px] tracking-[-0.75px] leading-[normal] whitespace-nowrap">
+          {subtitle}
+        </div>
+      ) : null}
+
+      {activityTitle ? (
+        <div className="absolute top-52 left-[42px] [font-family:'Cabin-Regular',Helvetica] font-normal text-white text-[25px] tracking-[-0.75px] leading-[normal] whitespace-nowrap">
+          {activityTitle}
+        </div>
+      ) : null}
+
+      {activityText ? (
+        <div className="absolute top-[278px] left-[42px] [font-family:'Cabin-Regular',Helvetica] font-normal text-[#ffffffab] text-[25px] tracking-[1.25px] leading-[normal] whitespace-nowrap">
+          {activityText}
+        </div>
+      ) : null}
+
+      {footerLabel ? (
+        <div className="absolute top-[869px] left-[1823px] [font-family:'Cabin-Regular',Helvetica] font-normal text-white text-[25px] tracking-[1.25px] leading-[normal] whitespace-nowrap">
+          {footerLabel}
+        </div>
+      ) : null}
+
+      {children}
+    </section>
+  );
+};
+
+export const Frame = (): JSX.Element => {
+  return (
+    <main className="overflow-hidden [background:radial-gradient(50%_50%_at_76%_49%,rgba(36,61,21,1)_0%,rgba(56,88,23,1)_13%,rgba(95,143,32,1)_26%,rgba(138,171,104,1)_45%,rgba(205,229,186,1)_67%)] w-full min-w-[2393px] min-h-[1406px] relative">
+      <div
+        className="absolute top-[-108px] left-[784px] w-[1769px] h-[1016px] [background:radial-gradient(50%_50%_at_75%_50%,rgba(0,0,0,0.64)_0%,rgba(0,0,0,0.03)_46%,rgba(0,0,0,0)_63%)]"
+        aria-hidden="true"
+      />
+      <img
+        className="absolute top-32 left-[2051px] w-[147px] h-[147px] aspect-[1] object-cover"
+        alt="Profile avatar"
+        src={rectangle33}
+      />
+      <div className="absolute top-[124px] left-[1812px] [text-shadow:0px_4px_4px_#00000040] [font-family:'Roboto-Regular',Helvetica] font-normal text-white text-6xl tracking-[0] leading-[normal] whitespace-nowrap">
+        whatNot
+      </div>
+      <div className="absolute top-[211px] left-[1888px] [text-shadow:0px_4px_4px_#00000040] [font-family:'Roboto-Regular',Helvetica] font-normal text-[#dddddd] text-[50px] tracking-[0.50px] leading-[normal] whitespace-nowrap">
+        700
+      </div>
+      <div
+        className="absolute top-[211px] left-[1990px] w-[49px] h-[47px] bg-[#d9d9d9] rounded-[24.39px/23.47px] shadow-[0px_4px_4px_#00000040]"
+        aria-label="Currency badge"
+      >
+        <div className="absolute w-[63.64%] h-[69.81%] top-[14.89%] left-[22.09%] [font-family:'Roboto-Regular',Helvetica] font-normal text-[#6e8f55] text-[40px] tracking-[0] leading-[32.0px] whitespace-nowrap">
+          G
+        </div>
+      </div>
+      <div
+        className="absolute top-[237px] left-[2168px] w-[42px] h-[43px] flex aspect-[0.98] bg-[url(/ellipse-9.svg)] bg-[100%_100%]"
+        aria-hidden="true"
+      >
+        <img
+          className="mt-[5.4px] w-[33.02px] h-[11.52px] ml-[4.6px]"
+          alt=""
+          src={ellipse10}
+        />
+      </div>
+      <img
+        className="absolute top-[465px] left-0 w-[2393px] h-[941px]"
+        alt=""
+        src={ellipse11}
+        aria-hidden="true"
+      />
+      <div
+        className="absolute top-[822px] left-0 w-[2393px] h-[584px] bg-[linear-gradient(180deg,rgba(217,217,217,0)_0%,rgba(191,190,190,0.08)_14%,rgba(16,11,11,0.59)_100%)]"
+        aria-hidden="true"
+      />
+      <div
+        className="absolute top-[878px] left-[-35px] w-[1562px] h-[370px] rounded-[781px/185px] [background:radial-gradient(50%_50%_at_50%_50%,rgba(217,217,217,1)_0%,rgba(115,115,115,0)_100%)]"
+        aria-hidden="true"
+      />
+      <div
+        className="absolute top-[794px] left-[720px] w-[1281px] h-[353px] rounded-[640.5px/176.5px] [background:radial-gradient(50%_50%_at_50%_50%,rgba(217,217,217,1)_0%,rgba(115,115,115,0)_100%)]"
+        aria-hidden="true"
+      />
+      <section
+        className="absolute top-[547px] left-[2107px] w-[403px] h-[550px]"
+        aria-label="Companion card"
+      >
+        <div className="absolute w-full h-[62.57%] top-0 left-0 rounded-[11px] shadow-[36px_4px_22.4px_-24px_#0000006b] [background:radial-gradient(50%_50%_at_74%_49%,rgba(247,255,153,1)_0%,rgba(230,254,100,1)_18%,rgba(222,252,67,1)_33%,rgba(200,239,53,1)_45%,rgba(159,221,33,1)_70%,rgba(141,209,25,1)_100%)]" />
+        <div className="absolute w-full h-[34.20%] top-[64.75%] left-0 rounded-[11px] [background:radial-gradient(50%_50%_at_74%_50%,rgba(129,129,129,0.01)_70%,rgba(92,92,91,0.31)_100%)]" />
+        <div className="absolute w-full h-[29.41%] top-[33.16%] left-0 rounded-[0px_0px_11px_11px] bg-[linear-gradient(180deg,rgba(0,0,0,0)_0%,rgba(0,0,0,0.62)_67%,rgba(0,0,0,0.82)_100%)]" />
+      </section>
+      <img
+        className="absolute top-[554px] left-[2118px] w-64 h-64 aspect-[1] object-cover"
+        alt="Character illustration"
+        src={image9}
+      />
+      <GradientCard
+        className="top-[522px] left-[1721px] w-[538px] h-[659px]"
+        widthClass="w-full"
+        heightClass="h-[62.57%]"
+      />
+      <div className="absolute top-[869px] left-[1823px] [font-family:'Cabin-Regular',Helvetica] font-normal text-white text-[25px] tracking-[1.25px] leading-[normal] whitespace-nowrap">
+        Controllers
+      </div>
+      <img
+        className="absolute top-[691px] left-[1850px] w-[268px] h-[166px] aspect-[1.71]"
+        alt="Controller accessory"
+        src={image8}
+      />
+      <img
+        className="absolute top-[590px] left-[1862px] w-64 h-64 aspect-[1] object-cover"
+        alt="Game controllers"
+        src={image7}
+      />
+      <nav aria-label="Channel sections">
+        <div className="absolute top-[134px] left-[230px] [font-family:'Cabin-Medium',Helvetica] font-medium text-[#ffffff4c] text-[35px] tracking-[-1.05px] leading-[normal]">
+          Friends
+        </div>
+        <div className="absolute top-[177px] left-[230px] [font-family:'Cabin-Medium',Helvetica] font-medium text-[#ffffff99] text-[40px] tracking-[-1.20px] leading-[normal]">
+          Study Sessions
+        </div>
+        <div className="absolute top-[225px] left-[134px] [font-family:'Cabin-Medium',Helvetica] font-medium text-white text-[64px] tracking-[-1.92px] leading-[normal]">
+          My Channel
+        </div>
+      </nav>
+      <GradientCard
+        className="top-[486px] left-[1212px] w-[636px] h-[762px]"
+        widthClass="w-[600px]"
+        heightClass="h-[762px]"
+        title="whatnot"
+        subtitle="20 hours"
+        activityTitle="Latest Activities"
+        activityText="whoosh.. theres nothing here!"
+      >
+        <div className="absolute top-[484px] left-72 w-[340px] h-[127px] rounded-[170px/63.5px] [background:radial-gradient(50%_50%_at_50%_50%,rgba(0,0,0,0.53)_0%,rgba(102,102,102,0.58)_100%)]" />
+      </GradientCard>
+      <section
+        className="absolute top-[419px] left-[375px] w-[856px] h-[959px]"
+        aria-label="Featured item"
+      >
+        <div className="absolute top-0 left-0 w-[852px] h-[959px]">
+          <div className="absolute w-full h-[62.57%] top-0 left-0 rounded-[11px] shadow-[36px_4px_22.4px_-24px_#0000006b] [background:radial-gradient(50%_50%_at_74%_49%,rgba(247,255,153,1)_0%,rgba(230,254,100,1)_18%,rgba(222,252,67,1)_33%,rgba(200,239,53,1)_45%,rgba(159,221,33,1)_70%,rgba(141,209,25,1)_100%)]" />
+          <div className="absolute w-full h-[34.20%] top-[64.75%] left-0 rounded-[11px] [background:radial-gradient(50%_50%_at_74%_50%,rgba(129,129,129,0.01)_70%,rgba(92,92,91,0.31)_100%)]" />
+          <div className="absolute w-full h-[29.41%] top-[33.16%] left-0 rounded-[0px_0px_11px_11px] bg-[linear-gradient(180deg,rgba(0,0,0,0)_0%,rgba(0,0,0,0.62)_67%,rgba(0,0,0,0.82)_100%)]" />
+        </div>
+        <div className="absolute w-[9.00%] h-[2.50%] top-[64.13%] left-0 [font-family:'Roboto-Regular',Helvetica] font-normal text-[#00000075] text-3xl tracking-[0] leading-[24.0px] whitespace-nowrap">
+          1 of 8
+        </div>
+        <img
+          className="absolute w-[74.19%] top-[387px] left-[25.81%] h-[154px] aspect-[3.11]"
+          alt="Open tray reflection"
+          src={image5}
+        />
+        <div className="absolute top-[489px] left-12 [text-shadow:0px_4px_4px_#00000040] [font-family:'Cabin-Regular',Helvetica] font-normal text-white text-[50px] tracking-[0] leading-[40.0px] whitespace-nowrap">
+          Open Tray
+        </div>
+        <img
+          className="absolute w-[69.63%] top-[118px] left-[30.37%] h-[332px] aspect-[1] object-cover"
+          alt="Open tray icon"
+          src={image4}
+        />
+      </section>
+    </main>
+  );
+};
