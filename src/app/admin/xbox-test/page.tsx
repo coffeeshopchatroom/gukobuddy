@@ -5,6 +5,7 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 import { useUser, useDoc, useMemoFirebase, useFirestore } from "@/firebase"
 import { doc } from "firebase/firestore"
+import { X, Check } from "lucide-react"
 
 type CardProps = {
   className?: string;
@@ -15,7 +16,17 @@ type CardProps = {
   activityText?: string;
   zIndex: number;
   onClick?: () => void;
+  emotion?: string;
 };
+
+const emotions = [
+  { id: 'default', label: 'content' },
+  { id: 'happy', label: 'happy' },
+  { id: 'sad', label: 'sad' },
+  { id: 'angry', label: 'angry' },
+  { id: 'bored', label: 'bored' },
+  { id: 'surprised', label: 'surprised' },
+]
 
 const GradientCard = ({
   className,
@@ -26,6 +37,7 @@ const GradientCard = ({
   activityText,
   zIndex,
   onClick,
+  emotion = 'default'
 }: CardProps): JSX.Element => {
   return (
     <section
@@ -59,9 +71,15 @@ const GradientCard = ({
       </div>
 
       {/* AVATAR PHOTO CONTAINER */}
-      <div className="absolute top-[-60px] right-[15px] w-[330px] h-[600px] rounded-t-full rounded-b-full ">
-        <img src="/avatars/male/mii-m2/mii-m2_angry.png" alt="angry mii" className="w-full h-full object-cover" />
-      </div>
+      {title && (
+        <div className="absolute top-[-60px] right-[15px] w-[330px] h-[600px] rounded-t-full rounded-b-full pointer-events-auto">
+          <img 
+            src={`/avatars/male/mii-m2/mii-m2_${emotion}.png`} 
+            alt={`${emotion} mii`} 
+            className="w-full h-full object-cover drop-shadow-2xl" 
+          />
+        </div>
+      )}
 
       {title && (
         <div className="absolute top-[51px] left-[42px] font-medium text-white text-[35px] tracking-[-1.05px] leading-normal font-headline lowercase">
@@ -97,6 +115,9 @@ export default function Xbox360ThemeReplica() {
   const { data: profile } = useDoc(profileRef);
 
   const [activeTab, setActiveTab] = React.useState<number>(2); // Default to My Channel
+  const [currentEmotion, setCurrentEmotion] = React.useState<string>('default');
+  const [hoverEmotion, setHoverEmotion] = React.useState<string | null>(null);
+  const [showEmotionPicker, setShowEmotionPicker] = React.useState(false);
   const [mounted, setMounted] = React.useState(false);
 
   React.useEffect(() => {
@@ -108,6 +129,9 @@ export default function Xbox360ThemeReplica() {
   const tabs = ["Friends", "Study Sessions", "My Channel"];
   const displayName = user?.isAnonymous ? "guest" : (profile?.displayName || user?.displayName || "whatNot");
   const avatarUrl = profile?.photoUrl || user?.photoURL || "https://picsum.photos/seed/xboxava/200/200";
+
+  const activeAvatarPath = `/avatars/male/mii-m2/mii-m2_${currentEmotion}.png`;
+  const previewAvatarPath = `/avatars/male/mii-m2/mii-m2_${hoverEmotion || currentEmotion}.png`;
 
   return (
     <div className="fixed inset-0 bg-[#243d15] flex items-center justify-center overflow-hidden font-sans select-none z-[9999]">
@@ -192,7 +216,7 @@ export default function Xbox360ThemeReplica() {
               <div className="absolute w-full h-[34.20%] top-[64.75%] left-0 rounded-[11px] [background:radial-gradient(50%_50%_at_74%_50%,rgba(129,129,129,0.01)_70%,rgba(92,92,91,0.31)_100%)]" />
               <div className="absolute w-full h-[29.41%] top-[33.16%] left-0 rounded-b-[11px] bg-[linear-gradient(180deg,rgba(0,0,0,0)_0%,rgba(0,0,0,0.62)_67%,rgba(0,0,0,0.82)_100%)]" />
             </div>
-            {/* Reflection specifically for this hardcoded section */}
+            {/* Reflection */}
             <div
               className="absolute top-full left-0 w-full h-full opacity-30 transition-all duration-700 pointer-events-none"
               style={{
@@ -216,7 +240,8 @@ export default function Xbox360ThemeReplica() {
             subtitle="20 hours"
             activityTitle="Latest Activities"
             activityText="whoosh.. theres nothing here!"
-            onClick={() => setActiveTab(2)}
+            emotion={currentEmotion}
+            onClick={() => setShowEmotionPicker(true)}
           />
 
           {/* Tertiary Blade (Controllers) */}
@@ -230,7 +255,7 @@ export default function Xbox360ThemeReplica() {
               <div className="absolute w-full h-[34.20%] top-[64.75%] left-0 rounded-[11px] [background:radial-gradient(50%_50%_at_74%_50%,rgba(129,129,129,0.01)_70%,rgba(92,92,91,0.31)_100%)]" />
               <div className="absolute w-full h-[29.41%] top-[33.16%] left-0 rounded-b-[11px] bg-[linear-gradient(180deg,rgba(0,0,0,0)_0%,rgba(0,0,0,0.62)_67%,rgba(0,0,0,0.82)_100%)]" />
             </div>
-            {/* Reflection specifically for this hardcoded section */}
+            {/* Reflection */}
             <div
               className="absolute top-full left-0 w-full h-full opacity-30 transition-all duration-700 pointer-events-none"
               style={{
@@ -244,6 +269,63 @@ export default function Xbox360ThemeReplica() {
             <div className="absolute top-[347px] left-12 font-headline text-white text-[35px] lowercase">Controllers</div>
           </section>
         </div>
+
+        {/* Emotion Picker Pop-up */}
+        {showEmotionPicker && (
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-md z-[1000] flex items-center justify-center animate-in fade-in duration-300">
+            <div className="relative w-[1200px] h-[800px] rounded-[40px] overflow-hidden flex flex-col shadow-2xl border-4 border-white/20 [background:radial-gradient(173.24%_228.65%_at_17.13%_-29.45%,#243D15_0%,#385817_13%,#5F8F20_26%,#8AAB68_45%,#CDE5BA_67%)]">
+              <button 
+                onClick={() => setShowEmotionPicker(false)}
+                className="absolute top-8 right-8 text-white/40 hover:text-white transition-colors"
+              >
+                <X size={64} />
+              </button>
+
+              <div className="p-16 flex-1 flex flex-col items-center">
+                <h2 className="text-white text-7xl font-headline lowercase mb-12 [text-shadow:0px_4px_4px_#00000040]">Choose Expression</h2>
+                
+                <div className="flex items-center justify-between w-full flex-1 gap-20">
+                  {/* List */}
+                  <div className="flex flex-col gap-6 flex-1">
+                    {emotions.map((emo) => (
+                      <button
+                        key={emo.id}
+                        onMouseEnter={() => setHoverEmotion(emo.id)}
+                        onMouseLeave={() => setHoverEmotion(null)}
+                        onClick={() => {
+                          setCurrentEmotion(emo.id);
+                          setShowEmotionPicker(false);
+                        }}
+                        className={cn(
+                          "w-full py-8 px-12 rounded-[20px] text-5xl font-medium transition-all duration-300 flex items-center justify-between lowercase font-headline",
+                          (hoverEmotion === emo.id || (!hoverEmotion && currentEmotion === emo.id)) 
+                            ? "bg-white text-[#243d15] scale-105 shadow-xl" 
+                            : "bg-white/5 text-white/60 hover:bg-white/10"
+                        )}
+                      >
+                        {emo.label}
+                        {(hoverEmotion === emo.id || (!hoverEmotion && currentEmotion === emo.id)) && <Check size={48} />}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Preview Area */}
+                  <div className="relative w-[500px] h-[500px] flex items-center justify-center bg-black/20 rounded-full border-8 border-white/10 overflow-visible">
+                     <img 
+                      src={previewAvatarPath} 
+                      alt="preview" 
+                      className="h-[700px] object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)] transform -translate-y-20 animate-in zoom-in duration-300"
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-12 text-white/30 text-3xl font-headline lowercase">
+                  Move your cursor to preview, click to select
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Footer Nav Controls */}
         <div className="absolute bottom-[100px] left-[134px] z-[100] flex items-center gap-8">
