@@ -1,7 +1,8 @@
+
 "use client"
 
 import * as React from "react"
-import { ChevronRight, Disc, Gamepad2, Film, Music, Grid3X3, ArrowRight } from "lucide-react"
+import { Disc, Gamepad2, Film, Music, Grid3X3, User } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export default function Xbox360ThemeReplica() {
@@ -15,12 +16,12 @@ export default function Xbox360ThemeReplica() {
   if (!mounted) return null
 
   const blades = [
-    { title: "Open Tray", icon: <DiscIcon />, color: "from-[#96bd14] to-[#456b14]", subtitle: "tray empty" },
-    { title: "Player1", icon: <AvatarPopout />, color: "from-[#bde754] to-[#7fb32a]", subtitle: "0 G", special: "avatar" },
-    { title: "Games", icon: <GamepadIcon />, color: "from-[#ace41b] to-[#67a711]", subtitle: "latest titles" },
-    { title: "Videos", icon: <VideoIcon />, color: "from-[#a2df1a] to-[#61a010]", subtitle: "video library" },
-    { title: "Music", icon: <MusicIcon />, color: "from-[#98da19] to-[#5a9a0f]", subtitle: "music library" },
-    { title: "Apps", icon: <GridIcon />, color: "from-[#8fd518] to-[#54930e]", subtitle: "social apps" },
+    { title: "Open Tray", subtitle: "tray empty", icon: <DiscIcon /> },
+    { title: "Player1", subtitle: "0 G", icon: <AvatarPlaceholder />, special: "avatar" },
+    { title: "Games", subtitle: "latest titles", icon: <GamepadIcon /> },
+    { title: "Videos", subtitle: "video library", icon: <VideoIcon /> },
+    { title: "Music", subtitle: "music library", icon: <MusicIcon /> },
+    { title: "Apps", subtitle: "social apps", icon: <GridIcon /> },
   ]
 
   const menuItems = [
@@ -34,163 +35,201 @@ export default function Xbox360ThemeReplica() {
   const selectedMenuIndex = 4 // "My Xbox"
 
   return (
-    <div className="fixed inset-0 bg-[#456b14] flex flex-col items-center justify-center overflow-hidden font-sans select-none z-[9999] font-['Roboto',sans-serif]">
-      {/* Background Gradient & Bokeh Circles */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#bde754] via-[#7fb32a] to-[#456b14] overflow-hidden">
-        <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-white/10 blur-[120px] rounded-full" />
-        <div className="absolute bottom-[-20%] right-[-10%] w-[80%] h-[80%] bg-[#bde754]/20 blur-[150px] rounded-full" />
+    <div className="fixed inset-0 flex items-center justify-center overflow-hidden font-sans select-none z-[9999]">
+      {/* 
+        Scaling Container 
+        Figma dimensions: 2393 x 1406
+      */}
+      <div 
+        className="relative shrink-0 overflow-hidden shadow-2xl"
+        style={{
+          width: '2393px',
+          height: '1406px',
+          background: 'radial-gradient(ellipse 173.24% 228.65% at 17.13% -29.45%, #243D15 0%, #385817 13%, #5F8F20 26%, #8AAB68 45%, #CDE5BA 67%)',
+          transform: `scale(${typeof window !== 'undefined' ? Math.min(window.innerWidth / 2393, window.innerHeight / 1406) : 1})`,
+        }}
+      >
+        {/* Top Dark Shadow Gradient (Bokeh) */}
+        <div 
+          className="pointer-events-none"
+          style={{
+            width: '1769px',
+            height: '1016px',
+            left: '784px',
+            top: '-108px',
+            position: 'absolute',
+            background: 'radial-gradient(ellipse 106.52% 186.07% at 68.66% -0.00%, rgba(0, 0, 0, 0.64) 0%, rgba(0, 0, 0, 0.03) 46%, rgba(0, 0, 0, 0) 63%)'
+          }} 
+        />
+
+        {/* Gray Floor Stage (Massive Circle) */}
+        <div 
+          className="absolute"
+          style={{
+            width: '5962px',
+            height: '1604px',
+            left: '-1785px',
+            top: '703px',
+            background: 'linear-gradient(180deg, #686868 0%, #939393 100%)',
+            boxShadow: '0px -103px 118.8px 12px rgba(255, 255, 255, 0.44)',
+            borderRadius: '9999px',
+            outline: '4px white solid'
+          }} 
+        />
+
+        {/* Floor Reflections */}
+        <div 
+          className="absolute"
+          style={{
+            width: '2393px',
+            height: '584px',
+            left: '0px',
+            top: '822px',
+            background: 'linear-gradient(180deg, rgba(217, 217, 217, 0) 0%, rgba(190.55, 190, 190, 0.08) 14%, rgba(15.53, 11.30, 11.30, 0.59) 100%)'
+          }} 
+        />
         
-        {/* Bokeh Circles */}
-        <div className="absolute top-[20%] left-[30%] w-32 h-32 border-[1px] border-white/5 rounded-full" />
-        <div className="absolute top-[40%] left-[10%] w-64 h-64 border-[1px] border-white/5 rounded-full" />
-        <div className="absolute bottom-[30%] right-[20%] w-48 h-48 border-[1px] border-white/10 rounded-full" />
-      </div>
+        {/* Soft floor highlights */}
+        <div className="absolute left-[-35px] top-[878px] w-[1562px] h-[370px] rounded-full opacity-50" style={{ background: 'radial-gradient(ellipse 51.44% 50.00% at 50.00% 50.00%, #D9D9D9 0%, rgba(115, 115, 115, 0) 100%)' }} />
+        <div className="absolute left-[720px] top-[794px] w-[1281px] h-[353px] rounded-full opacity-50" style={{ background: 'radial-gradient(ellipse 51.44% 50.00% at 50.00% 50.00%, #D9D9D9 0%, rgba(115, 115, 115, 0) 100%)' }} />
 
-      {/* Gray Floor Stage (Half Circle) */}
-      <div className="absolute bottom-[-45%] left-1/2 -translate-x-1/2 w-[150%] h-[80%] bg-gradient-to-b from-slate-300/40 to-slate-900/60 rounded-[50%] blur-[2px] border-t border-white/20" />
-
-      {/* Floor Highlight / Selected Reflection */}
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-white/20 blur-[60px] rounded-[50%] transition-opacity duration-700" />
-
-      {/* Vertical Side Menu (My Xbox etc) */}
-      <div className="absolute top-20 left-24 z-50 flex flex-col gap-1 items-start">
-        {menuItems.map((item, i) => {
-          const distance = Math.abs(i - selectedMenuIndex);
-          const scale = Math.max(0.7, 1 - distance * 0.1);
-          const opacity = Math.max(0.2, 1 - distance * 0.2);
-          const isActive = i === selectedMenuIndex;
-
-          return (
-            <div 
-              key={i} 
-              className={cn(
-                "flex items-center gap-3 transition-all duration-500",
-                isActive ? "text-white text-4xl font-bold" : "text-white/60 text-xl font-medium"
-              )}
-              style={{ 
-                transform: `scale(${scale})`,
-                opacity: opacity,
-                marginLeft: isActive ? '0' : '10px'
-              }}
-            >
-              {isActive && <div className="w-2 h-2 bg-white rotate-45 mr-1" />}
-              <span className="lowercase">{item}</span>
+        {/* Profile Section (Top Right) */}
+        <div className="absolute top-[124px] right-[200px] flex items-start gap-12 z-50">
+          <div className="text-right mt-2">
+            <div className="text-[60px] font-medium text-white lowercase leading-none" style={{ fontFamily: 'Roboto, sans-serif', textShadow: '0px 4px 4px rgba(0, 0, 0, 0.25)' }}>whatNot</div>
+            <div className="flex items-center justify-end gap-3 mt-4">
+              <span className="text-[50px] font-normal text-[#DDDDDD]" style={{ fontFamily: 'Roboto, sans-serif', textShadow: '0px 4px 4px rgba(0, 0, 0, 0.25)' }}>700</span>
+              <div className="w-[48px] h-[47px] bg-[#D9D9D9] rounded-full flex items-center justify-center shadow-lg">
+                <span className="text-[40px] text-[#6E8F55] font-bold leading-none mb-1">G</span>
+              </div>
             </div>
-          )
-        })}
-      </div>
-
-      {/* Profile/Gamertag Dimmer Halo (Top Right) */}
-      <div className="absolute top-12 right-24 z-50 flex items-center gap-4">
-        <div className="absolute -inset-8 bg-black/10 blur-2xl rounded-full" />
-        <div className="relative text-right">
-          <div className="text-3xl font-bold text-white lowercase drop-shadow-md">Player1</div>
-          <div className="text-xl font-medium text-white/70 tracking-tight">0 <span className="text-xs uppercase align-top mt-1 inline-block">g</span></div>
+          </div>
+          
+          <div className="relative">
+            <div className="w-[139px] h-[139px] bg-[#222] rounded-[9px] border-[5px] border-[#ACBB68] shadow-2xl overflow-hidden">
+               <img src="https://picsum.photos/seed/xboxexact/200/200" className="w-full h-full object-cover" alt="avatar" />
+            </div>
+            {/* Status dot */}
+            <div className="absolute bottom-[-15px] left-1/2 -translate-x-1/2 w-[42px] h-[43px] rounded-full border-2 border-[#8DD590] shadow-md bg-gradient-to-b from-[#6CBF4B] to-[#8EC158]">
+              <div className="absolute inset-1 rounded-full bg-gradient-to-b from-white/30 to-transparent" />
+            </div>
+          </div>
         </div>
-        <div className="relative w-20 h-20 bg-zinc-900 rounded-sm p-1 border border-white/20 shadow-2xl overflow-hidden">
-          <img src="https://picsum.photos/seed/xboxpfp/200/200" className="w-full h-full object-cover opacity-90" alt="player" />
-          <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent" />
-        </div>
-      </div>
 
-      {/* Main Blades Stack */}
-      <div className="relative w-full h-full flex items-center justify-center perspective-[2000px] mt-12">
-        <div className="relative flex items-center justify-start translate-x-[20%]">
-          {blades.map((blade, i) => {
-            const relativeIndex = i - activeBladeIndex
-            const isVisible = relativeIndex >= -1 // Show one behind
-            
-            return (
-              <div
-                key={i}
-                onClick={() => setActiveBladeIndex(i)}
+        {/* Vertical Menu (Left) */}
+        <div className="absolute top-[134px] left-[134px] z-50 flex flex-col gap-6 items-start">
+           {menuItems.map((item, i) => {
+             const distance = Math.abs(i - selectedMenuIndex);
+             const scale = Math.max(0.7, 1 - distance * 0.1);
+             const opacity = Math.max(0.3, 1 - distance * 0.2);
+             const isActive = i === selectedMenuIndex;
+             
+             return (
+               <div 
+                key={i} 
                 className={cn(
-                  "absolute transition-all duration-700 ease-out cursor-pointer group",
-                  relativeIndex === 0 ? "z-[60]" : relativeIndex < 0 ? `z-[${40 + i}]` : `z-[${50 - i}]`
+                  "transition-all duration-500 lowercase font-medium",
+                  isActive ? "text-white text-[64px]" : "text-white/30 text-[35px]"
                 )}
-                style={{
-                  transform: `
-                    translateX(${relativeIndex * 280}px) 
-                    rotateY(${relativeIndex === 0 ? 0 : -35}deg)
-                    translateZ(${relativeIndex === 0 ? 100 : -200 - Math.abs(relativeIndex) * 100}px)
-                  `,
-                  opacity: isVisible ? 1 : 0,
-                  pointerEvents: isVisible ? 'auto' : 'none'
+                style={{ 
+                  fontFamily: 'Cabin, sans-serif',
+                  transformOrigin: 'left center',
+                  transform: `scale(${scale})`,
+                  opacity: opacity,
+                  marginTop: isActive ? '20px' : '0'
                 }}
-              >
-                {/* Blade Reflection */}
-                {relativeIndex === 0 && (
-                  <div 
-                    className="absolute top-[380px] left-0 w-full h-[120px] bg-white/10 blur-[40px] rounded-[50%] z-0"
-                  />
-                )}
+               >
+                 {item}
+               </div>
+             )
+           })}
+        </div>
 
-                {/* Main Card Container */}
-                <div className="relative group">
-                  {/* Card Shadow on the one behind */}
-                  <div className={cn(
-                    "absolute inset-4 bg-black/40 blur-2xl transition-all duration-500",
-                    relativeIndex === 0 ? "opacity-40" : "opacity-70 translate-x-4"
-                  )} />
+        {/* Main Blades Container */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="relative w-full flex items-center justify-start left-[20%]">
+            {blades.map((blade, i) => {
+              const relativeIndex = i - activeBladeIndex
+              const isVisible = relativeIndex >= -1
+              const isActive = relativeIndex === 0
 
-                  <div className={cn(
-                    "relative w-[480px] h-[340px] rounded-xl bg-gradient-to-br p-10 overflow-visible transition-all duration-500",
-                    blade.color,
-                    relativeIndex === 0 ? "ring-2 ring-white/40 shadow-[0_40px_100px_rgba(0,0,0,0.6)]" : "opacity-90 grayscale-[0.2]"
-                  )}>
-                    {/* Darker Gradient Overlay for Icon Area */}
-                    <div className="absolute top-0 left-0 w-full h-[60%] bg-gradient-to-b from-black/20 to-transparent pointer-events-none" />
-                    
-                    {/* Glossy Texture Overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent opacity-60" />
-                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.15)_0%,transparent_50%)]" />
+              return (
+                <div
+                  key={i}
+                  onClick={() => setActiveBladeIndex(i)}
+                  className={cn(
+                    "absolute transition-all duration-700 ease-out cursor-pointer pointer-events-auto",
+                    isActive ? "z-[60]" : relativeIndex < 0 ? `z-[${40 + i}]` : `z-[${50 - i}]`
+                  )}
+                  style={{
+                    transform: `
+                      translateX(${relativeIndex * 550}px) 
+                      rotateY(${isActive ? 0 : -35}deg)
+                      translateZ(${isActive ? 200 : -200 - Math.abs(relativeIndex) * 200}px)
+                    `,
+                    opacity: isVisible ? 1 : 0,
+                  }}
+                >
+                  <div className="relative">
+                    {/* Active Blade Card Style From Figma */}
+                    <div 
+                      className={cn(
+                        "relative rounded-[11px] transition-all duration-500 overflow-hidden",
+                        isActive ? "w-[538px] h-[659px]" : "w-[403px] h-[550px] opacity-70 grayscale-[0.3]"
+                      )}
+                    >
+                      {/* Main Color Gradient */}
+                      <div 
+                        className="absolute inset-0 top-0 bottom-[35%] rounded-t-[11px]"
+                        style={{ 
+                          background: 'radial-gradient(ellipse 95.17% 95.37% at 46.12% 4.91%, #F7FF99 0%, #E6FE64 18%, #DEFC43 33%, #C8EF35 45%, #9FDD21 70%, #8DD119 100%)',
+                          boxShadow: '36px 4px 22.4px -24px rgba(0, 0, 0, 0.42)'
+                        }}
+                      />
+                      
+                      {/* Bottom Info Area Overlay */}
+                      <div 
+                        className="absolute bottom-0 left-0 right-0 h-[60%] flex flex-col justify-end p-12"
+                        style={{ background: 'linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.62) 67%, rgba(0, 0, 0, 0.82) 100%)' }}
+                      >
+                         <div className="text-white text-[50px] font-medium lowercase mb-2" style={{ fontFamily: 'Cabin, sans-serif' }}>
+                           {blade.title}
+                         </div>
+                         <div className="text-white/60 text-[25px] font-normal lowercase tracking-[1.25px]" style={{ fontFamily: 'Cabin, sans-serif' }}>
+                           {blade.subtitle}
+                         </div>
+                      </div>
 
-                    {/* Blade Content */}
-                    <div className="relative h-full flex flex-col justify-between">
-                      <div className="flex-1 flex items-center justify-center">
-                        <div className={cn(
-                          "transition-transform duration-500",
-                          relativeIndex === 0 ? "scale-[2.8]" : "scale-[2]"
-                        )}>
+                      {/* Icon/Avatar Area */}
+                      <div className="relative h-full flex items-center justify-center pb-[20%]">
+                        <div className={isActive ? "scale-[2.5]" : "scale-[1.5]"}>
                           {blade.icon}
                         </div>
                       </div>
-                      <div className="text-white drop-shadow-md">
-                        <div className="text-4xl font-bold lowercase">{blade.title}</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Subtitle Tracking Text (Below Card) */}
-                  <div className={cn(
-                    "mt-4 text-center transition-all duration-500",
-                    relativeIndex === 0 ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-                  )}>
-                    <div className="text-white/60 text-lg font-medium lowercase tracking-wide">
-                      {i + 1} of {blades.length} — {blade.subtitle}
                     </div>
                   </div>
                 </div>
-              </div>
-            )
-          })}
+              )
+            })}
+          </div>
         </div>
-      </div>
 
-      {/* Footer Nav Controls */}
-      <div className="absolute bottom-12 left-24 z-50 flex items-center gap-3">
-        <div className="w-7 h-7 bg-green-500 rounded-full flex items-center justify-center text-[11px] text-white font-black shadow-lg">A</div>
-        <span className="text-white/90 font-bold lowercase text-xl">Select</span>
-        <div className="ml-4 w-7 h-7 bg-red-500 rounded-full flex items-center justify-center text-[11px] text-white font-black shadow-lg">B</div>
-        <span className="text-white/90 font-bold lowercase text-xl">Back</span>
+        {/* Footer Nav Controls */}
+        <div className="absolute bottom-[100px] left-[134px] z-50 flex items-center gap-8">
+           <div className="flex items-center gap-4">
+             <div className="w-[50px] h-[50px] bg-green-500 rounded-full flex items-center justify-center text-white font-black text-2xl shadow-lg">A</div>
+             <span className="text-white text-3xl lowercase font-medium" style={{ fontFamily: 'Cabin, sans-serif' }}>select</span>
+           </div>
+           <div className="flex items-center gap-4">
+             <div className="w-[50px] h-[50px] bg-red-500 rounded-full flex items-center justify-center text-white font-black text-2xl shadow-lg">B</div>
+             <span className="text-white text-3xl lowercase font-medium" style={{ fontFamily: 'Cabin, sans-serif' }}>back</span>
+           </div>
+        </div>
       </div>
 
       <style jsx global>{`
         body {
-          background: #456b14 !important;
-        }
-        .perspective-[2000px] {
-          perspective: 2000px;
+          background: #243D15 !important;
         }
       `}</style>
     </div>
@@ -199,11 +238,22 @@ export default function Xbox360ThemeReplica() {
 
 function DiscIcon() {
   return (
-    <div className="w-24 h-24 rounded-full border-4 border-white/20 bg-white/10 relative flex items-center justify-center shadow-inner">
-      <div className="w-16 h-16 rounded-full border-2 border-white/40 flex items-center justify-center">
+    <div className="w-[100px] h-[100px] rounded-full border-4 border-white/20 bg-white/10 relative flex items-center justify-center">
+      <div className="w-[60px] h-[60px] rounded-full border-2 border-white/40 flex items-center justify-center">
         <div className="w-4 h-4 rounded-full bg-white/80" />
       </div>
       <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent rotate-45" />
+    </div>
+  )
+}
+
+function AvatarPlaceholder() {
+  return (
+    <div className="relative w-[120px] h-[160px] flex items-center justify-center">
+       <div className="absolute top-0 w-24 h-24 rounded-full bg-zinc-900 border-4 border-white/20 shadow-xl overflow-hidden">
+          <img src="https://picsum.photos/seed/avatar1/100/100" className="w-full h-full object-cover" alt="" />
+       </div>
+       <div className="absolute bottom-0 w-full h-24 bg-gradient-to-b from-zinc-800 to-zinc-900 rounded-t-[30px] border-t border-white/10" />
     </div>
   )
 }
@@ -241,22 +291,6 @@ function GridIcon() {
       {[...Array(9)].map((_, i) => (
         <div key={i} className="w-6 h-6 rounded-sm bg-white/30" />
       ))}
-    </div>
-  )
-}
-
-function AvatarPopout() {
-  return (
-    <div className="relative w-48 h-64 overflow-visible">
-      {/* Pop-out silhouette that extends beyond the 48x64 bounds */}
-      <div className="absolute top-[-40px] left-1/2 -translate-x-1/2 w-24 h-24 rounded-full bg-zinc-900 border-4 border-[#bde754] shadow-2xl flex items-center justify-center overflow-hidden">
-         <img src="https://picsum.photos/seed/pfp/100/100" className="w-full h-full object-cover" alt="" />
-      </div>
-      <div className="absolute top-[45px] left-[-20px] right-[-20px] bottom-0 bg-gradient-to-b from-zinc-800 to-zinc-900 rounded-t-[50px] rounded-b-[10px] shadow-2xl border-t border-white/10 flex items-center justify-center">
-         <span className="text-[8px] font-black uppercase tracking-tighter opacity-20 text-white mt-12">player</span>
-      </div>
-      {/* Decorative pop-out elements */}
-      <div className="absolute top-[60px] right-[-10px] w-6 h-12 bg-[#bde754] rounded-full blur-xl opacity-40 animate-pulse" />
     </div>
   )
 }
