@@ -9,9 +9,9 @@ import { doc, setDoc } from "firebase/firestore"
 import { ChevronLeft, Loader2 } from "lucide-react"
 
 const MALE_AVATARS = [
-  { id: 'mii-m1', label: 'Style 1' },
-  { id: 'mii-m2', label: 'Style 2' },
-  { id: 'mii-m3', label: 'Style 3' },
+  { id: 'mii-m1'},
+  { id: 'mii-m2'},
+  { id: 'mii-m3'},
 ]
 
 export default function AvatarPickerPage() {
@@ -90,14 +90,13 @@ export default function AvatarPickerPage() {
                 onClick={() => setStep('selection')}
                 className="w-[500px] h-[700px] rounded-[40px] bg-white/5 border-4 border-white/10 hover:bg-white/10 hover:scale-105 hover:border-white/30 transition-all flex items-center justify-center group"
               >
-                <svg className="w-64 h-64 text-white/40 group-hover:text-white transition-colors" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm9 7h-6v13h-2v-6h-2v6H9V9H3V7h18v2z"/>
-                </svg>
+                <img src="/devmade-icons/maleicon.png" alt="Male" className="w-122 h-full" />
               </button>
-              <button className="w-[500px] h-[700px] rounded-[40px] bg-white/5 border-4 border-white/10 opacity-30 cursor-not-allowed flex items-center justify-center">
-                <svg className="w-64 h-64 text-white/40" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm3 10v7h2v-7h1v-4c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v4h1v7h2v-7h5z"/>
-                </svg>
+              <button 
+                onClick={() => setStep('selection')}
+                className="w-[500px] h-[700px] rounded-[40px] bg-white/5 border-4 border-white/10 hover:bg-white/10 hover:scale-105 hover:border-white/30 transition-all flex items-center justify-center group"
+              >
+                <img src="/devmade-icons/femaleicon.png" alt="Female" className="w-122 h-full" />
               </button>
             </div>
           ) : (
@@ -119,9 +118,7 @@ export default function AvatarPickerPage() {
                       }}
                     />
                   </div>
-                  <span className="text-4xl text-white font-headline lowercase opacity-60 group-hover:opacity-100 transition-opacity">
-                    {avatar.label}
-                  </span>
+                  
                   {isUpdating && <Loader2 className="absolute inset-0 m-auto text-white animate-spin" size={64} />}
                 </button>
               ))}
