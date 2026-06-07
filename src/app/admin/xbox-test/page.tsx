@@ -166,8 +166,8 @@ export default function Xbox360ThemeReplica() {
                 <div className="[text-shadow:0px_4px_4px_#00000040] font-normal text-white text-6xl tracking-tight  font-headline">{displayName}</div>
                 <div className="flex items-center justify-end gap-3 mt-2">
                   <div className="[text-shadow:0px_4px_4px_#00000040] font-normal text-[#dddddd] text-[50px] tracking-wide">700</div>
-                  <div className="w-[49px] h-[47px] bg-[#d9d9d9] rounded-full shadow-[0px_4px_4px_#00000040] flex items-center justify-center">
-                    <span className="text-[#6e8f55] text-[40px] font-bold">G</span>
+                  <div className="w-[49px] h-[47px] rounded-full shadow-[0px_4px_4px_#00000040] flex items-center justify-center">
+                    <img src="/devmade-icons/gukocoin.png" alt="G" className="w-[49px] h-[47px]" />
                   </div>
                 </div>
              </div>
