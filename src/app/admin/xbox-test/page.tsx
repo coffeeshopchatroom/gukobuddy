@@ -3,7 +3,7 @@
 
 import * as React from "react"
 import { cn } from "@/lib/utils"
-import { useUser, useDoc, useMemoFirebase } from "@/firebase"
+import { useUser, useDoc, useMemoFirebase, useFirestore } from "@/firebase"
 import { doc } from "firebase/firestore"
 
 type CardProps = {
@@ -87,7 +87,8 @@ const GradientCard = ({
 
 export default function Xbox360ThemeReplica() {
   const { user } = useUser();
-  const profileRef = useMemoFirebase(() => user ? doc(null as any, 'users', user.uid, 'profile', 'settings') : null, [user]);
+  const db = useFirestore();
+  const profileRef = useMemoFirebase(() => user ? doc(db, 'users', user.uid, 'profile', 'settings') : null, [db, user]);
   const { data: profile } = useDoc(profileRef);
 
   const [activeTab, setActiveTab] = React.useState<number>(2); // Default to My Channel
