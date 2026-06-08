@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -24,7 +23,8 @@ import {
   Radio,
   Settings,
   Gamepad2,
-  UserCircle2
+  UserCircle2,
+  Wind
 } from "lucide-react"
 
 import {
@@ -489,18 +489,29 @@ function AdminPanelDialog({ children, open, onOpenChange }: { children: React.Re
                   </Link>
                 </Button>
               </div>
-              <Button 
-                variant="outline"
-                asChild
-                className="w-full h-14 rounded-2xl font-bold gap-2 border-2 border-primary hover:bg-primary/5 shadow-sm lowercase"
-              >
-                <Link href="/admin/avatar-picker">
-                  <UserCircle2 className="h-5 w-5 text-primary" /> avatar picker
-                </Link>
-              </Button>
+              <div className="grid grid-cols-2 gap-3">
+                <Button 
+                  variant="outline"
+                  asChild
+                  className="w-full h-14 rounded-2xl font-bold gap-2 border-2 border-primary hover:bg-primary/5 shadow-sm lowercase"
+                >
+                  <Link href="/admin/avatar-picker">
+                    <UserCircle2 className="h-5 w-5 text-primary" /> avatar picker
+                  </Link>
+                </Button>
+                <Button 
+                  variant="outline"
+                  asChild
+                  className="w-full h-14 rounded-2xl font-bold gap-2 border-2 border-orange-200 hover:bg-orange-50 shadow-sm lowercase"
+                >
+                  <Link href="/admin/animation-testing">
+                    <Wind className="h-5 w-5 text-orange-500" /> motion lab
+                  </Link>
+                </Button>
+              </div>
             </div>
             <p className="text-xs text-muted-foreground text-center lowercase px-4">
-              these tools are for internal testing of experimental global themes and notifications.
+              these tools are for internal testing of experimental global themes, animations, and notifications.
             </p>
           </div>
         </div>
