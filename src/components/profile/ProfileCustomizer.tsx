@@ -170,7 +170,7 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
         targetColors: profile.targetColors || {},
         font: profile.font || 'Plus Jakarta Sans',
         cornerRounding: profile.cornerRounding ?? 16,
-        layout: profile.layout || DEFAULT_LAYOUT,
+        layout: { ...DEFAULT_LAYOUT, ...profile.layout },
         stickers: (profile.stickers || []).map((s: any) => ({ ...s, rotation: s.rotation || 0, zIndex: s.zIndex || 1 }))
       });
     }
@@ -455,11 +455,11 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
                 <div 
                   className="absolute transition-all"
                   style={{ 
-                    left: formData.layout.banner.x, 
-                    top: formData.layout.banner.y,
-                    width: formData.layout.banner.w,
-                    height: formData.layout.banner.h,
-                    zIndex: formData.layout.banner.zIndex
+                    left: formData.layout.banner?.x ?? 0, 
+                    top: formData.layout.banner?.y ?? 0,
+                    width: formData.layout.banner?.w ?? 0,
+                    height: formData.layout.banner?.h ?? 0,
+                    zIndex: formData.layout.banner?.zIndex ?? 0
                   }}
                 >
                   {formData.bannerUrl ? (
@@ -472,12 +472,12 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
                 <div 
                   className="absolute transition-all"
                   style={{ 
-                    left: formData.layout.pfp.x, 
-                    top: formData.layout.pfp.y,
-                    width: formData.layout.pfp.w,
-                    height: formData.layout.pfp.h,
+                    left: formData.layout.pfp?.x ?? 0, 
+                    top: formData.layout.pfp?.y ?? 0,
+                    width: formData.layout.pfp?.w ?? 0,
+                    height: formData.layout.pfp?.h ?? 0,
                     borderRadius: previewRounding,
-                    zIndex: formData.layout.pfp.zIndex,
+                    zIndex: formData.layout.pfp?.zIndex ?? 2,
                     ...getTargetBorderStyle('profile', bodyBgStyle),
                     overflow: 'hidden'
                   }}
@@ -494,11 +494,11 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
                 <div 
                   className="absolute transition-all flex flex-col justify-center"
                   style={{ 
-                    left: formData.layout.name.x, 
-                    top: formData.layout.name.y,
-                    width: formData.layout.name.w,
-                    height: formData.layout.name.h,
-                    zIndex: formData.layout.name.zIndex,
+                    left: formData.layout.name?.x ?? 0, 
+                    top: formData.layout.name?.y ?? 0,
+                    width: formData.layout.name?.w ?? 0,
+                    height: formData.layout.name?.h ?? 0,
+                    zIndex: formData.layout.name?.zIndex ?? 2,
                     color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor'
                   }}
                 >
@@ -508,11 +508,11 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
                 <div 
                   className="absolute transition-all"
                   style={{ 
-                    left: formData.layout.username.x, 
-                    top: formData.layout.username.y,
-                    width: formData.layout.username.w,
-                    height: formData.layout.username.h,
-                    zIndex: formData.layout.username.zIndex,
+                    left: formData.layout.username?.x ?? 0, 
+                    top: formData.layout.username?.y ?? 0,
+                    width: formData.layout.username?.w ?? 0,
+                    height: formData.layout.username?.h ?? 0,
+                    zIndex: formData.layout.username?.zIndex ?? 2,
                     color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor',
                     opacity: 0.6
                   }}
@@ -523,11 +523,11 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
                 <div 
                   className="absolute transition-all"
                   style={{ 
-                    left: formData.layout.addBtn.x, 
-                    top: formData.layout.addBtn.y,
-                    width: formData.layout.addBtn.w,
-                    height: formData.layout.addBtn.h,
-                    zIndex: formData.layout.addBtn.zIndex
+                    left: formData.layout.addBtn?.x ?? 0, 
+                    top: formData.layout.addBtn?.y ?? 0,
+                    width: formData.layout.addBtn?.w ?? 0,
+                    height: formData.layout.addBtn?.h ?? 0,
+                    zIndex: formData.layout.addBtn?.zIndex ?? 2
                   }}
                 >
                   <Button 
@@ -546,11 +546,11 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
                 <div 
                   className="absolute transition-all"
                   style={{ 
-                    left: formData.layout.aboutHeader.x, 
-                    top: formData.layout.aboutHeader.y,
-                    width: formData.layout.aboutHeader.w,
-                    height: formData.layout.aboutHeader.h,
-                    zIndex: formData.layout.aboutHeader.zIndex,
+                    left: formData.layout.aboutHeader?.x ?? 0, 
+                    top: formData.layout.aboutHeader?.y ?? 0,
+                    width: formData.layout.aboutHeader?.w ?? 0,
+                    height: formData.layout.aboutHeader?.h ?? 0,
+                    zIndex: formData.layout.aboutHeader?.zIndex ?? 2,
                     color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor',
                     opacity: 0.4
                   }}
@@ -561,11 +561,11 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
                 <div 
                   className="absolute transition-all"
                   style={{ 
-                    left: formData.layout.bio.x, 
-                    top: formData.layout.bio.y,
-                    width: formData.layout.bio.w,
-                    height: formData.layout.bio.h,
-                    zIndex: formData.layout.bio.zIndex,
+                    left: formData.layout.bio?.x ?? 0, 
+                    top: formData.layout.bio?.y ?? 0,
+                    width: formData.layout.bio?.w ?? 0,
+                    height: formData.layout.bio?.h ?? 0,
+                    zIndex: formData.layout.bio?.zIndex ?? 2,
                     color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor',
                   }}
                 >
@@ -910,11 +910,11 @@ function AdvancedProfileEditor({
               onPointerDown={(e) => handlePointerDown(e, 'banner', 'move')}
               onClick={e => e.stopPropagation()}
               style={{ 
-                left: formData.layout.banner.x, 
-                top: formData.layout.banner.y,
-                width: formData.layout.banner.w,
-                height: formData.layout.banner.h,
-                zIndex: formData.layout.banner.zIndex
+                left: formData.layout.banner?.x ?? 0, 
+                top: formData.layout.banner?.y ?? 0,
+                width: formData.layout.banner?.w ?? 0,
+                height: formData.layout.banner?.h ?? 0,
+                zIndex: formData.layout.banner?.zIndex ?? 0
               }}
             >
               {formData.bannerUrl ? (
@@ -929,12 +929,12 @@ function AdvancedProfileEditor({
               onPointerDown={(e) => handlePointerDown(e, 'pfp', 'move')}
               onClick={e => e.stopPropagation()}
               style={{ 
-                left: formData.layout.pfp.x, 
-                top: formData.layout.pfp.y,
-                width: formData.layout.pfp.w,
-                height: formData.layout.pfp.h,
+                left: formData.layout.pfp?.x ?? 0, 
+                top: formData.layout.pfp?.y ?? 0,
+                width: formData.layout.pfp?.w ?? 0,
+                height: formData.layout.pfp?.h ?? 0,
                 borderRadius: previewRounding,
-                zIndex: formData.layout.pfp.zIndex,
+                zIndex: formData.layout.pfp?.zIndex ?? 2,
                 ...getTargetBorderStyle('profile', bodyBgStyle),
                 overflow: 'hidden'
               }}
@@ -951,11 +951,11 @@ function AdvancedProfileEditor({
               onPointerDown={(e) => handlePointerDown(e, 'name', 'move')}
               onClick={e => e.stopPropagation()}
               style={{ 
-                left: formData.layout.name.x, 
-                top: formData.layout.name.y,
-                width: formData.layout.name.w,
-                height: formData.layout.name.h,
-                zIndex: formData.layout.name.zIndex,
+                left: formData.layout.name?.x ?? 0, 
+                top: formData.layout.name?.y ?? 0,
+                width: formData.layout.name?.w ?? 0,
+                height: formData.layout.name?.h ?? 0,
+                zIndex: formData.layout.name?.zIndex ?? 2,
                 color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor'
               }}
             >
@@ -969,11 +969,11 @@ function AdvancedProfileEditor({
               onPointerDown={(e) => handlePointerDown(e, 'username', 'move')}
               onClick={e => e.stopPropagation()}
               style={{ 
-                left: formData.layout.username.x, 
-                top: formData.layout.username.y,
-                width: formData.layout.username.w,
-                height: formData.layout.username.h,
-                zIndex: formData.layout.username.zIndex,
+                left: formData.layout.username?.x ?? 0, 
+                top: formData.layout.username?.y ?? 0,
+                width: formData.layout.username?.w ?? 0,
+                height: formData.layout.username?.h ?? 0,
+                zIndex: formData.layout.username?.zIndex ?? 2,
                 color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor',
                 opacity: 0.6
               }}
@@ -986,11 +986,11 @@ function AdvancedProfileEditor({
               onPointerDown={(e) => handlePointerDown(e, 'addBtn', 'move')}
               onClick={e => e.stopPropagation()}
               style={{ 
-                left: formData.layout.addBtn.x, 
-                top: formData.layout.addBtn.y,
-                width: formData.layout.addBtn.w,
-                height: formData.layout.addBtn.h,
-                zIndex: formData.layout.addBtn.zIndex
+                left: formData.layout.addBtn?.x ?? 0, 
+                top: formData.layout.addBtn?.y ?? 0,
+                width: formData.layout.addBtn?.w ?? 0,
+                height: formData.layout.addBtn?.h ?? 0,
+                zIndex: formData.layout.addBtn?.zIndex ?? 2
               }}
             >
               <Button 
@@ -1011,11 +1011,11 @@ function AdvancedProfileEditor({
               onPointerDown={(e) => handlePointerDown(e, 'aboutHeader', 'move')}
               onClick={e => e.stopPropagation()}
               style={{ 
-                left: formData.layout.aboutHeader.x, 
-                top: formData.layout.aboutHeader.y,
-                width: formData.layout.aboutHeader.w,
-                height: formData.layout.aboutHeader.h,
-                zIndex: formData.layout.aboutHeader.zIndex,
+                left: formData.layout.aboutHeader?.x ?? 0, 
+                top: formData.layout.aboutHeader?.y ?? 0,
+                width: formData.layout.aboutHeader?.w ?? 0,
+                height: formData.layout.aboutHeader?.h ?? 0,
+                zIndex: formData.layout.aboutHeader?.zIndex ?? 2,
                 color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor',
                 opacity: 0.4
               }}
@@ -1028,11 +1028,11 @@ function AdvancedProfileEditor({
               onPointerDown={(e) => handlePointerDown(e, 'bio', 'move')}
               onClick={e => e.stopPropagation()}
               style={{ 
-                left: formData.layout.bio.x, 
-                top: formData.layout.bio.y,
-                width: formData.layout.bio.w,
-                height: formData.layout.bio.h,
-                zIndex: formData.layout.bio.zIndex,
+                left: formData.layout.bio?.x ?? 0, 
+                top: formData.layout.bio?.y ?? 0,
+                width: formData.layout.bio?.w ?? 0,
+                height: formData.layout.bio?.h ?? 0,
+                zIndex: formData.layout.bio?.zIndex ?? 2,
                 color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor',
               }}
             >
