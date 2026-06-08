@@ -667,11 +667,10 @@ function AdvancedProfileEditor({
 
   const handlePointerDown = (e: React.PointerEvent, id: string, type: 'move' | 'resize' | 'rotate', dir?: string) => {
     e.stopPropagation();
+    setSelectedId(id);
     
     if (id === 'banner' && type === 'move') return;
 
-    setSelectedId(id);
-  
     const element = id.startsWith('sticker-')
       ? formData.stickers.find((s: any) => s.id === id.replace('sticker-', ''))
       : formData.layout[id];
@@ -782,12 +781,12 @@ function AdvancedProfileEditor({
           )
         };
       } else {
-        const currentZ = prev.layout[selectedId].zIndex || 0;
+        const currentZ = prev.layout[selectedId as keyof ProfileLayout]?.zIndex ?? 0;
         return {
           ...prev,
           layout: {
             ...prev.layout,
-            [selectedId]: { ...prev.layout[selectedId], zIndex: Math.max(0, currentZ + delta) }
+            [selectedId]: { ...prev.layout[selectedId as keyof ProfileLayout], zIndex: Math.max(0, currentZ + delta) }
           }
         };
       }
@@ -825,8 +824,8 @@ function AdvancedProfileEditor({
       <div 
         className="absolute border-2 border-primary pointer-events-none z-[199]"
         style={{
-          left: element.x - 4, 
-          top: element.y - 4, 
+          left: (element.x ?? 0) - 4, 
+          top: (element.y ?? 0) - 4, 
           width: (element.w || 0) + 8, 
           height: (element.h || 0) + 8,
           transform: `rotate(${element.rotation || 0}deg)`
