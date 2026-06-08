@@ -136,7 +136,7 @@ export default function AvatarPickerPage() {
           )}
         </div>
 
-        {/* Footer Nav Controls */}
+        {/* Footer Nav Controls ok*/}
         <div className="absolute bottom-[100px] left-[134px] z-[100] flex items-center gap-8">
            <div className="flex items-center gap-4 group">
              <div className="w-[50px] h-[50px] bg-green-500 rounded-full flex items-center justify-center text-white font-black text-2xl shadow-lg group-hover:animate-pulse">A</div>
