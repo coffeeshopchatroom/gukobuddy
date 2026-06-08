@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -34,7 +33,8 @@ import {
   Redo2, 
   Star, 
   Trash2,
-  RotateCw
+  RotateCw,
+  Layers
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { 
@@ -84,6 +84,7 @@ type ElementLayout = {
   y: number;
   w: number;
   h: number;
+  zIndex: number;
 };
 
 type Sticker = ElementLayout & {
@@ -93,6 +94,7 @@ type Sticker = ElementLayout & {
 };
 
 type ProfileLayout = {
+  banner: ElementLayout;
   pfp: ElementLayout;
   name: ElementLayout;
   username: ElementLayout;
@@ -102,12 +104,13 @@ type ProfileLayout = {
 };
 
 const DEFAULT_LAYOUT: ProfileLayout = {
-  pfp: { x: 24, y: 40, w: 96, h: 96 },
-  name: { x: 136, y: 50, w: 200, h: 48 },
-  username: { x: 136, y: 98, w: 150, h: 24 },
-  bio: { x: 24, y: 200, w: 300, h: 60 },
-  addBtn: { x: 450, y: 50, w: 120, h: 44 },
-  aboutHeader: { x: 24, y: 175, w: 100, h: 20 }
+  banner: { x: 0, y: 0, w: 600, h: 80, zIndex: 0 },
+  pfp: { x: 24, y: 40, w: 96, h: 96, zIndex: 2 },
+  name: { x: 136, y: 50, w: 200, h: 48, zIndex: 2 },
+  username: { x: 136, y: 98, w: 150, h: 24, zIndex: 2 },
+  bio: { x: 24, y: 200, w: 300, h: 60, zIndex: 2 },
+  addBtn: { x: 450, y: 50, w: 120, h: 44, zIndex: 2 },
+  aboutHeader: { x: 24, y: 175, w: 100, h: 20, zIndex: 2 }
 };
 
 export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCustomizerProps) {
@@ -168,7 +171,7 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
         font: profile.font || 'Plus Jakarta Sans',
         cornerRounding: profile.cornerRounding ?? 16,
         layout: profile.layout || DEFAULT_LAYOUT,
-        stickers: (profile.stickers || []).map((s: any) => ({ ...s, rotation: s.rotation || 0 }))
+        stickers: (profile.stickers || []).map((s: any) => ({ ...s, rotation: s.rotation || 0, zIndex: s.zIndex || 1 }))
       });
     }
   }, [profile]);
@@ -192,7 +195,8 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
           y: 200,
           w: 80,
           h: 80,
-          rotation: 0
+          rotation: 0,
+          zIndex: formData.stickers.length + 5
         };
         setFormData(prev => ({ ...prev, stickers: [...prev.stickers, newSticker] }));
       } else {
@@ -441,16 +445,27 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
               </div>
               
               <div 
-                className="w-full h-[300px] overflow-hidden relative transition-all duration-300 shadow-2xl border border-border"
+                className="w-full aspect-[3/2] overflow-hidden relative transition-all duration-300 shadow-2xl border border-border"
                 style={{ 
                   borderRadius: previewRounding,
                   fontFamily: formData.font,
                   background: bodyBgStyle,
                 }}
               >
-                <div className="h-16 w-full relative bg-muted/20">
-                  {formData.bannerUrl && (
+                <div 
+                  className="absolute transition-all"
+                  style={{ 
+                    left: formData.layout.banner.x, 
+                    top: formData.layout.banner.y,
+                    width: formData.layout.banner.w,
+                    height: formData.layout.banner.h,
+                    zIndex: formData.layout.banner.zIndex
+                  }}
+                >
+                  {formData.bannerUrl ? (
                     <img src={formData.bannerUrl} className="w-full h-full object-cover" alt="banner" />
+                  ) : (
+                    <div className="w-full h-full bg-muted/20" />
                   )}
                 </div>
                 
@@ -462,6 +477,7 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
                     width: formData.layout.pfp.w,
                     height: formData.layout.pfp.h,
                     borderRadius: previewRounding,
+                    zIndex: formData.layout.pfp.zIndex,
                     ...getTargetBorderStyle('profile', bodyBgStyle),
                     overflow: 'hidden'
                   }}
@@ -482,6 +498,7 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
                     top: formData.layout.name.y,
                     width: formData.layout.name.w,
                     height: formData.layout.name.h,
+                    zIndex: formData.layout.name.zIndex,
                     color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor'
                   }}
                 >
@@ -495,6 +512,7 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
                     top: formData.layout.username.y,
                     width: formData.layout.username.w,
                     height: formData.layout.username.h,
+                    zIndex: formData.layout.username.zIndex,
                     color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor',
                     opacity: 0.6
                   }}
@@ -508,7 +526,8 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
                     left: formData.layout.addBtn.x, 
                     top: formData.layout.addBtn.y,
                     width: formData.layout.addBtn.w,
-                    height: formData.layout.addBtn.h
+                    height: formData.layout.addBtn.h,
+                    zIndex: formData.layout.addBtn.zIndex
                   }}
                 >
                   <Button 
@@ -531,6 +550,7 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
                     top: formData.layout.aboutHeader.y,
                     width: formData.layout.aboutHeader.w,
                     height: formData.layout.aboutHeader.h,
+                    zIndex: formData.layout.aboutHeader.zIndex,
                     color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor',
                     opacity: 0.4
                   }}
@@ -545,6 +565,7 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
                     top: formData.layout.bio.y,
                     width: formData.layout.bio.w,
                     height: formData.layout.bio.h,
+                    zIndex: formData.layout.bio.zIndex,
                     color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor',
                   }}
                 >
@@ -559,6 +580,7 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
                     className="absolute transition-all pointer-events-none"
                     style={{
                       left: sticker.x, top: sticker.y, width: sticker.w, height: sticker.h,
+                      zIndex: sticker.zIndex,
                       transform: `rotate(${sticker.rotation || 0}deg)`
                     }}
                   >
@@ -645,6 +667,9 @@ function AdvancedProfileEditor({
 
   const handlePointerDown = (e: React.PointerEvent, id: string, type: 'move' | 'resize' | 'rotate', dir?: string) => {
     e.stopPropagation();
+    
+    if (id === 'banner' && type === 'move') return;
+
     setSelectedId(id);
   
     const element = id.startsWith('sticker-')
@@ -704,15 +729,18 @@ function AdvancedProfileEditor({
 
       if (dir.includes('e')) changes.w = Math.max(10, dragState.initialW + dx);
       if (dir.includes('s')) changes.h = Math.max(10, dragState.initialH + dy);
-      if (dir.includes('w')) {
-        const newW = Math.max(10, dragState.initialW - dx);
-        changes.w = newW;
-        changes.x = dragState.initialX + (dragState.initialW - newW);
-      }
-      if (dir.includes('n')) {
-        const newH = Math.max(10, dragState.initialH - dy);
-        changes.h = newH;
-        changes.y = dragState.initialY + (dragState.initialH - newH);
+      
+      if (dragState.id !== 'banner') {
+        if (dir.includes('w')) {
+          const newW = Math.max(10, dragState.initialW - dx);
+          changes.w = newW;
+          changes.x = dragState.initialX + (dragState.initialW - newW);
+        }
+        if (dir.includes('n')) {
+          const newH = Math.max(10, dragState.initialH - dy);
+          changes.h = newH;
+          changes.y = dragState.initialY + (dragState.initialH - newH);
+        }
       }
 
       setFormData((prev: any) => updateElement(prev, dragState.id, changes));
@@ -741,6 +769,32 @@ function AdvancedProfileEditor({
     }
   };
 
+  const changeLayer = (delta: number) => {
+    if (!selectedId) return;
+    
+    setFormData((prev: any) => {
+      if (selectedId.startsWith('sticker-')) {
+        const sid = selectedId.replace('sticker-', '');
+        return {
+          ...prev,
+          stickers: prev.stickers.map((s: any) => 
+            s.id === sid ? { ...s, zIndex: Math.max(0, (s.zIndex || 0) + delta) } : s
+          )
+        };
+      } else {
+        const currentZ = prev.layout[selectedId].zIndex || 0;
+        return {
+          ...prev,
+          layout: {
+            ...prev.layout,
+            [selectedId]: { ...prev.layout[selectedId], zIndex: Math.max(0, currentZ + delta) }
+          }
+        };
+      }
+    });
+    saveToHistory(formData);
+  };
+
   const deleteSelected = () => {
     if (!selectedId) return;
     if (selectedId.startsWith('sticker-')) {
@@ -756,7 +810,7 @@ function AdvancedProfileEditor({
 
   const renderHandle = (id: string, dir: string, className: string) => (
     <div 
-      className={cn("absolute w-4 h-4 bg-background border-2 border-primary z-50 rounded-full shadow-md", className)}
+      className={cn("absolute w-4 h-4 bg-background border-2 border-primary z-[200] rounded-full shadow-md", className)}
       onPointerDown={(e) => handlePointerDown(e, id, 'resize', dir)}
       onClick={e => e.stopPropagation()}
     />
@@ -765,25 +819,29 @@ function AdvancedProfileEditor({
   const renderSelectionBox = (id: string, element: any) => {
     if (selectedId !== id) return null;
     const isSticker = id.startsWith('sticker-');
+    const isBanner = id === 'banner';
+
     return (
       <div 
-        className="absolute border-2 border-primary pointer-events-none z-[99]"
+        className="absolute border-2 border-primary pointer-events-none z-[199]"
         style={{
           left: element.x - 4, 
           top: element.y - 4, 
-          width: element.w + 8, 
-          height: element.h + 8,
+          width: (element.w || 0) + 8, 
+          height: (element.h || 0) + 8,
           transform: `rotate(${element.rotation || 0}deg)`
         }}
       >
-        {renderHandle(id, 'nw', "top-[-8px] left-[-8px] cursor-nw-resize pointer-events-auto")}
-        {renderHandle(id, 'ne', "top-[-8px] right-[-8px] cursor-ne-resize pointer-events-auto")}
-        {renderHandle(id, 'sw', "bottom-[-8px] left-[-8px] cursor-sw-resize pointer-events-auto")}
+        {!isBanner && renderHandle(id, 'nw', "top-[-8px] left-[-8px] cursor-nw-resize pointer-events-auto")}
+        {!isBanner && renderHandle(id, 'ne', "top-[-8px] right-[-8px] cursor-ne-resize pointer-events-auto")}
+        {!isBanner && renderHandle(id, 'sw', "bottom-[-8px] left-[-8px] cursor-sw-resize pointer-events-auto")}
         {renderHandle(id, 'se', "bottom-[-8px] right-[-8px] cursor-se-resize pointer-events-auto")}
+        {isBanner && renderHandle(id, 's', "bottom-[-8px] left-1/2 -translate-x-1/2 cursor-s-resize pointer-events-auto")}
+        {isBanner && renderHandle(id, 'e', "right-[-8px] top-1/2 -translate-y-1/2 cursor-e-resize pointer-events-auto")}
 
         {isSticker && (
           <div
-            className="absolute w-5 h-5 flex items-center justify-center bg-background border-2 border-primary z-50 rounded-full shadow-md top-[-25px] left-1/2 -translate-x-1/2 cursor-alias pointer-events-auto"
+            className="absolute w-5 h-5 flex items-center justify-center bg-background border-2 border-primary z-[200] rounded-full shadow-md top-[-25px] left-1/2 -translate-x-1/2 cursor-alias pointer-events-auto"
             onPointerDown={(e) => handlePointerDown(e, id, 'rotate')}
             onClick={e => e.stopPropagation()}
           >
@@ -804,6 +862,19 @@ function AdvancedProfileEditor({
               <Button variant="ghost" size="icon" onClick={undo} disabled={historyIndex <= 0} className="h-9 w-9 text-foreground hover:bg-muted"><Undo2 className="h-5 w-5" /></Button>
               <Button variant="ghost" size="icon" onClick={redo} disabled={historyIndex >= history.length - 1} className="h-9 w-9 text-foreground hover:bg-muted"><Redo2 className="h-5 w-5" /></Button>
             </div>
+            
+            {selectedId && (
+              <div className="flex items-center gap-2 bg-muted/40 p-1 rounded-xl border border-border/10">
+                <Button variant="ghost" size="icon" onClick={() => changeLayer(1)} className="h-9 w-9 text-foreground hover:bg-muted" title="Bring Forward">
+                  <Layers className="h-4 w-4" />
+                  <span className="text-[10px] ml-1">+</span>
+                </Button>
+                <Button variant="ghost" size="icon" onClick={() => changeLayer(-1)} className="h-9 w-9 text-foreground hover:bg-muted" title="Send Backward">
+                  <Layers className="h-4 w-4" />
+                  <span className="text-[10px] ml-1">-</span>
+                </Button>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-4">
@@ -834,14 +905,27 @@ function AdvancedProfileEditor({
               background: bodyBgStyle,
             }}
           >
-            <div className="h-20 w-full absolute top-0 left-0 bg-muted/10 z-0">
-              {formData.bannerUrl && (
-                <img src={formData.bannerUrl} className="w-full h-full object-cover" alt="banner" />
+            <div 
+              className={cn("absolute cursor-pointer", selectedId === 'banner' ? "z-[100]" : "z-[1]")}
+              onPointerDown={(e) => handlePointerDown(e, 'banner', 'move')}
+              onClick={e => e.stopPropagation()}
+              style={{ 
+                left: formData.layout.banner.x, 
+                top: formData.layout.banner.y,
+                width: formData.layout.banner.w,
+                height: formData.layout.banner.h,
+                zIndex: formData.layout.banner.zIndex
+              }}
+            >
+              {formData.bannerUrl ? (
+                <img src={formData.bannerUrl} className="w-full h-full object-cover select-none pointer-events-none" alt="banner" />
+              ) : (
+                <div className="w-full h-full bg-muted/10" />
               )}
             </div>
 
             <div 
-              className={cn("absolute cursor-pointer", selectedId === 'pfp' ? "z-50" : "z-10")}
+              className={cn("absolute cursor-pointer", selectedId === 'pfp' ? "z-[100]" : "z-[10]")}
               onPointerDown={(e) => handlePointerDown(e, 'pfp', 'move')}
               onClick={e => e.stopPropagation()}
               style={{ 
@@ -850,6 +934,7 @@ function AdvancedProfileEditor({
                 width: formData.layout.pfp.w,
                 height: formData.layout.pfp.h,
                 borderRadius: previewRounding,
+                zIndex: formData.layout.pfp.zIndex,
                 ...getTargetBorderStyle('profile', bodyBgStyle),
                 overflow: 'hidden'
               }}
@@ -862,7 +947,7 @@ function AdvancedProfileEditor({
             </div>
 
             <div 
-              className={cn("absolute cursor-pointer", selectedId === 'name' ? "z-50" : "z-10")}
+              className={cn("absolute cursor-pointer", selectedId === 'name' ? "z-[100]" : "z-[10]")}
               onPointerDown={(e) => handlePointerDown(e, 'name', 'move')}
               onClick={e => e.stopPropagation()}
               style={{ 
@@ -870,6 +955,7 @@ function AdvancedProfileEditor({
                 top: formData.layout.name.y,
                 width: formData.layout.name.w,
                 height: formData.layout.name.h,
+                zIndex: formData.layout.name.zIndex,
                 color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor'
               }}
             >
@@ -879,7 +965,7 @@ function AdvancedProfileEditor({
             </div>
 
             <div 
-              className={cn("absolute cursor-pointer", selectedId === 'username' ? "z-50" : "z-10")}
+              className={cn("absolute cursor-pointer", selectedId === 'username' ? "z-[100]" : "z-[10]")}
               onPointerDown={(e) => handlePointerDown(e, 'username', 'move')}
               onClick={e => e.stopPropagation()}
               style={{ 
@@ -887,6 +973,7 @@ function AdvancedProfileEditor({
                 top: formData.layout.username.y,
                 width: formData.layout.username.w,
                 height: formData.layout.username.h,
+                zIndex: formData.layout.username.zIndex,
                 color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor',
                 opacity: 0.6
               }}
@@ -895,14 +982,15 @@ function AdvancedProfileEditor({
             </div>
 
             <div 
-              className={cn("absolute cursor-pointer", selectedId === 'addBtn' ? "z-50" : "z-10")}
+              className={cn("absolute cursor-pointer", selectedId === 'addBtn' ? "z-[100]" : "z-[10]")}
               onPointerDown={(e) => handlePointerDown(e, 'addBtn', 'move')}
               onClick={e => e.stopPropagation()}
               style={{ 
                 left: formData.layout.addBtn.x, 
                 top: formData.layout.addBtn.y,
                 width: formData.layout.addBtn.w,
-                height: formData.layout.addBtn.h
+                height: formData.layout.addBtn.h,
+                zIndex: formData.layout.addBtn.zIndex
               }}
             >
               <Button 
@@ -919,7 +1007,7 @@ function AdvancedProfileEditor({
             </div>
 
             <div 
-              className={cn("absolute cursor-pointer", selectedId === 'aboutHeader' ? "z-50" : "z-10")}
+              className={cn("absolute cursor-pointer", selectedId === 'aboutHeader' ? "z-[100]" : "z-[10]")}
               onPointerDown={(e) => handlePointerDown(e, 'aboutHeader', 'move')}
               onClick={e => e.stopPropagation()}
               style={{ 
@@ -927,6 +1015,7 @@ function AdvancedProfileEditor({
                 top: formData.layout.aboutHeader.y,
                 width: formData.layout.aboutHeader.w,
                 height: formData.layout.aboutHeader.h,
+                zIndex: formData.layout.aboutHeader.zIndex,
                 color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor',
                 opacity: 0.4
               }}
@@ -935,7 +1024,7 @@ function AdvancedProfileEditor({
             </div>
 
             <div 
-              className={cn("absolute cursor-pointer", selectedId === 'bio' ? "z-50" : "z-10")}
+              className={cn("absolute cursor-pointer", selectedId === 'bio' ? "z-[100]" : "z-[10]")}
               onPointerDown={(e) => handlePointerDown(e, 'bio', 'move')}
               onClick={e => e.stopPropagation()}
               style={{ 
@@ -943,6 +1032,7 @@ function AdvancedProfileEditor({
                 top: formData.layout.bio.y,
                 width: formData.layout.bio.w,
                 height: formData.layout.bio.h,
+                zIndex: formData.layout.bio.zIndex,
                 color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor',
               }}
             >
@@ -954,11 +1044,12 @@ function AdvancedProfileEditor({
             {formData.stickers.map((sticker: Sticker) => (
               <div 
                 key={sticker.id}
-                className={cn("absolute cursor-pointer", selectedId === `sticker-${sticker.id}` ? "z-50" : "z-10")}
+                className={cn("absolute cursor-pointer", selectedId === `sticker-${sticker.id}` ? "z-[150]" : "z-[15]")}
                 onPointerDown={(e) => handlePointerDown(e, `sticker-${sticker.id}`, 'move')}
                 onClick={e => e.stopPropagation()}
                 style={{
                   left: sticker.x, top: sticker.y, width: sticker.w, height: sticker.h,
+                  zIndex: sticker.zIndex,
                   transform: `rotate(${sticker.rotation || 0}deg)`
                 }}
               >
@@ -1042,4 +1133,3 @@ function AestheticColorPickerContent({ label, value, onChange }: { label: string
     </div>
   );
 }
-

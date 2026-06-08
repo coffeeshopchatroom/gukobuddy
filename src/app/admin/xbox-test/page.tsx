@@ -61,12 +61,12 @@ const GradientCard = ({
       <div
         className="absolute top-full left-0 w-full h-full opacity-30 transition-all duration-700 pointer-events-none"
         style={{
-          transform: 'scaleY(-1) translateY(20px)',
-          maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, transparent 50%)',
-          WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, transparent 50%)',
+          transform: 'scaleY(-1) translateY(2px)',
+          maskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 60%)',
+          WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 60%)',
         }}
       >
-        <div className="w-full h-full rounded-[11px] bg-white/20" />
+        <div className="w-full h-full rounded-[11px] bg-white/20 blur-md" />
       </div>
 
       <div className="absolute top-0 left-0 w-full h-full">
@@ -233,12 +233,12 @@ export default function Xbox360ThemeReplica() {
             <div
               className="absolute top-full left-0 w-full h-full opacity-30 transition-all duration-700 pointer-events-none"
               style={{
-                transform: 'scaleY(-1) translateY(20px)',
-                maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, transparent 50%)',
-                WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, transparent 50%)',
+                transform: 'scaleY(-1) translateY(2px)',
+                maskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 60%)',
+                WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 60%)',
               }}
             >
-              <div className="w-full h-full rounded-[11px] bg-white/20" />
+              <div className="w-full h-full rounded-[11px] bg-white/20 blur-md" />
             </div>
             <div className="absolute top-[489px] left-12 [text-shadow:0px_4px_4px_#00000040] font-headline text-white text-[50px] ">Open Channel</div>
             <div className="absolute bottom-[320px] left-0 font-normal text-black/40 text-3xl px-12">1 of 8</div>
@@ -274,12 +274,12 @@ export default function Xbox360ThemeReplica() {
             <div
               className="absolute top-full left-0 w-full h-full opacity-30 transition-all duration-700 pointer-events-none"
               style={{
-                transform: 'scaleY(-1) translateY(20px)',
-                maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, transparent 50%)',
-                WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, transparent 50%)',
+                transform: 'scaleY(-1) translateY(2px)',
+                maskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 60%)',
+                WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 60%)',
               }}
             >
-              <div className="w-full h-full rounded-[11px] bg-white/20" />
+              <div className="w-full h-full rounded-[11px] bg-white/20 blur-md" />
             </div>
             <div className="absolute top-[347px] left-12 font-headline text-white text-[35px] ">Controllers</div>
           </section>
