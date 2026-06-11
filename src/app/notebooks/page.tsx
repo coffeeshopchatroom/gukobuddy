@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -210,31 +211,22 @@ export default function NotebooksPage() {
   const { data: notes, isLoading: isNotesLoading } = useCollection(notesQuery)
   const selectedNote = notes?.find(n => n.id === selectedNoteId)
 
-  // Editor setup
+  // Editor setup - IMPORTANT: Only re-initialize when the selected ID changes.
+  // Re-initializing when 'notes' updates causes focus loss while typing.
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        bulletList: {
-          keepMarks: true,
-          keepAttributes: false,
-        },
-        orderedList: {
-          keepMarks: true,
-          keepAttributes: false,
-        },
+        bulletList: { keepMarks: true, keepAttributes: false },
+        orderedList: { keepMarks: true, keepAttributes: false },
       }),
       Placeholder.configure({
         placeholder: "type '/' for commands...",
       }),
       TaskList,
-      TaskItem.configure({
-        nested: true,
-      }),
+      TaskItem.configure({ nested: true }),
       Link.configure({
-        openOnClick: false, // Handle clicks manually to allow internal navigation
-        HTMLAttributes: {
-          class: 'subpage-link',
-        },
+        openOnClick: false,
+        HTMLAttributes: { class: 'subpage-link' },
       }),
     ],
     content: selectedNote?.content || '',
@@ -262,27 +254,26 @@ export default function NotebooksPage() {
         const link = target.closest('a.subpage-link');
         if (link) {
           event.preventDefault();
-          // Find the link's text content to extract the original title if needed
-          // But actually we just need to identify which note it points to.
-          // For simplicity in this demo, let's assume we can match by title or text
-          const linkText = link.textContent?.replace('📄 ', '').trim();
-          const targetNote = notes?.find(n => n.title === linkText || n.id === link.getAttribute('data-id'));
-          if (targetNote) {
-            setSelectedNoteId(targetNote.id);
+          const noteId = link.getAttribute('data-id');
+          if (noteId) {
+            setSelectedNoteId(noteId);
           }
           return true;
         }
         return false;
       }
     }
-  }, [selectedNoteId, notes])
+  }, [selectedNoteId]) // Removed 'notes' to prevent focus loss glitch
 
-  // Sync editor content when selected note changes
+  // Sync remote content back to the editor ONLY when the editor is NOT focused
+  // to avoid jumping cursors while the user is typing.
   React.useEffect(() => {
-    if (editor && selectedNote && editor.getHTML() !== selectedNote.content) {
-      editor.commands.setContent(selectedNote.content)
+    if (editor && selectedNote && !editor.isFocused) {
+      if (editor.getHTML() !== selectedNote.content) {
+        editor.commands.setContent(selectedNote.content)
+      }
     }
-  }, [selectedNoteId, editor])
+  }, [selectedNote?.content, editor])
 
   const handleCreateNote = () => {
     if (!user || !db) return
@@ -344,10 +335,8 @@ export default function NotebooksPage() {
   const handleApplyCommand = (command: string, params?: any) => {
     if (!editor) return
     
-    // Defer processing to avoid state collision during event loop
     setTimeout(() => {
       const { from, to } = editor.state.selection
-      // Delete the trigger character '/'
       editor.chain().focus().deleteRange({ from: from - 1, to: to }).run()
 
       switch (command) {
@@ -361,7 +350,6 @@ export default function NotebooksPage() {
           break;
         case 'subpage': 
           if (params?.id) {
-            // Include data-id for easier internal navigation tracking
             editor.chain().focus().insertContent(`<a href="/notebooks" class="subpage-link" data-id="${params.id}">📄 ${params.title || 'untitled'}</a>`).run();
           }
           break;
@@ -683,12 +671,11 @@ function SlashCommandMenu({ editor, onApply, notes }: { editor: any, onApply: (c
   React.useEffect(() => {
     const { from } = editor.state.selection
     const domPos = editor.view.coordsAtPos(from)
-    // Position menu explicitly ABOVE the cursor to avoid clipping
     setCoords({ 
       top: domPos.top + window.scrollY - 340, 
       left: domPos.left + window.scrollX 
     })
-  }, [editor])
+  }, [editor, editor.state.selection])
 
   const commands = [
     { id: 'text', label: 'text', desc: 'start writing with plain text.', icon: <Type size={16} />, action: () => onApply('text') },
