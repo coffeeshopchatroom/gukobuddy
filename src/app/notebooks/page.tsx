@@ -181,7 +181,7 @@ export default function NotebooksPage() {
   }
 
   return (
-    <div className="fixed inset-0 bg-white z-[9999] flex overflow-hidden font-sans selection:bg-[#c1e2ff]">
+    <div className="min-h-screen bg-white flex overflow-hidden font-sans selection:bg-[#c1e2ff]">
       {/* Notion-style Sidebar */}
       <aside className="w-[240px] flex flex-col shrink-0 bg-[#fbfbfa] border-r border-[#0000000f] h-full overflow-hidden group/sidebar">
         {/* Sidebar Header */}
