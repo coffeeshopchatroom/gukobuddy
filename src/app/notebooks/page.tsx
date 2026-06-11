@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -232,7 +231,7 @@ export default function NotebooksPage() {
         nested: true,
       }),
       Link.configure({
-        openOnClick: true,
+        openOnClick: false, // Handle clicks manually to allow internal navigation
         HTMLAttributes: {
           class: 'subpage-link',
         },
@@ -257,9 +256,26 @@ export default function NotebooksPage() {
           setIsSlashMenuOpen(false)
         }
         return false
+      },
+      handleClick: (view, pos, event) => {
+        const target = event.target as HTMLElement;
+        const link = target.closest('a.subpage-link');
+        if (link) {
+          event.preventDefault();
+          // Find the link's text content to extract the original title if needed
+          // But actually we just need to identify which note it points to.
+          // For simplicity in this demo, let's assume we can match by title or text
+          const linkText = link.textContent?.replace('📄 ', '').trim();
+          const targetNote = notes?.find(n => n.title === linkText || n.id === link.getAttribute('data-id'));
+          if (targetNote) {
+            setSelectedNoteId(targetNote.id);
+          }
+          return true;
+        }
+        return false;
       }
     }
-  }, [selectedNoteId])
+  }, [selectedNoteId, notes])
 
   // Sync editor content when selected note changes
   React.useEffect(() => {
@@ -345,7 +361,8 @@ export default function NotebooksPage() {
           break;
         case 'subpage': 
           if (params?.id) {
-            editor.chain().focus().insertContent(`<a href="/notebooks" class="subpage-link">📄 ${params.title || 'untitled'}</a>`).run();
+            // Include data-id for easier internal navigation tracking
+            editor.chain().focus().insertContent(`<a href="/notebooks" class="subpage-link" data-id="${params.id}">📄 ${params.title || 'untitled'}</a>`).run();
           }
           break;
         default: break;
@@ -509,7 +526,7 @@ export default function NotebooksPage() {
                 <div className="relative group -mt-16 mb-8 w-fit">
                   <div 
                     onClick={() => { setPickerType('icon'); setIsMediaPickerOpen(true); }}
-                    className="text-8xl cursor-pointer hover:bg-[#0000000a] p-2 rounded-3xl transition-all flex items-center justify-center min-w-[128px] min-h-[128px]"
+                    className="text-8xl cursor-pointer hover:bg-[#0000000a] p-2 rounded-3xl transition-all flex items-center justify-center min-w-[128px] min-h-[128px] emoji-font"
                   >
                     <IconRenderer icon={selectedNote.icon} className="w-24 h-24" />
                   </div>
@@ -611,7 +628,7 @@ export default function NotebooksPage() {
                     <button 
                       key={i} 
                       onClick={() => updateMedia(emoji, 'icon')}
-                      className="aspect-square flex items-center justify-center text-2xl rounded-xl hover:bg-muted/10 transition-all border border-transparent hover:border-border/40"
+                      className="aspect-square flex items-center justify-center text-2xl rounded-xl hover:bg-muted/10 transition-all border border-transparent hover:border-border/40 emoji-font"
                     >
                       {emoji}
                     </button>
@@ -666,8 +683,11 @@ function SlashCommandMenu({ editor, onApply, notes }: { editor: any, onApply: (c
   React.useEffect(() => {
     const { from } = editor.state.selection
     const domPos = editor.view.coordsAtPos(from)
-    // Offset above the cursor
-    setCoords({ top: domPos.top + window.scrollY - 320, left: domPos.left + window.scrollX })
+    // Position menu explicitly ABOVE the cursor to avoid clipping
+    setCoords({ 
+      top: domPos.top + window.scrollY - 340, 
+      left: domPos.left + window.scrollX 
+    })
   }, [editor])
 
   const commands = [
@@ -736,7 +756,7 @@ function IconRenderer({ icon, className }: { icon: string, className?: string })
   const LucideIcon = LUCIDE_ICONS[icon];
   if (LucideIcon) return <LucideIcon className={className} />;
   if (icon.startsWith('http') || icon.startsWith('data:')) return <img src={icon} className={cn("object-cover", className)} alt="icon" />;
-  return <span className={cn("leading-none", className)}>{icon}</span>;
+  return <span className={cn("leading-none emoji-font", className)}>{icon}</span>;
 }
 
 function SidebarNoteItem({ note, isActive, onClick, onDelete }: any) {
