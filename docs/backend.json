@@ -158,6 +158,8 @@
         "title": { "type": "string" },
         "content": { "type": "string", "description": "HTML content from the rich text editor." },
         "icon": { "type": "string" },
+        "coverImage": { "type": "string" },
+        "iconType": { "type": "string", "enum": ["emoji", "icon", "image"] },
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" }
       },
