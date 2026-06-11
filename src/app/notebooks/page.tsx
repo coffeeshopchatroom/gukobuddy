@@ -174,14 +174,14 @@ export default function NotebooksPage() {
 
   if (!mounted || isUserLoading) {
     return (
-      <div className="fixed inset-0 bg-white flex items-center justify-center z-[250]">
+      <div className="fixed inset-0 bg-white flex items-center justify-center z-[9999]">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     )
   }
 
   return (
-    <div className="fixed inset-0 bg-white z-[200] flex overflow-hidden font-sans selection:bg-[#c1e2ff]">
+    <div className="fixed inset-0 bg-white z-[9999] flex overflow-hidden font-sans selection:bg-[#c1e2ff]">
       {/* Notion-style Sidebar */}
       <aside className="w-[240px] flex flex-col shrink-0 bg-[#fbfbfa] border-r border-[#0000000f] h-full overflow-hidden group/sidebar">
         {/* Sidebar Header */}
@@ -212,9 +212,9 @@ export default function NotebooksPage() {
         <div className="px-2 mt-6">
           <SidebarAction 
             icon={<Home size={16} />} 
-            label="return to guko buddy" 
+            label="return to dashboard" 
             onClick={() => router.push('/')}
-            className="text-primary font-semibold"
+            className="text-primary font-bold"
           />
         </div>
 
@@ -366,7 +366,7 @@ export default function NotebooksPage() {
 
           {/* Dynamic Toolbar (visible on selection/hover) */}
           {selectedNote && editor && (
-            <div className="fixed bottom-12 left-1/2 -translate-x-1/2 flex items-center gap-1.5 p-1.5 bg-white border border-[#0000001a] shadow-[0_12px_24px_rgba(0,0,0,0.08)] rounded-2xl animate-in slide-in-from-bottom-4 duration-300 z-50">
+            <div className="fixed bottom-12 left-[calc(50%+120px)] -translate-x-1/2 flex items-center gap-1.5 p-1.5 bg-white border border-[#0000001a] shadow-[0_12px_24px_rgba(0,0,0,0.08)] rounded-2xl animate-in slide-in-from-bottom-4 duration-300 z-50">
                <ToolbarButton active={editor.isActive('bold')} onClick={() => editor.chain().focus().toggleBold().run()} icon={<Bold size={18} />} />
                <ToolbarButton active={editor.isActive('italic')} onClick={() => editor.chain().focus().toggleItalic().run()} icon={<Italic size={18} />} />
                <div className="w-[1px] h-5 bg-border/40 mx-1" />

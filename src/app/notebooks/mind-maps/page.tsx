@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils"
 
 export default function MindMapsPage() {
   return (
-    <div className="min-h-[70vh] flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-white z-[9999] flex items-center justify-center p-4">
       <Card className="max-w-2xl w-full border-none shadow-2xl rounded-[48px] overflow-hidden bg-card text-center relative">
         <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary via-indigo-200 to-primary" />
         
