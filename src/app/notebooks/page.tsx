@@ -15,14 +15,9 @@ import {
   MoreHorizontal,
   Loader2,
   ImageIcon,
-  Smile,
-  Upload,
   Search,
-  Grid,
   ChevronLeft,
-  ArrowLeft,
   Settings2,
-  Library,
   Clock,
   Settings,
   ChevronsUpDown,
@@ -86,7 +81,8 @@ import {
   Trash,
   ChevronRight,
   SquareCheck,
-  Type
+  Type,
+  Upload
 } from "lucide-react"
 import { 
   useUser, 
@@ -115,11 +111,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
 
 const STOCK_COVERS = [
   "https://picsum.photos/seed/cover1/1200/400",
@@ -223,7 +214,16 @@ export default function NotebooksPage() {
   // Editor setup
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        bulletList: {
+          keepMarks: true,
+          keepAttributes: false,
+        },
+        orderedList: {
+          keepMarks: true,
+          keepAttributes: false,
+        },
+      }),
       Placeholder.configure({
         placeholder: "type '/' for commands...",
       }),
@@ -253,7 +253,7 @@ export default function NotebooksPage() {
       handleKeyDown: (view, event) => {
         if (event.key === '/') {
           setIsSlashMenuOpen(true)
-        } else {
+        } else if (event.key === 'Escape' || event.key === 'Backspace') {
           setIsSlashMenuOpen(false)
         }
         return false
@@ -328,25 +328,30 @@ export default function NotebooksPage() {
   const handleApplyCommand = (command: string, params?: any) => {
     if (!editor) return
     
-    // Clear the '/' char
-    const { from, to } = editor.state.selection
-    editor.commands.deleteRange({ from: from - 1, to: to })
+    // Defer processing to avoid state collision during event loop
+    setTimeout(() => {
+      const { from, to } = editor.state.selection
+      // Delete the trigger character '/'
+      editor.chain().focus().deleteRange({ from: from - 1, to: to }).run()
 
-    switch (command) {
-      case 'h1': editor.chain().focus().toggleHeading({ level: 1 }).run(); break;
-      case 'h2': editor.chain().focus().toggleHeading({ level: 2 }).run(); break;
-      case 'bullet': editor.chain().focus().toggleBulletList().run(); break;
-      case 'number': editor.chain().focus().toggleOrderedList().run(); break;
-      case 'task': editor.chain().focus().toggleTaskList().run(); break;
-      case 'toggle': editor.chain().focus().insertContent('<details><summary>toggle list</summary><p>content goes here</p></details>').run(); break;
-      case 'subpage': 
-        if (params?.id) {
-          editor.chain().focus().insertContent(`<a href="/notebooks" class="subpage-link">📄 ${params.title || 'untitled'}</a>`).run();
-        }
-        break;
-      default: break;
-    }
-    setIsSlashMenuOpen(false)
+      switch (command) {
+        case 'h1': editor.chain().focus().toggleHeading({ level: 1 }).run(); break;
+        case 'h2': editor.chain().focus().toggleHeading({ level: 2 }).run(); break;
+        case 'bullet': editor.chain().focus().toggleBulletList().run(); break;
+        case 'number': editor.chain().focus().toggleOrderedList().run(); break;
+        case 'task': editor.chain().focus().toggleTaskList().run(); break;
+        case 'toggle': 
+          editor.chain().focus().insertContent('<details class="notion-toggle"><summary>Toggle list</summary><div class="toggle-content"><p>Empty toggle. Press Enter to add more.</p></div></details>').run(); 
+          break;
+        case 'subpage': 
+          if (params?.id) {
+            editor.chain().focus().insertContent(`<a href="/notebooks" class="subpage-link">📄 ${params.title || 'untitled'}</a>`).run();
+          }
+          break;
+        default: break;
+      }
+      setIsSlashMenuOpen(false)
+    }, 10)
   }
 
   if (!mounted || isUserLoading) {
@@ -661,7 +666,8 @@ function SlashCommandMenu({ editor, onApply, notes }: { editor: any, onApply: (c
   React.useEffect(() => {
     const { from } = editor.state.selection
     const domPos = editor.view.coordsAtPos(from)
-    setCoords({ top: domPos.bottom + window.scrollY, left: domPos.left + window.scrollX })
+    // Offset above the cursor
+    setCoords({ top: domPos.top + window.scrollY - 320, left: domPos.left + window.scrollX })
   }, [editor])
 
   const commands = [
@@ -677,11 +683,11 @@ function SlashCommandMenu({ editor, onApply, notes }: { editor: any, onApply: (c
 
   return (
     <div 
-      className="fixed z-[999] bg-white border border-[#0000001a] shadow-[0_12px_24px_rgba(0,0,0,0.08)] rounded-2xl w-72 overflow-hidden animate-in fade-in zoom-in-95 duration-200"
-      style={{ top: coords.top + 8, left: coords.left }}
+      className="fixed z-[999] bg-white border border-[#0000001a] shadow-[0_12px_24px_rgba(0,0,0,0.08)] rounded-2xl w-72 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200"
+      style={{ top: Math.max(10, coords.top), left: coords.left }}
     >
       {!showSubpagePicker ? (
-        <div className="p-1 max-h-96 overflow-y-auto custom-scrollbar">
+        <div className="p-1 max-h-80 overflow-y-auto custom-scrollbar">
           <div className="px-3 py-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">basic blocks</div>
           {commands.map((cmd) => (
             <button
