@@ -140,6 +140,68 @@
   @apply mb-2 leading-relaxed;
 }
 
+/* Task Lists styling */
+.tiptap-editor ul[data-type="taskList"] {
+  list-style: none;
+  padding: 0;
+}
+
+.tiptap-editor ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 0.5rem;
+}
+
+.tiptap-editor ul[data-type="taskList"] li > label {
+  margin-right: 0.75rem;
+  user-select: none;
+  padding-top: 0.2rem;
+}
+
+.tiptap-editor ul[data-type="taskList"] li > div {
+  flex: 1;
+}
+
+.tiptap-editor ul[data-type="taskList"] input[type="checkbox"] {
+  cursor: pointer;
+}
+
+/* Toggle (Details) styling */
+.tiptap-editor details {
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.tiptap-editor summary {
+  cursor: pointer;
+  font-weight: bold;
+  outline: none;
+}
+
+/* Subpage Link styling */
+.tiptap-editor a.subpage-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  background: hsl(var(--muted) / 0.3);
+  border-radius: 0.5rem;
+  color: hsl(var(--foreground));
+  text-decoration: none;
+  font-weight: 500;
+  width: fit-content;
+  margin-bottom: 0.5rem;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+}
+
+.tiptap-editor a.subpage-link:hover {
+  background: hsl(var(--muted) / 0.6);
+  border-color: hsl(var(--border));
+}
+
 /* Custom scrollbar class for components */
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;

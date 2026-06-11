@@ -83,7 +83,10 @@ import {
   MessageSquare,
   Share2,
   Download,
-  Trash
+  Trash,
+  ChevronRight,
+  SquareCheck,
+  Type
 } from "lucide-react"
 import { 
   useUser, 
@@ -98,6 +101,9 @@ import { collection, doc, query, orderBy } from "firebase/firestore"
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
+import TaskList from '@tiptap/extension-task-list'
+import TaskItem from '@tiptap/extension-task-item'
+import Link from '@tiptap/extension-link'
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -109,6 +115,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 
 const STOCK_COVERS = [
   "https://picsum.photos/seed/cover1/1200/400",
@@ -183,16 +194,8 @@ const LUCIDE_ICONS: Record<string, any> = {
 };
 
 const EMOJIS = [
-  // Smileys & People
   "😀", "😃", "😄", "😁", "😆", "😅", "😂", "🤣", "☺️", "😊", "😇", "🙂", "🙃", "😉", "😌", "😍", "🥰", "😘", "😗", "😙", "😚", "😋", "😛", "😝", "😜", "🤪", "🤨", "🧐", "🤓", "😎", "🤩", "🥳", "😏", "😒", "😞", "😔", "😟", "😕", "🙁", "☹️", "😣", "😖", "😫", "😩", "🥺", "😢", "😭", "😤", "😠", "😡", "🤬", "🤯", "😳", "🥵", "🥶", "😱", "😨", "😰", "😥", "😓", "🤗", "🤔", "🤭", "🤫", "🤥", "😶", "😐", "😑", "😬", "🙄", "😯", "😦", "😧", "😮", "😲", "🥱", "😴", "🤤", "😪", "😵", "🤐", "🥴", "🤢", "🤮", "🤧", "😷", "🤒", "🤕", "🤑", "🤠", "😈", "👿", "👹", "👺", "🤡", "💩", "👻", "💀", "☠️", "👽", "👾", "🤖", "🎃", "😺", "😸", "😹", "😻", "😼", "😽", "🙀", "😿", "😾",
-  // Animals & Nature
-  "🐶", "🐱", "🐭", "🐹", "🐰", "🦊", "🐻", "🐼", "🐨", "🐯", "🦁", "🐮", "🐷", "🐽", "🐸", "🐵", "🙈", "🙉", "🙊", "🐒", "🐔", "🐧", "🐦", "🐤", "🐣", "🐥", "🦆", "🦅", "🦉", "🦇", "🐺", "🐗", "🐴", "🦄", "🐝", "🐛", "🦋", "🐌", "🐞", "🐜", "🦟", "🦗", "🕷", "🕸", "🦂", "🐢", "🐍", "🦎", "🦖", "🦕", "🐙", "🦑", "🦐", "🦞", "🦀", "🐡", "🐠", "🐟", "🐬", "🐳", "🐋", "🦈", "🐊", "🐅", "🐆", "🦓", "🦍", "🐘", "🦛", "🦏", "🐪", "🐫", "🦒", "🦘", "🐃", "🐂", "🐄", "🐎", "🐖", "🐏", "🐑", "🦙", "🐐", "🦌", "🐕", "🐩", "🐈", "🐓", "🦃", "🦚", "🦜", "🦢", "🕊", "🐇", "🦝", "🦨", "🦡", "🦦", "🦥", "🐁", "🐀", "🐿", "🦔", "🐾", "🐉", "🐲", "🌵", "🎄", "🌲", "🌳", "🌴", "🌱", "🌿", "☘️", "🍀", "🎍", "🎋", "🍃", "🍂", "🍁", "🍄", "🐚", "🌾", "💐", "🌷", "🌹", "🥀", "🌺", "🌸", "🌼", "🌻", "🌞", "🌝", "🌛", "🌜", "🌚", "🌕", "🌖", "🌗", "🌘", "🌑", "🌒", "🌓", "🌔", "🌙", "🌎", "🌍", "🌏", "🪐", "💫", "⭐️", "🌟", "✨", "⚡️", "☄️", "💥", "🔥", "🌪", "🌈", "☀️", "🌤", "⛅️", "🌥", "☁️", "🌦", "🌧", "⛈", "🌩", "🌨", "❄️", "☃️", "⛄️", "🌬", "💨", "💧", "💦", "☔️", "☂️", "🌊", "🌫",
-  // Food & Drink
-  "🍏", "🍎", "🍐", "🍊", "🍋", "🍌", "🍉", "🍇", "🍓", "🍈", "🍒", "🍑", "🥭", "🍍", "🥥", "🥝", "🍅", "🍆", "🥑", "🥦", "🥬", "🥒", "🌶", "🌽", "🥕", "🥔", "🍠", "🥐", "🥯", "🍞", "🥖", "🥨", "🧀", "🥚", "🍳", "🥞", "🥓", "🥩", "🍗", "🍖", "🦴", "🌭", "🍔", "🍟", "🍕", "🥪", "🥙", "🌮", "🌯", "🥗", "🥘", "🥫", "🍝", "🍜", "🍲", "🍛", "🍣", "🍱", "🥟", "🍤", "🍙", "🍚", "🍘", "🍥", "🥠", "🥮", "🍢", "🍡", "🍧", "🍨", "🍦", "🥧", "🧁", "🍰", "🎂", "🍮", "🍭", "🍬", "🍫", "🍿", "🧂", "🍩", "🍪", "🌰", "🥜", "🍯", "🥛", "🍼", "☕️", "🍵", "🥤", "🍶", "🍺", "🍻", "🥂", "🍷", "🥃", "🍸", "🍹", "🧉", "🍾", "🧊", "🥄", "🍴", "🍽",
-  // Activities
-  "⚽️", "🏀", "🏈", "⚾️", "🥎", "🎾", "🏐", "🏉", "🎱", "🏓", "🏸", "🏒", "🏑", "🥍", "🏏", "🥅", "⛳️", "🪁", "🏹", "🎣", "🤿", "🥊", "🥋", "⛸", "🎿", "🛷", "🥌", "🎯", "🪀", "🎮", "🕹", "🎰", "🎲", "🧩", "🧸", "♠️", "♥️", "♦️", "♣️", "♟", "🃏", "🀄️", "🎴", "🎭", "🖼", "🎨", "🧵", "🧶",
-  // Objects
-  "⌚️", "📱", "📲", "💻", "⌨️", "🖥", "🖨", "🖱", "trackball", "🕹", "🗜", "💽", "💾", "💿", "📀", "📼", "📷", "📸", "📹", "🎥", "📽", "🎞", "📞", "☎️", "📟", "📠", "📺", "📻", "🎙", "🎚", "🎛", "🧭", "⏱", "⏲", "⏰", "🕰", "⌛️", "⏳", "📡", "🔋", "🔌", "💡", "🔦", "🕯", "🪔", "🧯", "🛢", "💸", "💵", "💴", "💶", "💷", "💰", "💳", "💎", "⚖️", "🧰", "🔧", "🔨", "⚒", "🛠", "⛏", "🔩", "⚙️", "🧱", "⛓", "🧲", "🔫", "💣", "🧨", "🪓", "🔪", "🗡", "⚔️", "🛡", "🚬", "⚰️", "⚱️", "🏺", "🔮", "📿", "🧿", "💈", "⚗️", "🔭", "🔬", "🕳", "🩹", "🩺", "💊", "💉", "🩸", "🧬", "🦠", "🧼", "🧽", "🧺", "🧻", "🚽", "🚰", "🚿", "🛀", "🛁", "🧼", "🧴", "🪒", "🧹", "🧺", "🧻", "🧼", "🧽", "🧴", "🛋", "🪑", "🛌", "🛏", "🧸", "🖼", "🛍", "🛒", "🎁", "🎈", "🎏", "🎀", "🎊", "🎉", "🎎", "🏮", "🎐", "🧧", "✉️", "📩", "📨", "📧", "💌", "📥", "📤", "📦", "🏷", "📪", "📫", "📬", "📭", "📮", "📯", "📜", "📜", "📄", "📑", "📊", "📈", "📉", "🗒", "🗓", "📆", "📅", "🗑", "📇", "🗃", "📂", "📁", "📂", "🗂", "🗞", "📰", "📓", "📔", "📒", "📕", "📗", "📘", "📙", "📚", "📖", "🔖", "🧷", "🔗", "📎", "🖇", "📐", "📏", "🧮", "📌", "📍", "✂️", "🖊", "🖋", "✒️", "🖌", "🖍", "📝", "✏️", "🔍", "🔎", "🔏", "🔐", "🔒", "🔓"
+  "🐶", "🐱", "🐭", "🐹", "🐰", "🦊", "🐻", "🐼", "🐨", "🐯", "🦁", "🐮", "🐷", "🐽", "🐸", "🐵", "🙈", "🙉", "🙊", "🐒", "🐔", "🐧", "🐦", "🐤", "🐣", "🐥", "🦆", "🦅", "🦉", "🦇", "🐺", "🐗", "🐴", "🦄", "🐝", "🐛", "🦋", "🐌", "🐞", "🐜", "🦟", "🦗", "🕷", "🕸", "🦂", "🐢", "🐍", "🦎", "🦖", "🦕", "🐙", "🦑", "🦐", "🦞", "🦀", "🐡", "🐠", "🐟", "🐬", "🐳", "🐋", "🦈", "🐊", "🐅", "🐆", "🦓", "🦍", "🐘", "🦛", "🦏", "🐪", "🐫", "🦒", "🦘", "🐃", "🐂", "🐄", "🐎", "🐖", "🐏", "🐑", "🦙", "🐐", "🦌", "🐕", "🐩", "🐈", "🐓", "🦃", "🦚", "🦜", "🦢", "🕊", "🐇", "🦝", "🦨", "🦡", "🦦", "🦥", "🐁", "🐀", "🐿", "🦔", "🐾", "🐉", "🐲", "🌵", "🎄", "🌲", "🌳", "🌴", "🌱", "🌿", "☘️", "🍀", "🎍", "🎋", "🍃", "🍂", "🍁", "🍄", "🐚", "🌾", "💐", "🌷", "🌹", "🥀", "🌺", "🌸", "🌼", "🌻", "🌞", "🌝", "🌛", "🌜", "🌚", "🌕", "🌖", "🌗", "🌘", "🌑", "🌒", "🌓", "🌔", "🌙", "🌎", "🌍", "🌏", "🪐", "💫", "⭐️", "🌟", "✨", "⚡️", "☄️", "💥", "🔥", "🌪", "🌈", "☀️", "🌤", "⛅️", "🌥", "☁️", "🌦", "🌧", "⛈", "🌩", "🌨", "❄️", "☃️", "⛄️", "🌬", "💨", "💧", "💦", "☔️", "☂️", "🌊", "🌫"
 ];
 
 export default function NotebooksPage() {
@@ -205,17 +208,16 @@ export default function NotebooksPage() {
   const [pickerType, setPickerType] = React.useState<'cover' | 'icon'>('cover')
   const [isUploading, setIsUploading] = React.useState(false)
   const [mounted, setMounted] = React.useState(false)
+  const [isSlashMenuOpen, setIsSlashMenuOpen] = React.useState(false)
 
   React.useEffect(() => setMounted(true), [])
 
-  // Fetch Notes
   const notesQuery = useMemoFirebase(() => {
     if (!db || !user) return null
     return query(collection(db, "users", user.uid, "notes"), orderBy("updatedAt", "desc"))
   }, [db, user])
 
   const { data: notes, isLoading: isNotesLoading } = useCollection(notesQuery)
-  
   const selectedNote = notes?.find(n => n.id === selectedNoteId)
 
   // Editor setup
@@ -223,7 +225,17 @@ export default function NotebooksPage() {
     extensions: [
       StarterKit,
       Placeholder.configure({
-        placeholder: 'press enter to start writing...',
+        placeholder: "type '/' for commands...",
+      }),
+      TaskList,
+      TaskItem.configure({
+        nested: true,
+      }),
+      Link.configure({
+        openOnClick: true,
+        HTMLAttributes: {
+          class: 'subpage-link',
+        },
       }),
     ],
     content: selectedNote?.content || '',
@@ -237,6 +249,16 @@ export default function NotebooksPage() {
         })
       }
     },
+    editorProps: {
+      handleKeyDown: (view, event) => {
+        if (event.key === '/') {
+          setIsSlashMenuOpen(true)
+        } else {
+          setIsSlashMenuOpen(false)
+        }
+        return false
+      }
+    }
   }, [selectedNoteId])
 
   // Sync editor content when selected note changes
@@ -303,6 +325,30 @@ export default function NotebooksPage() {
     }
   }
 
+  const handleApplyCommand = (command: string, params?: any) => {
+    if (!editor) return
+    
+    // Clear the '/' char
+    const { from, to } = editor.state.selection
+    editor.commands.deleteRange({ from: from - 1, to: to })
+
+    switch (command) {
+      case 'h1': editor.chain().focus().toggleHeading({ level: 1 }).run(); break;
+      case 'h2': editor.chain().focus().toggleHeading({ level: 2 }).run(); break;
+      case 'bullet': editor.chain().focus().toggleBulletList().run(); break;
+      case 'number': editor.chain().focus().toggleOrderedList().run(); break;
+      case 'task': editor.chain().focus().toggleTaskList().run(); break;
+      case 'toggle': editor.chain().focus().insertContent('<details><summary>toggle list</summary><p>content goes here</p></details>').run(); break;
+      case 'subpage': 
+        if (params?.id) {
+          editor.chain().focus().insertContent(`<a href="/notebooks" class="subpage-link">📄 ${params.title || 'untitled'}</a>`).run();
+        }
+        break;
+      default: break;
+    }
+    setIsSlashMenuOpen(false)
+  }
+
   if (!mounted || isUserLoading) {
     return (
       <div className="fixed inset-0 bg-white flex items-center justify-center z-[9999]">
@@ -311,22 +357,21 @@ export default function NotebooksPage() {
     )
   }
 
+  const displayName = user?.isAnonymous ? "guest" : (user?.displayName || user?.email?.split('@')[0] || 'guko');
+
   return (
     <div className="min-h-screen bg-white flex overflow-hidden font-sans selection:bg-[#c1e2ff]">
-      {/* Notion-style Sidebar */}
       <aside className="w-[240px] flex flex-col shrink-0 bg-[#fbfbfa] border-r border-[#0000000f] h-full overflow-hidden group/sidebar">
-        {/* Sidebar Header */}
         <div className="p-4 flex items-center justify-between hover:bg-[#0000000a] transition-colors cursor-pointer group">
           <div className="flex items-center gap-2 overflow-hidden">
             <div className="h-5 w-5 rounded bg-primary/20 flex items-center justify-center shrink-0">
-               <span className="text-[10px] font-bold text-primary">{user?.email?.[0] || 'G'}</span>
+               <span className="text-[10px] font-bold text-primary">{displayName[0]}</span>
             </div>
-            <span className="text-sm font-semibold truncate lowercase text-[#37352f]">{user?.displayName || 'guko'}'s workspace</span>
+            <span className="text-sm font-semibold truncate lowercase text-[#37352f]">{displayName}'s workspace</span>
           </div>
           <ChevronsUpDown size={14} className="text-[#37352f]/40 opacity-0 group-hover:opacity-100 transition-opacity" />
         </div>
 
-        {/* Top Actions */}
         <div className="px-2 mt-2 space-y-[2px]">
           <SidebarAction icon={<Search size={16} />} label="quick find" />
           <SidebarAction icon={<Clock size={16} />} label="all updates" />
@@ -339,7 +384,6 @@ export default function NotebooksPage() {
           />
         </div>
 
-        {/* Home Button back to Guko Buddy */}
         <div className="px-2 mt-6">
           <SidebarAction 
             icon={<Home size={16} />} 
@@ -349,7 +393,6 @@ export default function NotebooksPage() {
           />
         </div>
 
-        {/* Navigation List */}
         <div className="flex-1 overflow-y-auto mt-6 custom-scrollbar px-2">
            <div className="px-2 mb-2">
              <span className="text-[11px] font-bold text-[#37352f]/40 uppercase tracking-widest">workspace</span>
@@ -377,9 +420,7 @@ export default function NotebooksPage() {
         </div>
       </aside>
 
-      {/* Main Workspace Area */}
       <main className="flex-1 relative flex flex-col bg-white overflow-hidden">
-        {/* Notion Top Nav Area */}
         <header className="h-11 flex items-center justify-between px-4 shrink-0 bg-white/80 backdrop-blur-sm z-50 border-b border-[#0000000a]">
           <div className="flex items-center gap-2 overflow-hidden max-w-lg">
             <Button 
@@ -411,7 +452,6 @@ export default function NotebooksPage() {
           </div>
         </header>
 
-        {/* Content Viewport */}
         <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col relative bg-white">
           {!selectedNoteId ? (
             <div className="max-w-6xl mx-auto w-full px-12 py-20 animate-in fade-in duration-700">
@@ -442,7 +482,6 @@ export default function NotebooksPage() {
             </div>
           ) : selectedNote ? (
             <div className="w-full flex-1 flex flex-col animate-in fade-in duration-500">
-              {/* Cover Image Area */}
               <div className="relative group w-full h-[280px] bg-muted/10 overflow-hidden shrink-0">
                 {selectedNote.coverImage ? (
                   <img src={selectedNote.coverImage} className="w-full h-full object-cover" alt="cover" />
@@ -461,9 +500,7 @@ export default function NotebooksPage() {
                 </div>
               </div>
 
-              {/* Note Content Container */}
               <div className="max-w-[800px] mx-auto w-full px-12 pb-40 relative">
-                {/* Floating Icon */}
                 <div className="relative group -mt-16 mb-8 w-fit">
                   <div 
                     onClick={() => { setPickerType('icon'); setIsMediaPickerOpen(true); }}
@@ -473,7 +510,6 @@ export default function NotebooksPage() {
                   </div>
                 </div>
 
-                {/* Title Section */}
                 <div className="group/page-header mb-8">
                   <textarea
                     value={selectedNote.title}
@@ -489,7 +525,6 @@ export default function NotebooksPage() {
                   />
                 </div>
 
-                {/* Rich Text Body */}
                 <div className="notion-tiptap-container min-h-[500px]">
                   <EditorContent editor={editor} className="outline-none" />
                 </div>
@@ -497,8 +532,15 @@ export default function NotebooksPage() {
             </div>
           ) : null}
 
-          {/* Dynamic Toolbar (visible on selection/hover) */}
-          {selectedNote && editor && (
+          {selectedNote && isSlashMenuOpen && editor && (
+             <SlashCommandMenu 
+                editor={editor} 
+                onApply={handleApplyCommand} 
+                notes={notes || []}
+             />
+          )}
+
+          {selectedNote && editor && !isSlashMenuOpen && (
             <div className="fixed bottom-12 left-[calc(50%+120px)] -translate-x-1/2 flex items-center gap-1.5 p-1.5 bg-white border border-[#0000001a] shadow-[0_12px_24px_rgba(0,0,0,0.08)] rounded-2xl animate-in slide-in-from-bottom-4 duration-300 z-50">
                <ToolbarButton active={editor.isActive('bold')} onClick={() => editor.chain().focus().toggleBold().run()} icon={<Bold size={18} />} />
                <ToolbarButton active={editor.isActive('italic')} onClick={() => editor.chain().focus().toggleItalic().run()} icon={<Italic size={18} />} />
@@ -507,12 +549,12 @@ export default function NotebooksPage() {
                <ToolbarButton active={editor.isActive('heading', { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} icon={<Heading2 size={18} />} />
                <div className="w-[1px] h-5 bg-border/40 mx-1" />
                <ToolbarButton active={editor.isActive('bulletList')} onClick={() => editor.chain().focus().toggleBulletList().run()} icon={<List size={18} />} />
+               <ToolbarButton active={editor.isActive('taskList')} onClick={() => editor.chain().focus().toggleTaskList().run()} icon={<SquareCheck size={18} />} />
             </div>
           )}
         </div>
       </main>
 
-      {/* Media Picker Dialog */}
       <Dialog open={isMediaPickerOpen} onOpenChange={setIsMediaPickerOpen}>
         <DialogContent className="max-w-2xl p-0 border-none bg-white shadow-3xl overflow-hidden rounded-[32px]">
           <DialogHeader className="p-6 pb-0">
@@ -608,61 +650,86 @@ export default function NotebooksPage() {
           </Tabs>
         </DialogContent>
       </Dialog>
+    </div>
+  )
+}
 
-      <style jsx global>{`
-        .notion-tiptap-container .ProseMirror {
-          font-size: 17px;
-          line-height: 1.6;
-          color: #37352f;
-        }
-        .notion-tiptap-container .ProseMirror p {
-          margin: 0.4em 0;
-          min-height: 1.5em;
-        }
-        .notion-tiptap-container .ProseMirror h1 {
-          font-size: 2.2em;
-          font-weight: 700;
-          margin-top: 1.5em;
-          margin-bottom: 0.2em;
-        }
-        .notion-tiptap-container .ProseMirror h2 {
-          font-size: 1.6em;
-          font-weight: 600;
-          margin-top: 1.2em;
-          margin-bottom: 0.2em;
-        }
-        .notion-tiptap-container .ProseMirror ul {
-          padding-left: 28px;
-          list-style-type: disc;
-          margin: 12px 0;
-        }
-        .notion-tiptap-container .ProseMirror .is-editor-empty:first-child::before {
-          content: attr(data-placeholder);
-          float: left;
-          color: #37352f15;
-          pointer-events: none;
-          height: 0;
-        }
-      `}</style>
+function SlashCommandMenu({ editor, onApply, notes }: { editor: any, onApply: (cmd: string, params?: any) => void, notes: any[] }) {
+  const [coords, setCoords] = React.useState({ top: 0, left: 0 })
+  const [showSubpagePicker, setShowSubpagePicker] = React.useState(false)
+
+  React.useEffect(() => {
+    const { from } = editor.state.selection
+    const domPos = editor.view.coordsAtPos(from)
+    setCoords({ top: domPos.bottom + window.scrollY, left: domPos.left + window.scrollX })
+  }, [editor])
+
+  const commands = [
+    { id: 'text', label: 'text', desc: 'start writing with plain text.', icon: <Type size={16} />, action: () => onApply('text') },
+    { id: 'h1', label: 'heading 1', desc: 'large section heading.', icon: <Heading1 size={16} />, action: () => onApply('h1') },
+    { id: 'h2', label: 'heading 2', desc: 'medium section heading.', icon: <Heading2 size={16} />, action: () => onApply('h2') },
+    { id: 'bullet', label: 'bulleted list', desc: 'create a simple bulleted list.', icon: <List size={16} />, action: () => onApply('bullet') },
+    { id: 'number', label: 'numbered list', desc: 'create a list with numbering.', icon: <List size={16} className="rotate-180" />, action: () => onApply('number') },
+    { id: 'task', label: 'check list', desc: 'track tasks with checkboxes.', icon: <SquareCheck size={16} />, action: () => onApply('task') },
+    { id: 'toggle', label: 'toggle list', desc: 'toggles can hide content inside.', icon: <ChevronRight size={16} />, action: () => onApply('toggle') },
+    { id: 'subpage', label: 'link to subpage', desc: 'reference another page here.', icon: <FileText size={16} />, action: () => setShowSubpagePicker(true) },
+  ]
+
+  return (
+    <div 
+      className="fixed z-[999] bg-white border border-[#0000001a] shadow-[0_12px_24px_rgba(0,0,0,0.08)] rounded-2xl w-72 overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+      style={{ top: coords.top + 8, left: coords.left }}
+    >
+      {!showSubpagePicker ? (
+        <div className="p-1 max-h-96 overflow-y-auto custom-scrollbar">
+          <div className="px-3 py-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">basic blocks</div>
+          {commands.map((cmd) => (
+            <button
+              key={cmd.id}
+              onClick={cmd.action}
+              className="w-full flex items-center gap-3 p-2 hover:bg-[#0000000a] transition-colors rounded-xl group text-left"
+            >
+              <div className="h-10 w-10 shrink-0 bg-white border border-border shadow-sm rounded-lg flex items-center justify-center text-muted-foreground group-hover:text-primary transition-colors">
+                {cmd.icon}
+              </div>
+              <div className="min-w-0">
+                <div className="text-sm font-bold text-[#37352f] lowercase">{cmd.label}</div>
+                <div className="text-[10px] text-muted-foreground lowercase truncate">{cmd.desc}</div>
+              </div>
+            </button>
+          ))}
+        </div>
+      ) : (
+        <div className="p-1">
+          <div className="flex items-center gap-2 px-3 py-2 border-b border-border/10 mb-1">
+             <button onClick={() => setShowSubpagePicker(false)} className="p-1 hover:bg-muted rounded"><ChevronLeft size={14} /></button>
+             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">link to page</span>
+          </div>
+          <div className="max-h-64 overflow-y-auto custom-scrollbar">
+            {notes.map(note => (
+              <button
+                key={note.id}
+                onClick={() => onApply('subpage', { id: note.id, title: note.title })}
+                className="w-full flex items-center gap-2 p-2 hover:bg-[#0000000a] transition-colors rounded-xl text-left"
+              >
+                <div className="w-4 h-4 flex items-center justify-center shrink-0">
+                  <IconRenderer icon={note.icon} className="w-full h-full opacity-60" />
+                </div>
+                <span className="text-sm text-[#37352f] truncate lowercase">{note.title || 'untitled'}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
 
 function IconRenderer({ icon, className }: { icon: string, className?: string }) {
   if (!icon) return <FileText className={className} />;
-  
-  // Check if it's a known Lucide icon name
   const LucideIcon = LUCIDE_ICONS[icon];
-  if (LucideIcon) {
-    return <LucideIcon className={className} />;
-  }
-
-  // Check if it's an uploaded image URL
-  if (icon.startsWith('http') || icon.startsWith('data:')) {
-    return <img src={icon} className={cn("object-cover", className)} alt="icon" />;
-  }
-
-  // Otherwise treat it as a standard Emoji string
+  if (LucideIcon) return <LucideIcon className={className} />;
+  if (icon.startsWith('http') || icon.startsWith('data:')) return <img src={icon} className={cn("object-cover", className)} alt="icon" />;
   return <span className={cn("leading-none", className)}>{icon}</span>;
 }
 
