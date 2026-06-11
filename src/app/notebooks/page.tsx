@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -25,7 +26,64 @@ import {
   Clock,
   Settings,
   ChevronsUpDown,
-  FileText
+  FileText,
+  Book,
+  Target,
+  Lightbulb,
+  Calendar,
+  Code,
+  PenTool,
+  Hash,
+  Star,
+  Zap,
+  Flame,
+  Globe,
+  Music,
+  Video,
+  Camera,
+  Heart,
+  Coffee,
+  ShoppingBag,
+  Briefcase,
+  Map,
+  Compass,
+  Anchor,
+  Wind,
+  Sun,
+  Moon,
+  Cloud,
+  Umbrella,
+  Flag,
+  Bell,
+  Lock,
+  Unlock,
+  Shield,
+  Key,
+  User,
+  Users,
+  Smartphone,
+  Laptop,
+  Terminal,
+  Database,
+  Cpu,
+  Trophy,
+  Award,
+  Medal,
+  Activity,
+  HeartPulse,
+  Brain,
+  Palette,
+  CheckCircle2,
+  AlertCircle,
+  HelpCircle,
+  Info,
+  ExternalLink,
+  Link2,
+  Mail,
+  MessageSquare,
+  Share2,
+  Download,
+  Trash
 } from "lucide-react"
 import { 
   useUser, 
@@ -51,7 +109,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import Image from "next/image"
 
 const STOCK_COVERS = [
   "https://picsum.photos/seed/cover1/1200/400",
@@ -60,9 +117,83 @@ const STOCK_COVERS = [
   "https://picsum.photos/seed/cover4/1200/400",
   "https://picsum.photos/seed/cover5/1200/400",
   "https://picsum.photos/seed/cover6/1200/400",
+  "https://picsum.photos/seed/cover7/1200/400",
+  "https://picsum.photos/seed/cover8/1200/400",
 ]
 
-const EMOJIS = ["📄", "📓", "💡", "🎯", "🚀", "📚", "🎨", "🧩", "🏠", "🔥", "🌈", "⭐", "🍀", "🌊", "🍄", "🥑", "🎮", "💻", "🧠", "✍️"]
+const LUCIDE_ICONS: Record<string, any> = {
+  "file-text": FileText,
+  "book": Book,
+  "target": Target,
+  "lightbulb": Lightbulb,
+  "calendar": Calendar,
+  "code": Code,
+  "pen-tool": PenTool,
+  "hash": Hash,
+  "star": Star,
+  "zap": Zap,
+  "flame": Flame,
+  "globe": Globe,
+  "music": Music,
+  "video": Video,
+  "camera": Camera,
+  "heart": Heart,
+  "coffee": Coffee,
+  "shopping-bag": ShoppingBag,
+  "briefcase": Briefcase,
+  "map": Map,
+  "compass": Compass,
+  "anchor": Anchor,
+  "wind": Wind,
+  "sun": Sun,
+  "moon": Moon,
+  "cloud": Cloud,
+  "umbrella": Umbrella,
+  "flag": Flag,
+  "bell": Bell,
+  "lock": Lock,
+  "unlock": Unlock,
+  "shield": Shield,
+  "key": Key,
+  "user": User,
+  "users": Users,
+  "smartphone": Smartphone,
+  "laptop": Laptop,
+  "terminal": Terminal,
+  "database": Database,
+  "cpu": Cpu,
+  "trophy": Trophy,
+  "award": Award,
+  "medal": Medal,
+  "activity": Activity,
+  "heart-pulse": HeartPulse,
+  "brain": Brain,
+  "palette": Palette,
+  "check-circle": CheckCircle2,
+  "alert-circle": AlertCircle,
+  "help-circle": HelpCircle,
+  "info": Info,
+  "external-link": ExternalLink,
+  "link": Link2,
+  "mail": Mail,
+  "message-square": MessageSquare,
+  "share": Share2,
+  "download": Download,
+  "trash": Trash
+};
+
+const EMOJIS = [
+  // Smileys & People
+  "😀", "😃", "😄", "😁", "😆", "😅", "😂", "🤣", "☺️", "😊", "😇", "🙂", "🙃", "😉", "😌", "😍", "🥰", "😘", "😗", "😙", "😚", "😋", "😛", "😝", "😜", "🤪", "🤨", "🧐", "🤓", "😎", "🤩", "🥳", "😏", "😒", "😞", "😔", "😟", "😕", "🙁", "☹️", "😣", "😖", "😫", "😩", "🥺", "😢", "😭", "😤", "😠", "😡", "🤬", "🤯", "😳", "🥵", "🥶", "😱", "😨", "😰", "😥", "😓", "🤗", "🤔", "🤭", "🤫", "🤥", "😶", "😐", "😑", "😬", "🙄", "😯", "😦", "😧", "😮", "😲", "🥱", "😴", "🤤", "😪", "😵", "🤐", "🥴", "🤢", "🤮", "🤧", "😷", "🤒", "🤕", "🤑", "🤠", "😈", "👿", "👹", "👺", "🤡", "💩", "👻", "💀", "☠️", "👽", "👾", "🤖", "🎃", "😺", "😸", "😹", "😻", "😼", "😽", "🙀", "😿", "😾",
+  // Animals & Nature
+  "🐶", "🐱", "🐭", "🐹", "🐰", "🦊", "🐻", "🐼", "🐨", "🐯", "🦁", "🐮", "🐷", "🐽", "🐸", "🐵", "🙈", "🙉", "🙊", "🐒", "🐔", "🐧", "🐦", "🐤", "🐣", "🐥", "🦆", "🦅", "🦉", "🦇", "🐺", "🐗", "🐴", "🦄", "🐝", "🐛", "🦋", "🐌", "🐞", "🐜", "🦟", "🦗", "🕷", "🕸", "🦂", "🐢", "🐍", "🦎", "🦖", "🦕", "🐙", "🦑", "🦐", "🦞", "🦀", "🐡", "🐠", "🐟", "🐬", "🐳", "🐋", "🦈", "🐊", "🐅", "🐆", "🦓", "🦍", "🐘", "🦛", "🦏", "🐪", "🐫", "🦒", "🦘", "🐃", "🐂", "🐄", "🐎", "🐖", "🐏", "🐑", "🦙", "🐐", "🦌", "🐕", "🐩", "🐈", "🐓", "🦃", "🦚", "🦜", "🦢", "🕊", "🐇", "🦝", "🦨", "🦡", "🦦", "🦥", "🐁", "🐀", "🐿", "🦔", "🐾", "🐉", "🐲", "🌵", "🎄", "🌲", "🌳", "🌴", "🌱", "🌿", "☘️", "🍀", "🎍", "🎋", "🍃", "🍂", "🍁", "🍄", "🐚", "🌾", "💐", "🌷", "🌹", "🥀", "🌺", "🌸", "🌼", "🌻", "🌞", "🌝", "🌛", "🌜", "🌚", "🌕", "🌖", "🌗", "🌘", "🌑", "🌒", "🌓", "🌔", "🌙", "🌎", "🌍", "🌏", "🪐", "💫", "⭐️", "🌟", "✨", "⚡️", "☄️", "💥", "🔥", "🌪", "🌈", "☀️", "🌤", "⛅️", "🌥", "☁️", "🌦", "🌧", "⛈", "🌩", "🌨", "❄️", "☃️", "⛄️", "🌬", "💨", "💧", "💦", "☔️", "☂️", "🌊", "🌫",
+  // Food & Drink
+  "🍏", "🍎", "🍐", "🍊", "🍋", "🍌", "🍉", "🍇", "🍓", "🍈", "🍒", "🍑", "🥭", "🍍", "🥥", "🥝", "🍅", "🍆", "🥑", "🥦", "🥬", "🥒", "🌶", "🌽", "🥕", "🥔", "🍠", "🥐", "🥯", "🍞", "🥖", "🥨", "🧀", "🥚", "🍳", "🥞", "🥓", "🥩", "🍗", "🍖", "🦴", "🌭", "🍔", "🍟", "🍕", "🥪", "🥙", "🌮", "🌯", "🥗", "🥘", "🥫", "🍝", "🍜", "🍲", "🍛", "🍣", "🍱", "🥟", "🍤", "🍙", "🍚", "🍘", "🍥", "🥠", "🥮", "🍢", "🍡", "🍧", "🍨", "🍦", "🥧", "🧁", "🍰", "🎂", "🍮", "🍭", "🍬", "🍫", "🍿", "🧂", "🍩", "🍪", "🌰", "🥜", "🍯", "🥛", "🍼", "☕️", "🍵", "🥤", "🍶", "🍺", "🍻", "🥂", "🍷", "🥃", "🍸", "🍹", "🧉", "🍾", "🧊", "🥄", "🍴", "🍽",
+  // Activities
+  "⚽️", "🏀", "🏈", "⚾️", "🥎", "🎾", "🏐", "🏉", "🎱", "🏓", "🏸", "🏒", "🏑", "🥍", "🏏", "🥅", "⛳️", "🪁", "🏹", "🎣", "🤿", "🥊", "🥋", "⛸", "🎿", "🛷", "🥌", "🎯", "🪀", "🎮", "🕹", "🎰", "🎲", "🧩", "🧸", "♠️", "♥️", "♦️", "♣️", "♟", "🃏", "🀄️", "🎴", "🎭", "🖼", "🎨", "🧵", "🧶",
+  // Objects
+  "⌚️", "📱", "📲", "💻", "⌨️", "🖥", "🖨", "🖱", "trackball", "🕹", "🗜", "💽", "💾", "💿", "📀", "📼", "📷", "📸", "📹", "🎥", "📽", "🎞", "📞", "☎️", "📟", "📠", "📺", "📻", "🎙", "🎚", "🎛", "🧭", "⏱", "⏲", "⏰", "🕰", "⌛️", "⏳", "📡", "🔋", "🔌", "💡", "🔦", "🕯", "🪔", "🧯", "🛢", "💸", "💵", "💴", "💶", "💷", "💰", "💳", "💎", "⚖️", "🧰", "🔧", "🔨", "⚒", "🛠", "⛏", "🔩", "⚙️", "🧱", "⛓", "🧲", "🔫", "💣", "🧨", "🪓", "🔪", "🗡", "⚔️", "🛡", "🚬", "⚰️", "⚱️", "🏺", "🔮", "📿", "🧿", "💈", "⚗️", "🔭", "🔬", "🕳", "🩹", "🩺", "💊", "💉", "🩸", "🧬", "🦠", "🧼", "🧽", "🧺", "🧻", "🚽", "🚰", "🚿", "🛀", "🛁", "🧼", "🧴", "🪒", "🧹", "🧺", "🧻", "🧼", "🧽", "🧴", "🛋", "🪑", "🛌", "🛏", "🧸", "🖼", "🛍", "🛒", "🎁", "🎈", "🎏", "🎀", "🎊", "🎉", "🎎", "🏮", "🎐", "🧧", "✉️", "📩", "📨", "📧", "💌", "📥", "📤", "📦", "🏷", "📪", "📫", "📬", "📭", "📮", "📯", "📜", "📜", "📄", "📑", "📊", "📈", "📉", "🗒", "🗓", "📆", "📅", "🗑", "📇", "🗃", "📂", "📁", "📂", "🗂", "🗞", "📰", "📓", "📔", "📒", "📕", "📗", "📘", "📙", "📚", "📖", "🔖", "🧷", "🔗", "📎", "🖇", "📐", "📏", "🧮", "📌", "📍", "✂️", "🖊", "🖋", "✒️", "🖌", "🖍", "📝", "✏️", "🔍", "🔎", "🔏", "🔐", "🔒", "🔓"
+];
 
 export default function NotebooksPage() {
   const router = useRouter()
@@ -123,7 +254,7 @@ export default function NotebooksPage() {
       id: noteId,
       title: "",
       content: "<p></p>",
-      icon: "📄",
+      icon: "file-text",
       coverImage: STOCK_COVERS[Math.floor(Math.random() * STOCK_COVERS.length)],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -190,7 +321,7 @@ export default function NotebooksPage() {
             <div className="h-5 w-5 rounded bg-primary/20 flex items-center justify-center shrink-0">
                <span className="text-[10px] font-bold text-primary">{user?.email?.[0] || 'G'}</span>
             </div>
-            <span className="text-sm font-semibold truncate lowercase text-[#37352f]">guko's workspace</span>
+            <span className="text-sm font-semibold truncate lowercase text-[#37352f]">{user?.displayName || 'guko'}'s workspace</span>
           </div>
           <ChevronsUpDown size={14} className="text-[#37352f]/40 opacity-0 group-hover:opacity-100 transition-opacity" />
         </div>
@@ -263,7 +394,9 @@ export default function NotebooksPage() {
               <>
                 <span className="text-[#37352f]/30">/</span>
                 <div className="flex items-center gap-1.5 truncate">
-                  <span className="text-sm shrink-0">{selectedNote.icon}</span>
+                  <div className="w-4 h-4 flex items-center justify-center shrink-0">
+                    <IconRenderer icon={selectedNote.icon} className="w-full h-full" />
+                  </div>
                   <span className="text-sm font-medium truncate lowercase text-[#37352f]">{selectedNote.title || 'untitled'}</span>
                 </div>
               </>
@@ -334,9 +467,9 @@ export default function NotebooksPage() {
                 <div className="relative group -mt-16 mb-8 w-fit">
                   <div 
                     onClick={() => { setPickerType('icon'); setIsMediaPickerOpen(true); }}
-                    className="text-8xl cursor-pointer hover:bg-[#0000000a] p-2 rounded-3xl transition-all"
+                    className="text-8xl cursor-pointer hover:bg-[#0000000a] p-2 rounded-3xl transition-all flex items-center justify-center min-w-[128px] min-h-[128px]"
                   >
-                    {selectedNote.icon || '📄'}
+                    <IconRenderer icon={selectedNote.icon} className="w-24 h-24" />
                   </div>
                 </div>
 
@@ -381,45 +514,57 @@ export default function NotebooksPage() {
 
       {/* Media Picker Dialog */}
       <Dialog open={isMediaPickerOpen} onOpenChange={setIsMediaPickerOpen}>
-        <DialogContent className="max-w-xl p-0 border-none bg-white shadow-3xl overflow-hidden rounded-[32px]">
+        <DialogContent className="max-w-2xl p-0 border-none bg-white shadow-3xl overflow-hidden rounded-[32px]">
           <DialogHeader className="p-6 pb-0">
             <DialogTitle className="text-xl font-bold lowercase text-[#37352f]">change {pickerType}</DialogTitle>
           </DialogHeader>
           
-          <Tabs defaultValue="image" className="w-full">
+          <Tabs defaultValue="library" className="w-full">
             <div className="px-6 border-b border-border/10">
               <TabsList className="bg-transparent gap-6 p-0 h-12 w-full justify-start border-none">
-                <TabsTrigger value="image" className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#37352f] data-[state=active]:bg-transparent shadow-none px-0 lowercase h-12 text-sm">library</TabsTrigger>
+                <TabsTrigger value="library" className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#37352f] data-[state=active]:bg-transparent shadow-none px-0 lowercase h-12 text-sm">library</TabsTrigger>
                 <TabsTrigger value="emoji" className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#37352f] data-[state=active]:bg-transparent shadow-none px-0 lowercase h-12 text-sm">emoji</TabsTrigger>
                 <TabsTrigger value="custom" className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#37352f] data-[state=active]:bg-transparent shadow-none px-0 lowercase h-12 text-sm">custom</TabsTrigger>
               </TabsList>
             </div>
 
-            <div className="p-6 max-h-[400px] overflow-y-auto custom-scrollbar">
-              <TabsContent value="image" className="m-0 mt-0">
-                <div className="grid grid-cols-2 gap-3">
-                  {(pickerType === 'cover' ? STOCK_COVERS : EMOJIS).map((item, i) => (
-                    <button 
-                      key={i} 
-                      onClick={() => updateMedia(item, pickerType)}
-                      className={cn(
-                        "relative aspect-video rounded-xl overflow-hidden hover:opacity-80 transition-all border-2 border-transparent hover:border-[#37352f]/20",
-                        pickerType === 'icon' && "aspect-square flex items-center justify-center text-4xl bg-muted/10"
-                      )}
-                    >
-                      {pickerType === 'cover' ? <img src={item} className="w-full h-full object-cover" alt="stock" /> : item}
-                    </button>
-                  ))}
-                </div>
+            <div className="p-6 max-h-[500px] overflow-y-auto custom-scrollbar">
+              <TabsContent value="library" className="m-0 mt-0">
+                {pickerType === 'icon' ? (
+                  <div className="grid grid-cols-8 gap-2">
+                    {Object.keys(LUCIDE_ICONS).map((iconName) => (
+                      <button 
+                        key={iconName} 
+                        onClick={() => updateMedia(iconName, 'icon')}
+                        className="aspect-square flex items-center justify-center p-2 rounded-xl hover:bg-muted/10 transition-all border border-transparent hover:border-border/40 group"
+                        title={iconName}
+                      >
+                        <IconRenderer icon={iconName} className="w-full h-full text-[#37352f]/60 group-hover:text-[#37352f]" />
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-3">
+                    {STOCK_COVERS.map((item, i) => (
+                      <button 
+                        key={i} 
+                        onClick={() => updateMedia(item, 'cover')}
+                        className="relative aspect-video rounded-xl overflow-hidden hover:opacity-80 transition-all border-2 border-transparent hover:border-[#37352f]/20"
+                      >
+                        <img src={item} className="w-full h-full object-cover" alt="stock" />
+                      </button>
+                    ))}
+                  </div>
+                )}
               </TabsContent>
 
               <TabsContent value="emoji" className="m-0 mt-0">
-                <div className="grid grid-cols-6 gap-3">
+                <div className="grid grid-cols-8 gap-2">
                   {EMOJIS.map((emoji, i) => (
                     <button 
                       key={i} 
                       onClick={() => updateMedia(emoji, 'icon')}
-                      className="aspect-square flex items-center justify-center text-4xl rounded-xl hover:bg-muted/10 transition-all border border-transparent hover:border-border/40"
+                      className="aspect-square flex items-center justify-center text-2xl rounded-xl hover:bg-muted/10 transition-all border border-transparent hover:border-border/40"
                     >
                       {emoji}
                     </button>
@@ -434,8 +579,8 @@ export default function NotebooksPage() {
                 >
                   {isUploading ? <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /> : <Upload className="h-8 w-8 text-muted-foreground/40" />}
                   <div className="text-center">
-                    <p className="text-sm font-bold lowercase text-[#37352f]">upload an image</p>
-                    <p className="text-xs text-muted-foreground lowercase">recommended size 1500x600px</p>
+                    <p className="text-sm font-bold lowercase text-[#37352f]">upload {pickerType === 'icon' ? 'an icon' : 'a banner'}</p>
+                    <p className="text-xs text-muted-foreground lowercase">recommended for {pickerType === 'icon' ? 'square aspect' : 'wide aspect'}</p>
                   </div>
                   <input 
                     id="media-upload" 
@@ -503,6 +648,24 @@ export default function NotebooksPage() {
   )
 }
 
+function IconRenderer({ icon, className }: { icon: string, className?: string }) {
+  if (!icon) return <FileText className={className} />;
+  
+  // Check if it's a known Lucide icon name
+  const LucideIcon = LUCIDE_ICONS[icon];
+  if (LucideIcon) {
+    return <LucideIcon className={className} />;
+  }
+
+  // Check if it's an uploaded image URL
+  if (icon.startsWith('http') || icon.startsWith('data:')) {
+    return <img src={icon} className={cn("object-cover", className)} alt="icon" />;
+  }
+
+  // Otherwise treat it as a standard Emoji string
+  return <span className={cn("leading-none", className)}>{icon}</span>;
+}
+
 function SidebarNoteItem({ note, isActive, onClick, onDelete }: any) {
   return (
     <div 
@@ -513,7 +676,9 @@ function SidebarNoteItem({ note, isActive, onClick, onDelete }: any) {
       )}
     >
       <div className="flex items-center gap-2 overflow-hidden flex-1">
-        <span className="text-sm shrink-0">{note.icon || '📄'}</span>
+        <div className="w-4 h-4 flex items-center justify-center shrink-0">
+          <IconRenderer icon={note.icon} className="w-full h-full opacity-70" />
+        </div>
         <span className={cn(
           "text-sm truncate lowercase",
           isActive ? "font-semibold text-[#37352f]" : "text-[#37352f]/60"
@@ -562,10 +727,10 @@ function NoteCard({ note, onClick, onDelete }: any) {
       </div>
       
       <div className="flex-1 p-6 flex flex-col justify-between relative bg-white">
-        <div className="absolute -top-8 left-6 text-4xl group-hover:scale-110 transition-transform">
-          {note.icon || '📄'}
+        <div className="absolute -top-8 left-6 w-16 h-16 bg-white rounded-2xl shadow-lg flex items-center justify-center text-3xl group-hover:scale-110 transition-transform p-3">
+          <IconRenderer icon={note.icon} className="w-full h-full" />
         </div>
-        <div className="mt-2 space-y-1">
+        <div className="mt-4 space-y-1">
           <h3 className="text-xl font-bold text-[#37352f] truncate lowercase">{note.title || 'untitled'}</h3>
           <p className="text-[10px] text-muted-foreground/40 font-bold uppercase tracking-widest">
             edited {new Date(note.updatedAt).toLocaleDateString()}
