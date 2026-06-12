@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -122,6 +123,44 @@ const Columns = Node.create({
   },
 })
 
+// Custom Page Link Node (Atom - Non-editable block)
+const PageLinkNode = Node.create({
+  name: 'pageLink',
+  group: 'block',
+  selectable: true,
+  draggable: true,
+  atom: true,
+  addAttributes() {
+    return {
+      id: { default: null },
+      title: { default: 'untitled' },
+      icon: { default: 'file-text' },
+    }
+  },
+  parseHTML() {
+    return [{ tag: 'div[data-page-link]' }]
+  },
+  renderHTML({ node }) {
+    const icon = node.attrs.icon;
+    let iconHtml = '📄';
+    
+    if (icon && !LUCIDE_ICONS[icon] && !icon.startsWith('http') && !icon.startsWith('data:')) {
+      iconHtml = icon;
+    }
+
+    return [
+      'div',
+      {
+        'data-page-link': '',
+        'data-id': node.attrs.id,
+        class: 'subpage-link block-link cursor-pointer flex items-center gap-2 p-2 hover:bg-[#0000000a] rounded-md transition-colors border border-transparent mb-1 w-full',
+      },
+      ['span', { class: 'shrink-0 opacity-70 emoji-font' }, iconHtml],
+      ['span', { class: 'truncate lowercase font-medium text-[#37352f]' }, node.attrs.title],
+    ]
+  },
+})
+
 export default function NotebooksPage() {
   const router = useRouter()
   const { user, isUserLoading } = useUser()
@@ -173,7 +212,6 @@ export default function NotebooksPage() {
       Link.configure({
         openOnClick: false,
         autolink: true,
-        HTMLAttributes: { class: 'subpage-link' },
       }),
       ImageExtension.configure({
         HTMLAttributes: {
@@ -184,6 +222,7 @@ export default function NotebooksPage() {
       Summary,
       Columns,
       Column,
+      PageLinkNode,
     ],
     content: selectedNote?.content || '',
     editorProps: {
@@ -197,15 +236,14 @@ export default function NotebooksPage() {
         return false
       },
       handleClick: (view, pos, event) => {
-        const { doc, tr } = view.state;
         const target = event.target as HTMLElement;
         
-        // 1. Handle Navigation Links (Page Links)
-        const subpageLink = target.closest('a.subpage-link');
-        if (subpageLink) {
+        // 1. Handle Page Links (the button-like blocks)
+        const pageLink = target.closest('[data-page-link]');
+        if (pageLink) {
           event.preventDefault();
           event.stopPropagation();
-          const noteId = subpageLink.getAttribute('data-id');
+          const noteId = pageLink.getAttribute('data-id');
           if (noteId) {
             setSelectedNoteId(noteId);
           }
@@ -216,6 +254,7 @@ export default function NotebooksPage() {
         const summary = target.closest('summary');
         if (summary && summary.parentElement?.matches('.notion-toggle')) {
           event.preventDefault();
+          const { doc, tr } = view.state;
           const $pos = doc.resolve(pos);
           for (let i = $pos.depth; i > 0; i--) {
             const node = $pos.node(i);
@@ -264,7 +303,6 @@ export default function NotebooksPage() {
     },
   }, [selectedNoteId])
 
-  // Re-sync editor content only when note changes and editor isn't actively focused
   React.useEffect(() => {
     if (editor && selectedNote && !editor.isFocused) {
       const currentHtml = editor.getHTML()
@@ -331,14 +369,6 @@ export default function NotebooksPage() {
       }
     } catch (error) {
       console.error("upload failed", error)
-      // Fallback for demo: if upload fails, use data URI
-      if (type === 'inline-image') {
-        const reader = new FileReader()
-        reader.onload = (re) => {
-          editor?.chain().focus().setImage({ src: re.target?.result as string }).run()
-        }
-        reader.readAsDataURL(file)
-      }
     } finally {
       setIsUploading(false)
     }
@@ -372,10 +402,16 @@ export default function NotebooksPage() {
         break;
       case 'subpage': 
         if (params?.id) {
-          const icon = params.icon || 'file-text';
-          const iconDisplay = LUCIDE_ICONS[icon] ? '📄' : icon;
-          // Use a button-like styling via the subpage-link class
-          editor.chain().focus().insertContent(`<a href="#" class="subpage-link" data-id="${params.id}">${iconDisplay} ${params.title || 'untitled'}</a><p></p>`).run();
+          // Insert the custom non-editable PageLinkNode
+          editor.chain().focus().insertContent({
+            type: 'pageLink',
+            attrs: {
+              id: params.id,
+              title: params.title || 'untitled',
+              icon: params.icon || 'file-text'
+            }
+          }).run();
+          editor.chain().focus().insertContent('<p></p>').run();
         }
         break;
       default: break;
