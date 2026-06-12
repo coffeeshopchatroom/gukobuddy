@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -201,6 +200,19 @@ export default function NotebooksPage() {
         const { doc, tr } = view.state;
         const target = event.target as HTMLElement;
         
+        // 1. Handle Navigation Links (Page Links)
+        const subpageLink = target.closest('a.subpage-link');
+        if (subpageLink) {
+          event.preventDefault();
+          event.stopPropagation();
+          const noteId = subpageLink.getAttribute('data-id');
+          if (noteId) {
+            setSelectedNoteId(noteId);
+          }
+          return true;
+        }
+
+        // 2. Handle Toggles
         const summary = target.closest('summary');
         if (summary && summary.parentElement?.matches('.notion-toggle')) {
           event.preventDefault();
@@ -217,18 +229,6 @@ export default function NotebooksPage() {
               return true;
             }
           }
-        }
-
-        const subpageLink = target.closest('a.subpage-link');
-        if (subpageLink) {
-          // Robust interception of subpage clicks
-          event.preventDefault();
-          event.stopPropagation();
-          const noteId = subpageLink.getAttribute('data-id');
-          if (noteId) {
-            setSelectedNoteId(noteId);
-          }
-          return true;
         }
 
         return false;
@@ -372,9 +372,9 @@ export default function NotebooksPage() {
         break;
       case 'subpage': 
         if (params?.id) {
-          // Use icon from params if available, otherwise default document
           const icon = params.icon || 'file-text';
           const iconDisplay = LUCIDE_ICONS[icon] ? '📄' : icon;
+          // Use a button-like styling via the subpage-link class
           editor.chain().focus().insertContent(`<a href="#" class="subpage-link" data-id="${params.id}">${iconDisplay} ${params.title || 'untitled'}</a><p></p>`).run();
         }
         break;
@@ -679,9 +679,9 @@ export default function NotebooksPage() {
                 <div className="space-y-2">
                   <Label className="text-[10px] font-bold uppercase tracking-widest opacity-40 ml-1">or paste url</Label>
                   <div className="flex gap-2">
-                    <Input 
+                    <input 
                       placeholder="https://..." 
-                      className="rounded-xl h-10 bg-muted/5 border-border/40 lowercase no-focus-ring" 
+                      className="flex h-10 w-full rounded-xl border border-border/40 bg-muted/5 px-3 py-2 text-sm lowercase focus:outline-none" 
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') updateMedia((e.target as HTMLInputElement).value, pickerType);
                       }}
@@ -712,7 +712,7 @@ function SlashCommandMenu({ editor, onApply, notes, onClose, query }: { editor: 
     { id: 'toggle', label: 'toggle list', desc: 'toggles can hide content inside.', icon: <ChevronRight size={16} />, action: () => onApply('toggle') },
     { id: 'columns', label: 'columns', desc: 'divide page into two blocks.', icon: <ColumnsIcon size={16} />, action: () => onApply('columns') },
     { id: 'image', label: 'image', desc: 'upload or insert a picture.', icon: <ImageFileIcon size={16} />, action: () => onApply('image') },
-    { id: 'subpage', label: 'link to subpage', desc: 'reference another page here.', icon: <FileText size={16} />, action: () => setShowSubpagePicker(true) },
+    { id: 'subpage', label: 'link to page', desc: 'reference another page here.', icon: <FileText size={16} />, action: () => setShowSubpagePicker(true) },
   ], [onApply]);
 
   const filteredCommands = React.useMemo(() => 

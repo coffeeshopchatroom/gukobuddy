@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -37,6 +36,7 @@
   }
 }
 
+/* --- NOTION STYLE EDITOR --- */
 .notion-tiptap-container .ProseMirror {
   outline: none;
   font-size: 1rem;
@@ -191,7 +191,7 @@
     margin-left: 1.75rem;
 }
 
-/* --- SUBPAGE LINKS --- */
+/* --- PAGE LINKS (BUTTON BLOCKS) --- */
 .notion-tiptap-container .ProseMirror a.subpage-link {
   display: flex;
   align-items: center;
@@ -214,4 +214,9 @@
 
 .notion-tiptap-container .ProseMirror a.subpage-link:active {
   background: #e5e5e4;
+}
+
+.emoji-font {
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  font-variant-emoji: emoji;
 }
