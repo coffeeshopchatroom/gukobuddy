@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -220,6 +221,7 @@ export default function NotebooksPage() {
 
         const subpageLink = target.closest('a.subpage-link');
         if (subpageLink) {
+          // Robust interception of subpage clicks
           event.preventDefault();
           event.stopPropagation();
           const noteId = subpageLink.getAttribute('data-id');
@@ -370,7 +372,10 @@ export default function NotebooksPage() {
         break;
       case 'subpage': 
         if (params?.id) {
-          editor.chain().focus().insertContent(`<a href="#" class="subpage-link" data-id="${params.id}">📄 ${params.title || 'untitled'}</a><p></p>`).run();
+          // Use icon from params if available, otherwise default document
+          const icon = params.icon || 'file-text';
+          const iconDisplay = LUCIDE_ICONS[icon] ? '📄' : icon;
+          editor.chain().focus().insertContent(`<a href="#" class="subpage-link" data-id="${params.id}">${iconDisplay} ${params.title || 'untitled'}</a><p></p>`).run();
         }
         break;
       default: break;
@@ -786,7 +791,7 @@ function SlashCommandMenu({ editor, onApply, notes, onClose, query }: { editor: 
             {notes.map(note => (
               <button
                 key={note.id}
-                onClick={() => onApply('subpage', { id: note.id, title: note.title })}
+                onClick={() => onApply('subpage', { id: note.id, title: note.title, icon: note.icon })}
                 className="w-full flex items-center gap-2 p-2 hover:bg-[#0000000a] transition-colors rounded-xl text-left"
               >
                 <div className="w-4 h-4 flex items-center justify-center shrink-0">

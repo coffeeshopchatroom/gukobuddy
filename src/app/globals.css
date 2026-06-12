@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -194,15 +195,23 @@
 .notion-tiptap-container .ProseMirror a.subpage-link {
   display: flex;
   align-items: center;
-  background: #f3f3f3;
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.5rem;
+  background: transparent;
+  padding: 0.35rem 0.5rem;
+  border-radius: 0.35rem;
   text-decoration: none;
   color: inherit;
-  margin-bottom: 0.5rem;
-  transition: background 0.2s;
+  margin-bottom: 1px;
+  transition: background 0.1s;
+  border: 1px solid transparent;
+  cursor: pointer;
+  user-select: none;
+  width: 100%;
 }
 
 .notion-tiptap-container .ProseMirror a.subpage-link:hover {
-  background: #e9e9e9;
+  background: #f1f1f0;
+}
+
+.notion-tiptap-container .ProseMirror a.subpage-link:active {
+  background: #e5e5e4;
 }
