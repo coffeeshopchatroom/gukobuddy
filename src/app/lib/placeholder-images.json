@@ -18,6 +18,18 @@
       "description": "Calm workspace environment",
       "imageUrl": "https://picsum.photos/seed/unimate-3/800/400",
       "imageHint": "desk workspace"
+    },
+    {
+      "id": "library-banner-1",
+      "description": "A vibrant and colorful abstract design for a library banner.",
+      "imageUrl": "https://picsum.photos/seed/unimate-4/1200/300",
+      "imageHint": "colorful abstract design"
+    },
+    {
+      "id": "library-banner-2",
+      "description": "A serene and calming image of a landscape for a library banner.",
+      "imageUrl": "https://picsum.photos/seed/unimate-5/1200/300",
+      "imageHint": "serene landscape"
     }
   ]
 }

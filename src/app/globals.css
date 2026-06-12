@@ -22,14 +22,6 @@
     --input: 123 15% 90%;
     --ring: 123 38% 75%;
     --radius: 1rem;
-    --sidebar-background: 120 10% 98%;
-    --sidebar-foreground: 120 10% 30%;
-    --sidebar-primary: 123 38% 75%;
-    --sidebar-primary-foreground: 123 20% 20%;
-    --sidebar-accent: 358 100% 95%;
-    --sidebar-accent-foreground: 358 50% 20%;
-    --sidebar-border: 120 10% 92%;
-    --sidebar-ring: 123 38% 75%;
   }
 }
 
@@ -39,243 +31,178 @@
   }
   body {
     @apply bg-background text-foreground;
-    transition: background-color 0.5s ease, color 0.5s ease;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 }
 
-/* Custom Scrollbar */
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+.notion-tiptap-container .ProseMirror {
+  outline: none;
+  font-size: 1rem;
+  line-height: 1.7;
 }
 
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: hsl(var(--primary) / 0.2);
-  border-radius: 20px;
-  border: 3px solid transparent;
-  background-clip: padding-box;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--primary) / 0.4);
-  background-clip: padding-box;
-}
-
-/* For Firefox */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: hsl(var(--primary) / 0.2) transparent;
-}
-
-/* Force all text elements to lowercase globally */
-*, button, input, textarea, label, span, p, h1, h2, h3, h4, h5, h6, div, li, a, strong, em, b, i, u, small {
-  text-transform: lowercase !important;
-}
-
-.animate-smooth-slow {
-  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-[data-sidebar="menu-button"] svg {
-  @apply transition-transform duration-500 ease-out;
-}
-
-/* Emoji Scaling Fix */
-.emoji-font {
-  font-variant-emoji: emoji;
-  line-height: 1;
-}
-
-/* Flashcard Specific Animations */
-.perspective-1000 {
-  perspective: 1000px;
-}
-
-.transform-style-3d {
-  transform-style: preserve-3d;
-}
-
-.backface-hidden {
-  backface-visibility: hidden;
-}
-
-.rotate-y-180 {
-  transform: rotateY(180deg);
-}
-
-/* Tiptap Custom Styles */
-.tiptap-editor .ProseMirror {
-  outline: none !important;
-  border: none !important;
-  box-shadow: none !important;
-}
-
-.tiptap-editor .is-editor-empty:first-child::before {
+.notion-tiptap-container .ProseMirror p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
   float: left;
-  color: #adb5bd;
+  color: hsl(var(--muted-foreground));
   pointer-events: none;
   height: 0;
 }
 
-/* Explicit heading sizes for the editor and study view */
-.tiptap-editor h1, .tiptap-content h1 {
-  font-size: 2.25rem !important; /* text-4xl */
-  line-height: 2.5rem !important;
-  font-weight: 800 !important;
-  margin-top: 1.5rem !important;
-  margin-bottom: 1rem !important;
-  color: hsl(var(--foreground));
+.notion-tiptap-container .ProseMirror h1,
+.notion-tiptap-container .ProseMirror h2 {
+  margin-bottom: 0.75rem;
+  margin-top: 1.5rem;
+  font-weight: 600;
 }
 
-.tiptap-editor h2, .tiptap-content h2 {
-  font-size: 1.5rem !important; /* text-2xl */
-  line-height: 2rem !important;
-  font-weight: 700 !important;
-  margin-top: 1.25rem !important;
-  margin-bottom: 0.75rem !important;
-  color: hsl(var(--foreground));
+.notion-tiptap-container .ProseMirror h1 {
+  font-size: 1.875rem; /* text-3xl */
+  line-height: 2.25rem;
 }
 
-.tiptap-editor p, .tiptap-content p {
-  @apply mb-2 leading-relaxed;
+.notion-tiptap-container .ProseMirror h2 {
+  font-size: 1.5rem; /* text-2xl */
+  line-height: 2rem;
 }
 
-/* Task Lists styling */
-.tiptap-editor ul[data-type="taskList"], .tiptap-content ul[data-type="taskList"] {
-  list-style: none !important;
-  padding: 0 !important;
-}
-
-.tiptap-editor ul[data-type="taskList"] li, .tiptap-content ul[data-type="taskList"] li {
-  display: flex !important;
-  align-items: flex-start !important;
-  margin-bottom: 0.5rem !important;
-}
-
-.tiptap-editor ul[data-type="taskList"] li > label, .tiptap-content ul[data-type="taskList"] li > label {
-  margin-right: 0.75rem !important;
-  user-select: none !important;
-  padding-top: 0.2rem !important;
-}
-
-.tiptap-editor ul[data-type="taskList"] li > div, .tiptap-content ul[data-type="taskList"] li > div {
-  flex: 1 !important;
-}
-
-.tiptap-editor ul[data-type="taskList"] input[type="checkbox"], .tiptap-content ul[data-type="taskList"] input[type="checkbox"] {
-  cursor: pointer !important;
-  width: 1.2rem !important;
-  height: 1.2rem !important;
-  accent-color: hsl(var(--primary)) !important;
-}
-
-/* Standard Lists */
-.tiptap-editor ul:not([data-type="taskList"]), .tiptap-content ul:not([data-type="taskList"]) {
-  list-style-type: disc !important;
-  padding-left: 1.5rem !important;
-  margin-bottom: 1rem !important;
-}
-
-.tiptap-editor ol, .tiptap-content ol {
-  list-style-type: decimal !important;
-  padding-left: 1.5rem !important;
-  margin-bottom: 1rem !important;
-}
-
-/* Toggle (Details) styling */
-.tiptap-editor details.notion-toggle, .tiptap-content details.notion-toggle {
+/* --- IMAGES --- */
+.notion-tiptap-container .ProseMirror img {
+  max-width: 100%;
+  height: auto;
   border-radius: 0.5rem;
-  padding: 0.25rem 0.5rem;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  display: block;
+}
+
+/* --- COLUMNS --- */
+.notion-columns {
+  display: flex;
+  gap: 2rem;
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+  align-items: flex-start;
+}
+
+.notion-column {
+  flex: 1;
+  min-width: 0;
+}
+
+/* --- LISTS --- */
+.notion-tiptap-container .ProseMirror ul:not([data-type='taskList']),
+.notion-tiptap-container .ProseMirror ol {
+  padding-left: 1.75rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.notion-tiptap-container .ProseMirror ul:not([data-type='taskList']) {
+  list-style-type: disc;
+}
+
+.notion-tiptap-container .ProseMirror ol {
+  list-style-type: decimal;
+}
+
+.notion-tiptap-container .ProseMirror li {
+  margin-bottom: 0.25rem;
+}
+
+/* --- TASK LISTS --- */
+.notion-tiptap-container .ProseMirror ul[data-type='taskList'] {
+  list-style: none;
+  padding: 0;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.notion-tiptap-container .ProseMirror ul[data-type='taskList'] li {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 0.5rem;
+}
+
+.notion-tiptap-container .ProseMirror ul[data-type='taskList'] li > label {
+  margin-right: 0.5rem;
+  margin-top: 0.25rem;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.notion-tiptap-container .ProseMirror ul[data-type='taskList'] li > div {
+  flex: 1;
+}
+
+.notion-tiptap-container .ProseMirror ul[data-type='taskList'] li > div > p {
+  margin: 0;
+}
+
+.notion-tiptap-container .ProseMirror ul[data-type='taskList'] input[type='checkbox'] {
+  cursor: pointer;
+  width: 1rem;
+  height: 1rem;
+}
+
+/* --- TOGGLE LISTS --- */
+.notion-tiptap-container .ProseMirror .notion-toggle {
+  margin-bottom: 0.5rem;
+}
+
+.notion-tiptap-container .ProseMirror .notion-toggle summary {
+  cursor: pointer;
+  font-weight: normal;
+  outline: none;
+  list-style: none; /* Hide the default marker */
+  display: flex;
+  align-items: center;
+  position: relative;
+  padding-left: 1.5rem;
+}
+
+.notion-tiptap-container .ProseMirror .notion-toggle summary::-webkit-details-marker {
+  display: none; /* Hide the default marker in Chrome */
+}
+
+.notion-tiptap-container .ProseMirror .notion-toggle summary:before {
+  content: '';
+  background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right"><path d="m9 18 6-6-6-6"/></svg>');
+  background-repeat: no-repeat;
+  background-size: contain;
+  width: 1rem;
+  height: 1rem;
+  display: inline-block;
+  transition: transform 0.2s;
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%) rotate(0deg);
+  pointer-events: none;
+}
+
+.notion-tiptap-container .ProseMirror .notion-toggle[open] > summary:before {
+  transform: translateY(-50%) rotate(90deg);
+}
+
+.notion-tiptap-container .ProseMirror .notion-toggle > *:not(summary) {
+    margin-left: 1.75rem;
+}
+
+/* --- SUBPAGE LINKS --- */
+.notion-tiptap-container .ProseMirror a.subpage-link {
+  display: flex;
+  align-items: center;
+  background: #f3f3f3;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  text-decoration: none;
+  color: inherit;
   margin-bottom: 0.5rem;
   transition: background 0.2s;
 }
 
-.tiptap-editor details.notion-toggle:hover, .tiptap-content details.notion-toggle:hover {
-  background: hsl(var(--muted) / 0.3);
-}
-
-.tiptap-editor summary, .tiptap-content summary {
-  cursor: pointer;
-  font-weight: 600;
-  outline: none;
-  list-style: none;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.tiptap-editor summary::-webkit-details-marker, .tiptap-content summary::-webkit-details-marker {
-  display: none;
-}
-
-.tiptap-editor summary::before, .tiptap-content summary::before {
-  content: '▶';
-  font-size: 0.6rem;
-  color: hsl(var(--muted-foreground));
-  transition: transform 0.2s;
-  display: inline-block;
-}
-
-.tiptap-editor details[open] > summary::before, .tiptap-content details[open] > summary::before {
-  transform: rotate(90deg);
-}
-
-.tiptap-editor .toggle-content, .tiptap-content .toggle-content {
-  padding-left: 1.2rem;
-  margin-top: 0.5rem;
-  border-left: 2px solid hsl(var(--border) / 0.5);
-}
-
-/* Subpage Link styling */
-.tiptap-editor a.subpage-link, .tiptap-content a.subpage-link {
-  display: flex !important;
-  align-items: center !important;
-  gap: 0.75rem !important;
-  padding: 0.5rem 1rem !important;
-  background: hsl(var(--muted) / 0.5) !important;
-  border-radius: 0.75rem !important;
-  color: hsl(var(--foreground)) !important;
-  text-decoration: none !important;
-  font-weight: 600 !important;
-  width: 100% !important;
-  margin-bottom: 0.5rem !important;
-  border: 1px solid transparent !important;
-  transition: all 0.2s !important;
-  cursor: pointer !important;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
-}
-
-.tiptap-editor a.subpage-link:hover, .tiptap-content a.subpage-link:hover {
-  background: hsl(var(--muted) / 0.8) !important;
-  border-color: hsl(var(--border)) !important;
-  transform: translateY(-1px) !important;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.05) !important;
-}
-
-/* Custom scrollbar class for components */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted-foreground) / 0.2);
-  border-radius: 10px;
-}
-
-/* Remove default focus rings from inputs in certain contexts */
-.no-focus-ring:focus, .no-focus-ring:focus-visible {
-  outline: none !important;
-  ring: 0 !important;
-  box-shadow: none !important;
+.notion-tiptap-container .ProseMirror a.subpage-link:hover {
+  background: #e9e9e9;
 }

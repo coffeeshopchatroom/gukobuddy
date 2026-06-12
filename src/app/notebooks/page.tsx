@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -17,71 +16,14 @@ import {
   ImageIcon,
   Search,
   ChevronLeft,
-  Settings2,
-  Clock,
   Settings,
   ChevronsUpDown,
   FileText,
-  Book,
-  Target,
-  Lightbulb,
-  Calendar,
-  Code,
-  PenTool,
-  Hash,
-  Star,
-  Zap,
-  Flame,
-  Globe,
-  Music,
-  Video,
-  Camera,
-  Heart,
-  Coffee,
-  ShoppingBag,
-  Briefcase,
-  Map,
-  Compass,
-  Anchor,
-  Wind,
-  Sun,
-  Moon,
-  Cloud,
-  Umbrella,
-  Flag,
-  Bell,
-  Lock,
-  Unlock,
-  Shield,
-  Key,
-  User,
-  Users,
-  Smartphone,
-  Laptop,
-  Terminal,
-  Database,
-  Cpu,
-  Trophy,
-  Award,
-  Medal,
-  Activity,
-  HeartPulse,
-  Brain,
-  Palette,
-  CheckCircle2,
-  AlertCircle,
-  HelpCircle,
-  Info,
-  ExternalLink,
-  Link2,
-  Mail,
-  MessageSquare,
-  Share2,
-  Download,
-  Trash,
-  ChevronRight,
   SquareCheck,
   Type,
+  ChevronRight,
+  Columns as ColumnsIcon,
+  Image as ImageFileIcon,
   Upload
 } from "lucide-react"
 import { 
@@ -95,11 +37,14 @@ import {
 } from "@/firebase"
 import { collection, doc, query, orderBy } from "firebase/firestore"
 import { useEditor, EditorContent } from '@tiptap/react'
+import { Node, mergeAttributes } from '@tiptap/core'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
 import TaskList from '@tiptap/extension-task-list'
 import TaskItem from '@tiptap/extension-task-item'
 import Link from '@tiptap/extension-link'
+import ImageExtension from '@tiptap/extension-image'
+
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -111,83 +56,71 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { STOCK_COVERS, LUCIDE_ICONS, EMOJIS } from "@/lib/notebook-constants"
+import { Clock } from "lucide-react"
 
-const STOCK_COVERS = [
-  "https://picsum.photos/seed/cover1/1200/400",
-  "https://picsum.photos/seed/cover2/1200/400",
-  "https://picsum.photos/seed/cover3/1200/400",
-  "https://picsum.photos/seed/cover4/1200/400",
-  "https://picsum.photos/seed/cover5/1200/400",
-  "https://picsum.photos/seed/cover6/1200/400",
-  "https://picsum.photos/seed/cover7/1200/400",
-  "https://picsum.photos/seed/cover8/1200/400",
-]
+// --- CUSTOM NODES ---
 
-const LUCIDE_ICONS: Record<string, any> = {
-  "file-text": FileText,
-  "book": Book,
-  "target": Target,
-  "lightbulb": Lightbulb,
-  "calendar": Calendar,
-  "code": Code,
-  "pen-tool": PenTool,
-  "hash": Hash,
-  "star": Star,
-  "zap": Zap,
-  "flame": Flame,
-  "globe": Globe,
-  "music": Music,
-  "video": Video,
-  "camera": Camera,
-  "heart": Heart,
-  "coffee": Coffee,
-  "shopping-bag": ShoppingBag,
-  "briefcase": Briefcase,
-  "map": Map,
-  "compass": Compass,
-  "anchor": Anchor,
-  "wind": Wind,
-  "sun": Sun,
-  "moon": Moon,
-  "cloud": Cloud,
-  "umbrella": Umbrella,
-  "flag": Flag,
-  "bell": Bell,
-  "lock": Lock,
-  "unlock": Unlock,
-  "shield": Shield,
-  "key": Key,
-  "user": User,
-  "users": Users,
-  "smartphone": Smartphone,
-  "laptop": Laptop,
-  "terminal": Terminal,
-  "database": Database,
-  "cpu": Cpu,
-  "trophy": Trophy,
-  "award": Award,
-  "medal": Medal,
-  "activity": Activity,
-  "heart-pulse": HeartPulse,
-  "brain": Brain,
-  "palette": Palette,
-  "check-circle": CheckCircle2,
-  "alert-circle": AlertCircle,
-  "help-circle": HelpCircle,
-  "info": Info,
-  "external-link": ExternalLink,
-  "link": Link2,
-  "mail": Mail,
-  "message-square": MessageSquare,
-  "share": Share2,
-  "download": Download,
-  "trash": Trash
-};
+const Details = Node.create({
+  name: 'details',
+  group: 'block',
+  content: 'summary block+',
+  defining: true,
+  addAttributes() {
+    return {
+      open: {
+        default: false,
+        parseHTML: element => element.hasAttribute('open'),
+        renderHTML: attributes => {
+          if (attributes.open) {
+            return { open: '' };
+          }
+          return {};
+        },
+      },
+    };
+  },
+  parseHTML() {
+    return [{ tag: 'details' }];
+  },
+  renderHTML({ HTMLAttributes }) {
+    return ['details', mergeAttributes(HTMLAttributes, { class: 'notion-toggle' }), 0];
+  },
+});
 
-const EMOJIS = [
-  "😀", "😃", "😄", "😁", "😆", "😅", "😂", "🤣", "☺️", "😊", "😇", "🙂", "🙃", "😉", "😌", "😍", "🥰", "😘", "😗", "😙", "😚", "😋", "😛", "😝", "😜", "🤪", "🤨", "🧐", "🤓", "😎", "🤩", "🥳", "😏", "😒", "😞", "😔", "😟", "😕", "🙁", "☹️", "😣", "😖", "😫", "😩", "🥺", "😢", "😭", "😤", "😠", "😡", "🤬", "🤯", "😳", "🥵", "🥶", "😱", "😨", "😰", "😥", "😓", "🤗", "🤔", "🤭", "🤫", "🤥", "😶", "😐", "😑", "😬", "🙄", "😯", "😦", "😧", "😮", "😲", "🥱", "😴", "🤤", "😪", "😵", "🤐", "🥴", "🤢", "🤮", "🤧", "😷", "🤒", "🤕", "🤑", "🤠", "😈", "👿", "👹", "👺", "🤡", "💩", "👻", "💀", "☠️", "👽", "👾", "🤖", "🎃", "😺", "😸", "😹", "😻", "😼", "😽", "🙀", "😿", "😾",
-  "🐶", "🐱", "🐭", "🐹", "🐰", "🦊", "🐻", "🐼", "🐨", "🐯", "🦁", "🐮", "🐷", "🐽", "🐸", "🐵", "🙈", "🙉", "🙊", "🐒", "🐔", "🐧", "🐦", "🐤", "🐣", "🐥", "🦆", "🦅", "🦉", "🦇", "🐺", "🐗", "🐴", "🦄", "🐝", "🐛", "🦋", "🐌", "🐞", "🐜", "🦟", "🦗", "🕷", "🕸", "🦂", "🐢", "🐍", "🦎", "🦖", "🦕", "🐙", "🦑", "🦐", "🦞", "🦀", "🐡", "🐠", "🐟", "🐬", "🐳", "🐋", "🦈", "🐊", "🐅", "🐆", "🦓", "🦍", "🐘", "🦛", "🦏", "🐪", "🐫", "🦒", "🦘", "🐃", "🐂", "🐄", "🐎", "🐖", "🐏", "🐑", "🦙", "🐐", "🦌", "🐕", "🐩", "🐈", "🐓", "🦃", "🦚", "🦜", "🦢", "🕊", "🐇", "🦝", "🦨", "🦡", "🦦", "🦥", "🐁", "🐀", "🐿", "🦔", "🐾", "🐉", "🐲", "🌵", "🎄", "🌲", "🌳", "🌴", "🌱", "🌿", "☘️", "🍀", "🎍", "🎋", "🍃", "🍂", "🍁", "🍄", "🐚", "🌾", "💐", "🌷", "🌹", "🥀", "🌺", "🌸", "🌼", "🌻", "🌞", "🌝", "🌛", "🌜", "🌚", "🌕", "🌖", "🌗", "🌘", "🌑", "🌒", "🌓", "🌔", "🌙", "🌎", "🌍", "🌏", "🪐", "💫", "⭐️", "🌟", "✨", "⚡️", "☄️", "💥", "🔥", "🌪", "🌈", "☀️", "🌤", "⛅️", "🌥", "☁️", "🌦", "🌧", "⛈", "🌩", "🌨", "❄️", "☃️", "⛄️", "🌬", "💨", "💧", "💦", "☔️", "☂️", "🌊", "🌫"
-];
+const Summary = Node.create({
+  name: 'summary',
+  content: 'inline*',
+  parseHTML() {
+    return [{ tag: 'summary' }];
+  },
+  renderHTML({ HTMLAttributes }) {
+    return ['summary', mergeAttributes(HTMLAttributes), 0];
+  },
+});
+
+const Column = Node.create({
+  name: 'column',
+  content: 'block+',
+  renderHTML() {
+    return ['div', { class: 'notion-column' }, 0]
+  },
+  parseHTML() {
+    return [{ tag: 'div.notion-column' }]
+  },
+})
+
+const Columns = Node.create({
+  name: 'columns',
+  group: 'block',
+  content: 'column{2,}',
+  renderHTML() {
+    return ['div', { class: 'notion-columns' }, 0]
+  },
+  parseHTML() {
+    return [{ tag: 'div.notion-columns' }]
+  },
+})
 
 export default function NotebooksPage() {
   const router = useRouter()
@@ -200,6 +133,7 @@ export default function NotebooksPage() {
   const [isUploading, setIsUploading] = React.useState(false)
   const [mounted, setMounted] = React.useState(false)
   const [isSlashMenuOpen, setIsSlashMenuOpen] = React.useState(false)
+  const [slashQuery, setSlashQuery] = React.useState("")
 
   React.useEffect(() => setMounted(true), [])
 
@@ -211,25 +145,93 @@ export default function NotebooksPage() {
   const { data: notes, isLoading: isNotesLoading } = useCollection(notesQuery)
   const selectedNote = notes?.find(n => n.id === selectedNoteId)
 
-  // Editor setup - IMPORTANT: Only re-initialize when the selected ID changes.
-  // Re-initializing when 'notes' updates causes focus loss while typing.
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
         bulletList: { keepMarks: true, keepAttributes: false },
         orderedList: { keepMarks: true, keepAttributes: false },
+        heading: { levels: [1, 2] },
       }),
       Placeholder.configure({
-        placeholder: "type '/' for commands...",
+        placeholder: ({ node, editor }) => {
+          if (node.type.name === 'summary' && node.content.size === 0) {
+            return 'Toggle title';
+          }
+          if (editor.isEmpty) {
+            return "type '/' for commands...";
+          }
+          return null;
+        },
       }),
-      TaskList,
-      TaskItem.configure({ nested: true }),
+      TaskList.configure({
+        HTMLAttributes: { class: 'notion-task-list' },
+      }),
+      TaskItem.configure({
+        nested: true,
+        HTMLAttributes: { class: 'notion-task-item' },
+      }),
       Link.configure({
         openOnClick: false,
+        autolink: true,
         HTMLAttributes: { class: 'subpage-link' },
       }),
+      ImageExtension.configure({
+        HTMLAttributes: {
+          class: 'notion-image',
+        },
+      }),
+      Details,
+      Summary,
+      Columns,
+      Column,
     ],
     content: selectedNote?.content || '',
+    editorProps: {
+      attributes: {
+        class: 'focus:outline-none',
+      },
+      handleKeyDown: (view, event) => {
+        if (event.key === 'Escape') {
+          setIsSlashMenuOpen(false)
+        }
+        return false
+      },
+      handleClick: (view, pos, event) => {
+        const { doc, tr } = view.state;
+        const target = event.target as HTMLElement;
+        
+        const summary = target.closest('summary');
+        if (summary && summary.parentElement?.matches('.notion-toggle')) {
+          event.preventDefault();
+          const $pos = doc.resolve(pos);
+          for (let i = $pos.depth; i > 0; i--) {
+            const node = $pos.node(i);
+            if (node.type.name === 'details') {
+              view.dispatch(
+                tr.setNodeMarkup($pos.before(i), undefined, {
+                  ...node.attrs,
+                  open: !node.attrs.open,
+                })
+              );
+              return true;
+            }
+          }
+        }
+
+        const subpageLink = target.closest('a.subpage-link');
+        if (subpageLink) {
+          event.preventDefault();
+          event.stopPropagation();
+          const noteId = subpageLink.getAttribute('data-id');
+          if (noteId) {
+            setSelectedNoteId(noteId);
+          }
+          return true;
+        }
+
+        return false;
+      },
+    },
     onUpdate: ({ editor }) => {
       if (selectedNoteId && user && db) {
         const html = editor.getHTML()
@@ -239,41 +241,36 @@ export default function NotebooksPage() {
           updatedAt: new Date().toISOString()
         })
       }
-    },
-    editorProps: {
-      handleKeyDown: (view, event) => {
-        if (event.key === '/') {
-          setIsSlashMenuOpen(true)
-        } else if (event.key === 'Escape' || event.key === 'Backspace') {
-          setIsSlashMenuOpen(false)
-        }
-        return false
-      },
-      handleClick: (view, pos, event) => {
-        const target = event.target as HTMLElement;
-        const link = target.closest('a.subpage-link');
-        if (link) {
-          event.preventDefault();
-          const noteId = link.getAttribute('data-id');
-          if (noteId) {
-            setSelectedNoteId(noteId);
-          }
-          return true;
-        }
-        return false;
-      }
-    }
-  }, [selectedNoteId]) // Removed 'notes' to prevent focus loss glitch
 
-  // Sync remote content back to the editor ONLY when the editor is NOT focused
-  // to avoid jumping cursors while the user is typing.
+      const { selection } = editor.state;
+      if (selection.empty) {
+        const { $from } = selection;
+        const text = $from.parent.textContent.substring(0, $from.parentOffset);
+        const slashMatch = text.match(/^\/([a-zA-Z0-9_]*)/);
+
+        if (slashMatch && !text.includes(' ')) {
+          setIsSlashMenuOpen(true);
+          setSlashQuery(slashMatch[1]);
+        } else {
+          setIsSlashMenuOpen(false);
+          setSlashQuery('');
+        }
+      } else {
+        setIsSlashMenuOpen(false);
+        setSlashQuery('');
+      }
+    },
+  }, [selectedNoteId])
+
+  // Re-sync editor content only when note changes and editor isn't actively focused
   React.useEffect(() => {
     if (editor && selectedNote && !editor.isFocused) {
-      if (editor.getHTML() !== selectedNote.content) {
+      const currentHtml = editor.getHTML()
+      if (currentHtml !== selectedNote.content) {
         editor.commands.setContent(selectedNote.content)
       }
     }
-  }, [selectedNote?.content, editor])
+  }, [selectedNoteId, editor, selectedNote?.content])
 
   const handleCreateNote = () => {
     if (!user || !db) return
@@ -281,7 +278,7 @@ export default function NotebooksPage() {
     const noteRef = doc(db, "users", user.uid, "notes", noteId)
     const newNote = {
       id: noteId,
-      title: "",
+      title: "untitled",
       content: "<p></p>",
       icon: "file-text",
       coverImage: STOCK_COVERS[Math.floor(Math.random() * STOCK_COVERS.length)],
@@ -316,7 +313,7 @@ export default function NotebooksPage() {
     setIsMediaPickerOpen(false)
   }
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'cover' | 'icon') => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'cover' | 'icon' | 'inline-image') => {
     const file = e.target.files?.[0]
     if (!file || !user) return
     setIsUploading(true)
@@ -324,9 +321,22 @@ export default function NotebooksPage() {
     try {
       const response = await fetch(`/api/upload?filename=${filename}`, { method: 'POST', body: file })
       const blob = await response.json()
-      updateMedia(blob.url, type)
+      
+      if (type === 'inline-image') {
+        editor?.chain().focus().setImage({ src: blob.url }).run()
+      } else {
+        updateMedia(blob.url, type)
+      }
     } catch (error) {
       console.error("upload failed", error)
+      // Fallback for demo: if upload fails, use data URI
+      if (type === 'inline-image') {
+        const reader = new FileReader()
+        reader.onload = (re) => {
+          editor?.chain().focus().setImage({ src: re.target?.result as string }).run()
+        }
+        reader.readAsDataURL(file)
+      }
     } finally {
       setIsUploading(false)
     }
@@ -334,29 +344,38 @@ export default function NotebooksPage() {
 
   const handleApplyCommand = (command: string, params?: any) => {
     if (!editor) return
-    
-    setTimeout(() => {
-      const { from, to } = editor.state.selection
-      editor.chain().focus().deleteRange({ from: from - 1, to: to }).run()
 
-      switch (command) {
-        case 'h1': editor.chain().focus().toggleHeading({ level: 1 }).run(); break;
-        case 'h2': editor.chain().focus().toggleHeading({ level: 2 }).run(); break;
-        case 'bullet': editor.chain().focus().toggleBulletList().run(); break;
-        case 'number': editor.chain().focus().toggleOrderedList().run(); break;
-        case 'task': editor.chain().focus().toggleTaskList().run(); break;
-        case 'toggle': 
-          editor.chain().focus().insertContent('<details class="notion-toggle"><summary>Toggle list</summary><div class="toggle-content"><p>Empty toggle. Press Enter to add more.</p></div></details>').run(); 
-          break;
-        case 'subpage': 
-          if (params?.id) {
-            editor.chain().focus().insertContent(`<a href="/notebooks" class="subpage-link" data-id="${params.id}">📄 ${params.title || 'untitled'}</a>`).run();
-          }
-          break;
-        default: break;
-      }
-      setIsSlashMenuOpen(false)
-    }, 10)
+    const { from } = editor.state.selection;
+    const range = {
+      from: from - (slashQuery.length + 1),
+      to: from,
+    };
+
+    editor.chain().focus().deleteRange(range).run()
+
+    switch (command) {
+      case 'h1': editor.chain().focus().toggleHeading({ level: 1 }).run(); break;
+      case 'h2': editor.chain().focus().toggleHeading({ level: 2 }).run(); break;
+      case 'bullet': editor.chain().focus().toggleBulletList().run(); break;
+      case 'number': editor.chain().focus().toggleOrderedList().run(); break;
+      case 'task': editor.chain().focus().toggleTaskList().run(); break;
+      case 'toggle': 
+        editor.chain().focus().insertContent('<details open><summary></summary><p></p></details><p></p>').run(); 
+        break;
+      case 'columns':
+        editor.chain().focus().insertContent('<div class="notion-columns"><div class="notion-column"><p></p></div><div class="notion-column"><p></p></div></div><p></p>').run();
+        break;
+      case 'image':
+        document.getElementById('inline-image-upload')?.click();
+        break;
+      case 'subpage': 
+        if (params?.id) {
+          editor.chain().focus().insertContent(`<a href="#" class="subpage-link" data-id="${params.id}">📄 ${params.title || 'untitled'}</a><p></p>`).run();
+        }
+        break;
+      default: break;
+    }
+    setIsSlashMenuOpen(false)
   }
 
   if (!mounted || isUserLoading) {
@@ -371,6 +390,14 @@ export default function NotebooksPage() {
 
   return (
     <div className="min-h-screen bg-white flex overflow-hidden font-sans selection:bg-[#c1e2ff]">
+      <input 
+        id="inline-image-upload" 
+        type="file" 
+        className="hidden" 
+        accept="image/*" 
+        onChange={(e) => handleFileUpload(e, 'inline-image')} 
+      />
+
       <aside className="w-[240px] flex flex-col shrink-0 bg-[#fbfbfa] border-r border-[#0000000f] h-full overflow-hidden group/sidebar">
         <div className="p-4 flex items-center justify-between hover:bg-[#0000000a] transition-colors cursor-pointer group">
           <div className="flex items-center gap-2 overflow-hidden">
@@ -536,7 +563,7 @@ export default function NotebooksPage() {
                 </div>
 
                 <div className="notion-tiptap-container min-h-[500px]">
-                  <EditorContent editor={editor} className="outline-none" />
+                  <EditorContent editor={editor} />
                 </div>
               </div>
             </div>
@@ -547,6 +574,8 @@ export default function NotebooksPage() {
                 editor={editor} 
                 onApply={handleApplyCommand} 
                 notes={notes || []}
+                onClose={() => setIsSlashMenuOpen(false)}
+                query={slashQuery}
              />
           )}
 
@@ -664,20 +693,11 @@ export default function NotebooksPage() {
   )
 }
 
-function SlashCommandMenu({ editor, onApply, notes }: { editor: any, onApply: (cmd: string, params?: any) => void, notes: any[] }) {
-  const [coords, setCoords] = React.useState({ top: 0, left: 0 })
+function SlashCommandMenu({ editor, onApply, notes, onClose, query }: { editor: any, onApply: (cmd: string, params?: any) => void, notes: any[], onClose: () => void, query: string }) {
+  const menuRef = React.useRef<HTMLDivElement>(null)
   const [showSubpagePicker, setShowSubpagePicker] = React.useState(false)
 
-  React.useEffect(() => {
-    const { from } = editor.state.selection
-    const domPos = editor.view.coordsAtPos(from)
-    setCoords({ 
-      top: domPos.top + window.scrollY - 340, 
-      left: domPos.left + window.scrollX 
-    })
-  }, [editor, editor.state.selection])
-
-  const commands = [
+  const allCommands = React.useMemo(() => [
     { id: 'text', label: 'text', desc: 'start writing with plain text.', icon: <Type size={16} />, action: () => onApply('text') },
     { id: 'h1', label: 'heading 1', desc: 'large section heading.', icon: <Heading1 size={16} />, action: () => onApply('h1') },
     { id: 'h2', label: 'heading 2', desc: 'medium section heading.', icon: <Heading2 size={16} />, action: () => onApply('h2') },
@@ -685,32 +705,76 @@ function SlashCommandMenu({ editor, onApply, notes }: { editor: any, onApply: (c
     { id: 'number', label: 'numbered list', desc: 'create a list with numbering.', icon: <List size={16} className="rotate-180" />, action: () => onApply('number') },
     { id: 'task', label: 'check list', desc: 'track tasks with checkboxes.', icon: <SquareCheck size={16} />, action: () => onApply('task') },
     { id: 'toggle', label: 'toggle list', desc: 'toggles can hide content inside.', icon: <ChevronRight size={16} />, action: () => onApply('toggle') },
+    { id: 'columns', label: 'columns', desc: 'divide page into two blocks.', icon: <ColumnsIcon size={16} />, action: () => onApply('columns') },
+    { id: 'image', label: 'image', desc: 'upload or insert a picture.', icon: <ImageFileIcon size={16} />, action: () => onApply('image') },
     { id: 'subpage', label: 'link to subpage', desc: 'reference another page here.', icon: <FileText size={16} />, action: () => setShowSubpagePicker(true) },
-  ]
+  ], [onApply]);
+
+  const filteredCommands = React.useMemo(() => 
+    allCommands.filter(cmd => 
+      cmd.label.toLowerCase().includes(query.toLowerCase())
+    ), 
+    [query, allCommands]
+  );
+
+  React.useEffect(() => {
+    const menu = menuRef.current;
+    if (editor && menu && query !== undefined) {
+      const { from } = editor.state.selection;
+      const { top, left, bottom } = editor.view.coordsAtPos(from);
+      const menuHeight = menu.offsetHeight;
+      
+      const enoughSpaceAbove = top > menuHeight + 20;
+
+      menu.style.left = `${left}px`;
+      
+      if (enoughSpaceAbove) {
+        menu.style.top = `${top - 10}px`;
+        menu.style.transform = 'translateY(-100%)';
+      } else {
+        menu.style.top = `${bottom + 10}px`;
+        menu.style.transform = 'translateY(0)';
+      }
+    }
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        onClose();
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [editor, query, onClose]);
 
   return (
     <div 
+      ref={menuRef}
       className="fixed z-[999] bg-white border border-[#0000001a] shadow-[0_12px_24px_rgba(0,0,0,0.08)] rounded-2xl w-72 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200"
-      style={{ top: Math.max(10, coords.top), left: coords.left }}
     >
       {!showSubpagePicker ? (
         <div className="p-1 max-h-80 overflow-y-auto custom-scrollbar">
-          <div className="px-3 py-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">basic blocks</div>
-          {commands.map((cmd) => (
-            <button
-              key={cmd.id}
-              onClick={cmd.action}
-              className="w-full flex items-center gap-3 p-2 hover:bg-[#0000000a] transition-colors rounded-xl group text-left"
-            >
-              <div className="h-10 w-10 shrink-0 bg-white border border-border shadow-sm rounded-lg flex items-center justify-center text-muted-foreground group-hover:text-primary transition-colors">
-                {cmd.icon}
-              </div>
-              <div className="min-w-0">
-                <div className="text-sm font-bold text-[#37352f] lowercase">{cmd.label}</div>
-                <div className="text-[10px] text-muted-foreground lowercase truncate">{cmd.desc}</div>
-              </div>
-            </button>
-          ))}
+          {filteredCommands.length > 0 ? (
+            <>
+              <div className="px-3 py-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">basic blocks</div>
+              {filteredCommands.map((cmd) => (
+                <button
+                  key={cmd.id}
+                  onClick={cmd.action}
+                  className="w-full flex items-center gap-3 p-2 hover:bg-[#0000000a] transition-colors rounded-xl group text-left"
+                >
+                  <div className="h-10 w-10 shrink-0 bg-white border border-border shadow-sm rounded-lg flex items-center justify-center text-muted-foreground group-hover:text-primary transition-colors">
+                    {cmd.icon}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-sm font-bold text-[#37352f] lowercase">{cmd.label}</div>
+                    <div className="text-[10px] text-muted-foreground lowercase truncate">{cmd.desc}</div>
+                  </div>
+                </button>
+              ))}
+            </>
+          ) : (
+            <div className="p-4 text-sm text-center text-muted-foreground">no matching commands.</div>
+          )}
         </div>
       ) : (
         <div className="p-1">
