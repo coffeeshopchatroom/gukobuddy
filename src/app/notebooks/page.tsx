@@ -127,6 +127,7 @@ const Columns = Node.create({
 const PageLinkNode = Node.create({
   name: 'pageLink',
   group: 'block',
+  content: '',
   selectable: true,
   draggable: true,
   atom: true,
