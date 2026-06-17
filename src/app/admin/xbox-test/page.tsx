@@ -19,6 +19,7 @@ type CardProps = {
   emotion?: string;
   avatarId?: string;
   avatarGender?: 'male' | 'female';
+  exitTransform?: string;
 };
 
 const emotions = [
@@ -50,25 +51,26 @@ const GradientCard = ({
   onClick,
   emotion = 'default',
   avatarId = 'mii-m2',
-  avatarGender = 'male'
+  avatarGender = 'male',
+  exitTransform
 }: CardProps): JSX.Element => {
   return (
     <section
       onClick={onClick}
       className={cn(
-        "absolute transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] cursor-pointer",
+        "absolute transition-all duration-1000 ease-[cubic-bezier(0.34,1.56,0.64,1)] cursor-pointer",
         isActive ? "hover:scale-[1.02]" : "hover:opacity-80",
         className
       )}
       style={{
         zIndex: zIndex,
-        transform: isActive ? 'scale(1)' : 'perspective(1000px) rotateY(-15deg) scale(0.9)',
-        opacity: isActive ? 1 : 0.6,
+        transform: isActive ? 'scale(1)' : (exitTransform || 'perspective(1000px) rotateY(-15deg) scale(0.9)'),
+        opacity: isActive ? 1 : 0,
       }}
     >
       {/* Reflection */}
       <div
-        className="absolute top-full left-0 w-full h-full opacity-30 transition-all duration-700 pointer-events-none"
+        className="absolute top-full left-0 w-full h-full opacity-30 transition-all duration-1000 pointer-events-none"
         style={{
           transform: 'scaleY(-1) translateY(2px)',
           maskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 60%)',
@@ -129,16 +131,29 @@ const GradientCard = ({
   );
 };
 
-const FriendTile = ({ friend }: { friend: typeof MOCK_FRIENDS[0] }) => {
+const FriendTile = ({ friend, index, active }: { friend: typeof MOCK_FRIENDS[0], index: number, active: boolean }) => {
   const isOnline = friend.status === 'online';
   const isActive = friend.status === 'active';
   const isOffline = friend.status === 'offline';
 
   return (
-    <div className="relative w-[600px] h-[350px] group transition-all duration-300 hover:scale-[1.02]">
+    <div 
+      className={cn(
+        "relative w-[600px] h-[350px] group transition-all duration-1000",
+        active ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-90 translate-y-10"
+      )}
+      style={{
+        transitionDelay: active ? `${index * 100}ms` : '0ms',
+        animation: active ? `flip-in 1s cubic-bezier(0.34, 1.56, 0.64, 1) ${index * 100}ms forwards` : 'none',
+        perspective: '1000px'
+      }}
+    >
       {/* Speech Bubble */}
-      {friend.statusMsg && (
-        <div className="absolute top-[-50px] right-[50px] z-50 bg-white rounded-full px-6 py-3 shadow-xl animate-in fade-in slide-in-from-bottom-2 duration-500">
+      {friend.statusMsg && active && (
+        <div 
+          className="absolute top-[-50px] right-[50px] z-50 bg-white rounded-full px-6 py-3 shadow-xl animate-in fade-in slide-in-from-bottom-2 duration-500"
+          style={{ animationDelay: `${(index * 100) + 800}ms` }}
+        >
           <p className="text-black text-2xl font-medium lowercase whitespace-nowrap">{friend.statusMsg}</p>
           <div className="absolute bottom-[-10px] right-8 w-6 h-6 bg-white rotate-45" />
         </div>
@@ -300,24 +315,27 @@ export default function Xbox360ThemeReplica() {
         <div className="absolute inset-0 pointer-events-none z-30">
           
           {/* FRIENDS TAB CONTENT */}
-          {activeTab === 0 && (
-            <div className="absolute top-[350px] left-[375px] w-[1900px] h-[900px] pointer-events-auto animate-in slide-in-from-right-20 duration-700">
-               <div className="grid grid-cols-3 gap-16">
-                  {MOCK_FRIENDS.map(friend => (
-                    <FriendTile key={friend.id} friend={friend} />
-                  ))}
-               </div>
-            </div>
-          )}
+          <div className={cn(
+            "absolute top-[350px] left-[375px] w-[1900px] h-[900px] pointer-events-auto transition-all duration-1000",
+            activeTab === 0 ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+          )}>
+              <div className="grid grid-cols-3 gap-16">
+                {MOCK_FRIENDS.map((friend, i) => (
+                  <FriendTile key={friend.id} friend={friend} index={i} active={activeTab === 0} />
+                ))}
+              </div>
+          </div>
 
           {/* MY CHANNEL TAB CONTENT */}
-          {activeTab === 2 && (
-            <>
-              {/* Main Card (Open Tray) */}
+          <div className={cn("absolute inset-0 pointer-events-none", activeTab === 2 ? "z-50" : "z-10")}>
+              {/* Main Card (Open Tray) - Parts Left */}
               <section
                 onClick={() => setActiveTab(2)}
-                className={cn("absolute top-[419px] left-[375px] w-[852px] h-[959px] transition-all duration-700 pointer-events-auto", activeTab === 2 ? "translate-x-0" : "-translate-x-[600px] opacity-40")}
-                style={{ zIndex: activeTab === 2 ? 100 : 10 }}
+                className={cn(
+                  "absolute top-[419px] left-[375px] w-[852px] h-[959px] transition-all duration-1000 pointer-events-auto", 
+                  activeTab === 2 ? "translate-x-0 opacity-100" : "-translate-x-[1500px] opacity-0"
+                )}
+                style={{ zIndex: 100 }}
               >
                 <div className="absolute inset-0 group">
                   <div className="absolute w-full h-[62.57%] top-0 left-0 rounded-[11px] shadow-[36px_4px_22.4px_-24px_#0000006b] [background:radial-gradient(50%_50%_at_74%_49%,rgba(247,255,153,1)_0%,rgba(230,254,100,1)_18%,rgba(222,252,67,1)_33%,rgba(200,239,53,1)_45%,rgba(159,221,33,1)_70%,rgba(141,209,25,1)_100%)]" />
@@ -326,7 +344,7 @@ export default function Xbox360ThemeReplica() {
                 </div>
                 {/* Reflection */}
                 <div
-                  className="absolute top-full left-0 w-full h-full opacity-30 transition-all duration-700 pointer-events-none"
+                  className="absolute top-full left-0 w-full h-full opacity-30 transition-all duration-1000 pointer-events-none"
                   style={{
                     transform: 'scaleY(-1) translateY(2px)',
                     maskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 60%)',
@@ -339,11 +357,12 @@ export default function Xbox360ThemeReplica() {
                 <div className="absolute bottom-[320px] left-0 font-normal text-black/40 text-3xl px-12">1 of 8</div>
               </section>
 
-              {/* Secondary Blade (Status/Activity) */}
+              {/* Secondary Blade (Status/Activity) - Parts Right */}
               <GradientCard
                 isActive={activeTab === 2}
-                zIndex={activeTab === 2 ? 90 : 20}
-                className={cn("top-[486px] left-[1212px] w-[636px] h-[762px] pointer-events-auto", activeTab === 2 ? "translate-x-0" : "translate-x-[-400px]")}
+                zIndex={90}
+                className={cn("top-[486px] left-[1212px] w-[636px] h-[762px] pointer-events-auto")}
+                exitTransform="translateX(800px) scale(0.8)"
                 title={displayName}
                 subtitle="20 hours"
                 activityTitle="Latest Activities"
@@ -354,11 +373,14 @@ export default function Xbox360ThemeReplica() {
                 onClick={() => setShowEmotionPicker(true)}
               />
 
-              {/* Tertiary Blade (Controllers) */}
+              {/* Tertiary Blade (Controllers) - Parts Further Right */}
               <section
                 onClick={() => setActiveTab(2)}
-                className={cn("absolute top-[522px] left-[1721px] w-[538px] h-[659px] transition-all duration-700 pointer-events-auto", activeTab === 2 ? "translate-x-0" : "translate-x-[400px]")}
-                style={{ zIndex: activeTab === 2 ? 80 : 30 }}
+                className={cn(
+                  "absolute top-[522px] left-[1721px] w-[538px] h-[659px] transition-all duration-1000 pointer-events-auto", 
+                  activeTab === 2 ? "translate-x-0 opacity-100" : "translate-x-[1500px] opacity-0"
+                )}
+                style={{ zIndex: 80 }}
               >
                 <div className="absolute inset-0">
                   <div className="absolute w-full h-[62.57%] top-0 left-0 rounded-[11px] shadow-[36px_4px_22.4px_-24px_#0000006b] [background:radial-gradient(50%_50%_at_74%_49%,rgba(247,255,153,1)_0%,rgba(230,254,100,1)_18%,rgba(222,252,67,1)_33%,rgba(200,239,53,1)_45%,rgba(159,221,33,1)_70%,rgba(141,209,25,1)_100%)]" />
@@ -367,7 +389,7 @@ export default function Xbox360ThemeReplica() {
                 </div>
                 {/* Reflection */}
                 <div
-                  className="absolute top-full left-0 w-full h-full opacity-30 transition-all duration-700 pointer-events-none"
+                  className="absolute top-full left-0 w-full h-full opacity-30 transition-all duration-1000 pointer-events-none"
                   style={{
                     transform: 'scaleY(-1) translateY(2px)',
                     maskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 60%)',
@@ -378,8 +400,7 @@ export default function Xbox360ThemeReplica() {
                 </div>
                 <div className="absolute top-[347px] left-12 font-headline text-white text-[35px] ">Controllers</div>
               </section>
-            </>
-          )}
+          </div>
         </div>
 
         {/* Emotion Picker Pop-up */}
@@ -491,6 +512,17 @@ export default function Xbox360ThemeReplica() {
         @keyframes bounce-sideways {
           0%, 100% { transform: translateX(0); }
           50% { transform: translateX(5px); }
+        }
+
+        @keyframes flip-in {
+          from {
+            opacity: 0;
+            transform: perspective(1000px) rotateY(-90deg) scale(0.8) translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: perspective(1000px) rotateY(0deg) scale(1) translateY(0);
+          }
         }
 
         .animate-background-shift {
