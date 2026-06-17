@@ -4,8 +4,8 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 import { useUser, useDoc, useMemoFirebase, useFirestore } from "@/firebase"
-import { doc } from "firebase/firestore"
-import { X, Check, Play } from "lucide-react"
+import { doc, setDoc } from "firebase/firestore"
+import { X, Check, Play, MessageSquare, Smile } from "lucide-react"
 
 type CardProps = {
   className?: string;
@@ -123,7 +123,7 @@ const GradientCard = ({
       )}
 
       {activityText && (
-        <div className="absolute top-[278px] left-[42px] font-normal text-[#ffffffab] text-[25px] tracking-[1.25px] leading-normal whitespace-nowrap ">
+        <div className="absolute top-[278px] left-[42px] font-normal text-[#ffffffab] text-[25px] tracking-[1.25px] leading-normal whitespace-nowrap overflow-hidden text-ellipsis max-w-[400px]">
           {activityText}
         </div>
       )}
@@ -224,14 +224,27 @@ export default function Xbox360ThemeReplica() {
   const [activeTab, setActiveTab] = React.useState<number>(0);
   const [currentEmotion, setCurrentEmotion] = React.useState<string>('default');
   const [hoverEmotion, setHoverEmotion] = React.useState<string | null>(null);
-  const [showEmotionPicker, setShowEmotionPicker] = React.useState(false);
+  const [showPicker, setShowPicker] = React.useState(false);
+  const [pickerMode, setPickerMode] = React.useState<'emotion' | 'status'>('emotion');
+  const [statusMsg, setStatusMsg] = React.useState("");
   const [mounted, setMounted] = React.useState(false);
 
   React.useEffect(() => {
     setMounted(true);
-  }, []);
+    if (profile?.statusMsg) setStatusMsg(profile.statusMsg);
+  }, [profile]);
 
   if (!mounted) return null;
+
+  const handleUpdateStatus = async () => {
+    if (!profileRef) return;
+    try {
+      await setDoc(profileRef, { statusMsg }, { merge: true });
+      setShowPicker(false);
+    } catch (error) {
+      console.error("Failed to update status", error);
+    }
+  }
 
   const tabs = ["Friends", "Study Sessions", "My Channel"];
   const displayName = user?.isAnonymous ? "guest" : (profile?.displayName || user?.displayName || "whatNot");
@@ -366,11 +379,11 @@ export default function Xbox360ThemeReplica() {
                 title={displayName}
                 subtitle="20 hours"
                 activityTitle="Latest Activities"
-                activityText="whoosh.. theres nothing here!"
+                activityText={statusMsg || "whoosh.. theres nothing here!"}
                 emotion={currentEmotion}
                 avatarId={selectedAvatarId}
                 avatarGender={selectedAvatarGender}
-                onClick={() => setShowEmotionPicker(true)}
+                onClick={() => setShowPicker(true)}
               />
 
               {/* Tertiary Blade (Controllers) - Parts Further Right */}
@@ -403,61 +416,126 @@ export default function Xbox360ThemeReplica() {
           </div>
         </div>
 
-        {/* Emotion Picker Pop-up */}
-        {showEmotionPicker && (
+        {/* Profile Customizer Pop-up (Status & Expression) */}
+        {showPicker && (
           <div className="absolute inset-0 bg-black/60 backdrop-blur-md z-[1000] flex items-center justify-center animate-in fade-in duration-300">
-            <div className="relative w-[1200px] h-[800px] rounded-[40px] overflow-hidden flex flex-col shadow-2xl border-4 border-white/20 [background:radial-gradient(173.24%_228.65%_at_17.13%_-29.45%,#243D15_0%,#385817_13%,#5F8F20_26%,#8AAB68_45%,#CDE5BA_67%)]">
+            <div className="relative w-[1400px] h-[900px] rounded-[40px] overflow-hidden flex flex-col shadow-2xl border-4 border-white/20 [background:radial-gradient(173.24%_228.65%_at_17.13%_-29.45%,#243D15_0%,#385817_13%,#5F8F20_26%,#8AAB68_45%,#CDE5BA_67%)]">
               <button 
-                onClick={() => setShowEmotionPicker(false)}
+                onClick={() => setShowPicker(false)}
                 className="absolute top-8 right-8 text-white/40 hover:text-white transition-colors"
               >
                 <X size={64} />
               </button>
 
-              <div className="p-16 flex-1 flex flex-col items-center">
-                <h2 className="text-white text-7xl font-headline  mb-12 [text-shadow:0px_4px_4px_#00000040]">Choose Expression</h2>
-                
-                <div className="flex items-center justify-between w-full flex-1 gap-20">
-                  {/* List */}
-                  <div className="flex flex-col gap-6 flex-1">
-                    {emotions.map((emo) => (
-                      <button
-                        key={emo.id}
-                        onMouseEnter={() => setHoverEmotion(emo.id)}
-                        onMouseLeave={() => setHoverEmotion(null)}
-                        onClick={() => {
-                          setCurrentEmotion(emo.id);
-                          setShowEmotionPicker(false);
-                        }}
-                        className={cn(
-                          "w-full py-8 px-12 rounded-[20px] text-5xl font-medium transition-all duration-300 flex items-center justify-between  font-headline",
-                          (hoverEmotion === emo.id || (!hoverEmotion && currentEmotion === emo.id)) 
-                            ? "bg-white text-[#243d15] scale-105 shadow-xl" 
-                            : "bg-white/5 text-white/60 hover:bg-white/10"
-                        )}
-                      >
-                        {emo.label}
-                        {(hoverEmotion === emo.id || (!hoverEmotion && currentEmotion === emo.id)) && <Check size={48} />}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Preview Area */}
-                  <div className="relative w-[500px] h-[500px] flex items-center justify-center bg-black/20 rounded-full border-8 border-white/10 overflow-visible">
-                     <img 
-                      src={previewAvatarPath} 
-                      alt="preview" 
-                      className="h-[700px] object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)] transform -translate-y-20 animate-in zoom-in duration-300"
-                      onError={(e) => {
-                        const fallbackAvatarId = selectedAvatarGender === 'female' ? 'mii-f1' : 'mii-m2';
-                        (e.target as HTMLImageElement).src = `/avatars/${selectedAvatarGender}/${fallbackAvatarId}/${fallbackAvatarId}_default.png`
-                      }}
-                    />
-                  </div>
+              <div className="flex h-full">
+                {/* Left Navigation Sidebar for Picker */}
+                <div className="w-[300px] bg-black/20 border-r-4 border-white/10 p-12 flex flex-col gap-8">
+                  <button 
+                    onClick={() => setPickerMode('emotion')}
+                    className={cn(
+                      "flex flex-col items-center gap-3 p-6 rounded-3xl transition-all",
+                      pickerMode === 'emotion' ? "bg-white text-[#243d15] scale-105" : "bg-white/5 text-white/60 hover:bg-white/10"
+                    )}
+                  >
+                    <Smile size={60} />
+                    <span className="text-2xl font-bold font-headline lowercase">expression</span>
+                  </button>
+                  <button 
+                    onClick={() => setPickerMode('status')}
+                    className={cn(
+                      "flex flex-col items-center gap-3 p-6 rounded-3xl transition-all",
+                      pickerMode === 'status' ? "bg-white text-[#243d15] scale-105" : "bg-white/5 text-white/60 hover:bg-white/10"
+                    )}
+                  >
+                    <MessageSquare size={60} />
+                    <span className="text-2xl font-bold font-headline lowercase">status</span>
+                  </button>
                 </div>
 
-                <div className="mt-12 text-white/30 text-3xl font-headline ">
-                  Move your cursor to preview, click to select
+                {/* Main Content Area */}
+                <div className="flex-1 p-16 flex flex-col items-center">
+                  <h2 className="text-white text-7xl font-headline mb-12 [text-shadow:0px_4px_4px_#00000040] lowercase">
+                    {pickerMode === 'emotion' ? 'choose expression' : 'set your status'}
+                  </h2>
+                  
+                  <div className="flex items-center justify-between w-full flex-1 gap-20">
+                    {pickerMode === 'emotion' ? (
+                      <>
+                        <div className="flex flex-col gap-6 flex-1">
+                          {emotions.map((emo) => (
+                            <button
+                              key={emo.id}
+                              onMouseEnter={() => setHoverEmotion(emo.id)}
+                              onMouseLeave={() => setHoverEmotion(null)}
+                              onClick={() => {
+                                setCurrentEmotion(emo.id);
+                                setShowPicker(false);
+                              }}
+                              className={cn(
+                                "w-full py-8 px-12 rounded-[20px] text-5xl font-medium transition-all duration-300 flex items-center justify-between  font-headline",
+                                (hoverEmotion === emo.id || (!hoverEmotion && currentEmotion === emo.id)) 
+                                  ? "bg-white text-[#243d15] scale-105 shadow-xl" 
+                                  : "bg-white/5 text-white/60 hover:bg-white/10"
+                              )}
+                            >
+                              {emo.label}
+                              {(hoverEmotion === emo.id || (!hoverEmotion && currentEmotion === emo.id)) && <Check size={48} />}
+                            </button>
+                          ))}
+                        </div>
+
+                        {/* Preview Area */}
+                        <div className="relative w-[500px] h-[500px] flex items-center justify-center bg-black/20 rounded-full border-8 border-white/10 overflow-visible">
+                           <img 
+                            src={previewAvatarPath} 
+                            alt="preview" 
+                            className="h-[700px] object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)] transform -translate-y-20 animate-in zoom-in duration-300"
+                            onError={(e) => {
+                              const fallbackAvatarId = selectedAvatarGender === 'female' ? 'mii-f1' : 'mii-m2';
+                              (e.target as HTMLImageElement).src = `/avatars/${selectedAvatarGender}/${fallbackAvatarId}/${fallbackAvatarId}_default.png`
+                            }}
+                          />
+                        </div>
+                      </>
+                    ) : (
+                      <div className="w-full max-w-4xl flex flex-col gap-10 items-center animate-in slide-in-from-right-10 duration-500">
+                        <div className="w-full bg-black/40 rounded-[32px] p-10 border-4 border-white/10 shadow-inner">
+                           <input 
+                            type="text" 
+                            value={statusMsg}
+                            onChange={(e) => setStatusMsg(e.target.value.toLowerCase())}
+                            placeholder="what are you doing?..."
+                            className="w-full bg-transparent border-none text-white text-6xl font-headline lowercase placeholder:text-white/10 focus:ring-0"
+                            autoFocus
+                            maxLength={40}
+                          />
+                        </div>
+                        <div className="flex gap-8">
+                          <button 
+                            onClick={handleUpdateStatus}
+                            className="h-20 px-20 rounded-2xl bg-white text-[#243d15] text-4xl font-bold font-headline lowercase hover:scale-105 transition-transform"
+                          >
+                            save status
+                          </button>
+                          <button 
+                            onClick={() => setShowPicker(false)}
+                            className="h-20 px-20 rounded-2xl bg-white/10 text-white text-4xl font-bold font-headline lowercase hover:bg-white/20 transition-all"
+                          >
+                            cancel
+                          </button>
+                        </div>
+                        <p className="text-white/30 text-3xl font-headline lowercase mt-10">
+                          this will be visible to all your friends in their plaza.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {pickerMode === 'emotion' && (
+                    <div className="mt-12 text-white/30 text-3xl font-headline ">
+                      Move your cursor to preview, click to select
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
