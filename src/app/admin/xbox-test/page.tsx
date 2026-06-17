@@ -5,7 +5,7 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 import { useUser, useDoc, useMemoFirebase, useFirestore } from "@/firebase"
 import { doc } from "firebase/firestore"
-import { X, Check } from "lucide-react"
+import { X, Check, Play } from "lucide-react"
 
 type CardProps = {
   className?: string;
@@ -28,6 +28,15 @@ const emotions = [
   { id: 'angry', label: 'angry' },
   { id: 'bored', label: 'bored' },
   { id: 'surprised', label: 'surprised' },
+]
+
+const MOCK_FRIENDS = [
+  { id: '1', username: 'joshua', status: 'offline', lastActive: '1h ago', avatarId: 'mii-m1', gender: 'male', emotion: 'default' },
+  { id: '2', username: 'sarah', status: 'online', activity: 'flashcard session', statusMsg: 'at a dinner party ugh', avatarId: 'mii-f2', gender: 'female', emotion: 'surprised' },
+  { id: '3', username: 'mike_99', status: 'active', activity: "this user is not currently on the channel. they're focusing by themselves", statusMsg: 'so much work', avatarId: 'mii-f3', gender: 'female', emotion: 'bored' },
+  { id: '4', username: 'leila', status: 'offline', lastActive: '3h ago', avatarId: 'mii-f1', gender: 'female', emotion: 'sad' },
+  { id: '5', username: 'kyle', status: 'online', activity: 'notebooks', statusMsg: 'no joins!', joinsOff: true, avatarId: 'mii-m2', gender: 'male', emotion: 'happy' },
+  { id: '6', username: 'dev_mode', status: 'active', activity: 'debugging the dashboard...', avatarId: 'mii-m3', gender: 'male', emotion: 'angry' },
 ]
 
 const GradientCard = ({
@@ -120,13 +129,84 @@ const GradientCard = ({
   );
 };
 
+const FriendTile = ({ friend }: { friend: typeof MOCK_FRIENDS[0] }) => {
+  const isOnline = friend.status === 'online';
+  const isActive = friend.status === 'active';
+  const isOffline = friend.status === 'offline';
+
+  return (
+    <div className="relative w-[600px] h-[350px] group transition-all duration-300 hover:scale-[1.02]">
+      {/* Speech Bubble */}
+      {friend.statusMsg && (
+        <div className="absolute top-[-50px] right-[50px] z-50 bg-white rounded-full px-6 py-3 shadow-xl animate-in fade-in slide-in-from-bottom-2 duration-500">
+          <p className="text-black text-2xl font-medium lowercase whitespace-nowrap">{friend.statusMsg}</p>
+          <div className="absolute bottom-[-10px] right-8 w-6 h-6 bg-white rotate-45" />
+        </div>
+      )}
+
+      {/* Card Body */}
+      <div className="absolute inset-0 rounded-[20px] overflow-hidden shadow-2xl">
+         <div className="absolute inset-0 [background:radial-gradient(50%_50%_at_74%_49%,rgba(247,255,153,1)_0%,rgba(230,254,100,1)_18%,rgba(222,252,67,1)_33%,rgba(200,239,53,1)_45%,rgba(159,221,33,1)_70%,rgba(141,209,25,1)_100%)] opacity-90" />
+         <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_0%,rgba(0,0,0,0.4)_100%)]" />
+         
+         <div className="absolute top-8 left-8 space-y-2">
+            <h3 className="text-black text-3xl font-bold lowercase opacity-80">{friend.username}</h3>
+            <p className={cn("text-4xl font-headline font-medium lowercase", isOnline ? "text-white" : "text-black/40")}>
+              {friend.status === 'joins-off' ? 'active' : friend.status}!
+            </p>
+         </div>
+
+         <div className="absolute bottom-8 left-8 right-[240px] space-y-4">
+            {isOffline && (
+              <div className="space-y-1">
+                <p className="text-black/40 text-xl font-bold uppercase tracking-widest">last active:</p>
+                <p className="text-black/60 text-2xl lowercase">{friend.lastActive}</p>
+              </div>
+            )}
+
+            {isOnline && (
+              <div className="space-y-4">
+                <div className="space-y-1">
+                   <p className="text-black/60 text-xl font-bold lowercase">currently on:</p>
+                   <p className="text-white text-2xl font-bold lowercase">{friend.activity}</p>
+                </div>
+                <button className="h-14 px-10 rounded-full bg-gradient-to-b from-[#6CBF4B] to-[#8EC158] border-2 border-white/40 text-white font-bold text-2xl shadow-lg hover:scale-105 transition-transform flex items-center gap-2">
+                  JOIN
+                </button>
+              </div>
+            )}
+
+            {isActive && (
+              <p className="text-black/70 text-2xl leading-snug lowercase font-medium">
+                {friend.activity}
+              </p>
+            )}
+         </div>
+      </div>
+
+      {/* Avatar Render */}
+      <div className="absolute bottom-0 right-0 w-[300px] h-[380px] pointer-events-none overflow-hidden">
+        <img 
+          src={`/avatars/${friend.gender}/${friend.avatarId}/${friend.avatarId}_${friend.emotion}.png`}
+          className="w-full h-full object-cover translate-y-10 scale-110 drop-shadow-2xl"
+          alt="friend avatar"
+          onError={(e) => {
+            const fallback = friend.gender === 'female' ? 'mii-f1' : 'mii-m2';
+             (e.target as HTMLImageElement).src = `/avatars/${friend.gender}/${fallback}/${fallback}_default.png`;
+          }}
+        />
+      </div>
+    </div>
+  );
+};
+
 export default function Xbox360ThemeReplica() {
   const { user } = useUser();
   const db = useFirestore();
   const profileRef = useMemoFirebase(() => user ? doc(db, 'users', user.uid, 'profile', 'settings') : null, [db, user]);
   const { data: profile } = useDoc(profileRef);
 
-  const [activeTab, setActiveTab] = React.useState<number>(2);
+  const [activeTab, setActiveTab] = React.useState<number>(0);
   const [currentEmotion, setCurrentEmotion] = React.useState<string>('default');
   const [hoverEmotion, setHoverEmotion] = React.useState<string | null>(null);
   const [showEmotionPicker, setShowEmotionPicker] = React.useState(false);
@@ -216,73 +296,90 @@ export default function Xbox360ThemeReplica() {
           ))}
         </nav>
 
-        {/* Interactive Blade Stack */}
+        {/* Interactive Content Area */}
         <div className="absolute inset-0 pointer-events-none z-30">
-          {/* Main Card (Open Tray) */}
-          <section
-            onClick={() => setActiveTab(2)}
-            className={cn("absolute top-[419px] left-[375px] w-[852px] h-[959px] transition-all duration-700 pointer-events-auto", activeTab === 2 ? "translate-x-0" : "-translate-x-[600px] opacity-40")}
-            style={{ zIndex: activeTab === 2 ? 100 : 10 }}
-          >
-            <div className="absolute inset-0 group">
-              <div className="absolute w-full h-[62.57%] top-0 left-0 rounded-[11px] shadow-[36px_4px_22.4px_-24px_#0000006b] [background:radial-gradient(50%_50%_at_74%_49%,rgba(247,255,153,1)_0%,rgba(230,254,100,1)_18%,rgba(222,252,67,1)_33%,rgba(200,239,53,1)_45%,rgba(159,221,33,1)_70%,rgba(141,209,25,1)_100%)]" />
-              <div className="absolute w-full h-[34.20%] top-[64.75%] left-0 rounded-[11px] [background:radial-gradient(50%_50%_at_74%_50%,rgba(129,129,129,0.01)_70%,rgba(92,92,91,0.31)_100%)]" />
-              <div className="absolute w-full h-[29.41%] top-[33.16%] left-0 rounded-b-[11px] bg-[linear-gradient(180deg,rgba(0,0,0,0)_0%,rgba(0,0,0,0.62)_67%,rgba(0,0,0,0.82)_100%)]" />
+          
+          {/* FRIENDS TAB CONTENT */}
+          {activeTab === 0 && (
+            <div className="absolute top-[350px] left-[375px] w-[1900px] h-[900px] pointer-events-auto animate-in slide-in-from-right-20 duration-700">
+               <div className="grid grid-cols-3 gap-16">
+                  {MOCK_FRIENDS.map(friend => (
+                    <FriendTile key={friend.id} friend={friend} />
+                  ))}
+               </div>
             </div>
-            {/* Reflection */}
-            <div
-              className="absolute top-full left-0 w-full h-full opacity-30 transition-all duration-700 pointer-events-none"
-              style={{
-                transform: 'scaleY(-1) translateY(2px)',
-                maskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 60%)',
-                WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 60%)',
-              }}
-            >
-              <div className="w-full h-full rounded-[11px] bg-white/20 blur-md" />
-            </div>
-            <div className="absolute top-[489px] left-12 [text-shadow:0px_4px_4px_#00000040] font-headline text-white text-[50px] ">Open Channel</div>
-            <div className="absolute bottom-[320px] left-0 font-normal text-black/40 text-3xl px-12">1 of 8</div>
-          </section>
+          )}
 
-          {/* Secondary Blade (Status/Activity) */}
-          <GradientCard
-            isActive={activeTab === 2}
-            zIndex={activeTab === 2 ? 90 : 20}
-            className={cn("top-[486px] left-[1212px] w-[636px] h-[762px] pointer-events-auto", activeTab === 2 ? "translate-x-0" : "translate-x-[-400px]")}
-            title={displayName}
-            subtitle="20 hours"
-            activityTitle="Latest Activities"
-            activityText="whoosh.. theres nothing here!"
-            emotion={currentEmotion}
-            avatarId={selectedAvatarId}
-            avatarGender={selectedAvatarGender}
-            onClick={() => setShowEmotionPicker(true)}
-          />
+          {/* MY CHANNEL TAB CONTENT */}
+          {activeTab === 2 && (
+            <>
+              {/* Main Card (Open Tray) */}
+              <section
+                onClick={() => setActiveTab(2)}
+                className={cn("absolute top-[419px] left-[375px] w-[852px] h-[959px] transition-all duration-700 pointer-events-auto", activeTab === 2 ? "translate-x-0" : "-translate-x-[600px] opacity-40")}
+                style={{ zIndex: activeTab === 2 ? 100 : 10 }}
+              >
+                <div className="absolute inset-0 group">
+                  <div className="absolute w-full h-[62.57%] top-0 left-0 rounded-[11px] shadow-[36px_4px_22.4px_-24px_#0000006b] [background:radial-gradient(50%_50%_at_74%_49%,rgba(247,255,153,1)_0%,rgba(230,254,100,1)_18%,rgba(222,252,67,1)_33%,rgba(200,239,53,1)_45%,rgba(159,221,33,1)_70%,rgba(141,209,25,1)_100%)]" />
+                  <div className="absolute w-full h-[34.20%] top-[64.75%] left-0 rounded-[11px] [background:radial-gradient(50%_50%_at_74%_50%,rgba(129,129,129,0.01)_70%,rgba(92,92,91,0.31)_100%)]" />
+                  <div className="absolute w-full h-[29.41%] top-[33.16%] left-0 rounded-b-[11px] bg-[linear-gradient(180deg,rgba(0,0,0,0)_0%,rgba(0,0,0,0.62)_67%,rgba(0,0,0,0.82)_100%)]" />
+                </div>
+                {/* Reflection */}
+                <div
+                  className="absolute top-full left-0 w-full h-full opacity-30 transition-all duration-700 pointer-events-none"
+                  style={{
+                    transform: 'scaleY(-1) translateY(2px)',
+                    maskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 60%)',
+                    WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 60%)',
+                  }}
+                >
+                  <div className="w-full h-full rounded-[11px] bg-white/20 blur-md" />
+                </div>
+                <div className="absolute top-[489px] left-12 [text-shadow:0px_4px_4px_#00000040] font-headline text-white text-[50px] ">Open Channel</div>
+                <div className="absolute bottom-[320px] left-0 font-normal text-black/40 text-3xl px-12">1 of 8</div>
+              </section>
 
-          {/* Tertiary Blade (Controllers) */}
-          <section
-            onClick={() => setActiveTab(2)}
-            className={cn("absolute top-[522px] left-[1721px] w-[538px] h-[659px] transition-all duration-700 pointer-events-auto", activeTab === 2 ? "translate-x-0" : "translate-x-[400px]")}
-            style={{ zIndex: activeTab === 2 ? 80 : 30 }}
-          >
-            <div className="absolute inset-0">
-              <div className="absolute w-full h-[62.57%] top-0 left-0 rounded-[11px] shadow-[36px_4px_22.4px_-24px_#0000006b] [background:radial-gradient(50%_50%_at_74%_49%,rgba(247,255,153,1)_0%,rgba(230,254,100,1)_18%,rgba(222,252,67,1)_33%,rgba(200,239,53,1)_45%,rgba(159,221,33,1)_70%,rgba(141,209,25,1)_100%)]" />
-              <div className="absolute w-full h-[34.20%] top-[64.75%] left-0 rounded-[11px] [background:radial-gradient(50%_50%_at_74%_50%,rgba(129,129,129,0.01)_70%,rgba(92,92,91,0.31)_100%)]" />
-              <div className="absolute w-full h-[29.41%] top-[33.16%] left-0 rounded-b-[11px] bg-[linear-gradient(180deg,rgba(0,0,0,0)_0%,rgba(0,0,0,0.62)_67%,rgba(0,0,0,0.82)_100%)]" />
-            </div>
-            {/* Reflection */}
-            <div
-              className="absolute top-full left-0 w-full h-full opacity-30 transition-all duration-700 pointer-events-none"
-              style={{
-                transform: 'scaleY(-1) translateY(2px)',
-                maskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 60%)',
-                WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 60%)',
-              }}
-            >
-              <div className="w-full h-full rounded-[11px] bg-white/20 blur-md" />
-            </div>
-            <div className="absolute top-[347px] left-12 font-headline text-white text-[35px] ">Controllers</div>
-          </section>
+              {/* Secondary Blade (Status/Activity) */}
+              <GradientCard
+                isActive={activeTab === 2}
+                zIndex={activeTab === 2 ? 90 : 20}
+                className={cn("top-[486px] left-[1212px] w-[636px] h-[762px] pointer-events-auto", activeTab === 2 ? "translate-x-0" : "translate-x-[-400px]")}
+                title={displayName}
+                subtitle="20 hours"
+                activityTitle="Latest Activities"
+                activityText="whoosh.. theres nothing here!"
+                emotion={currentEmotion}
+                avatarId={selectedAvatarId}
+                avatarGender={selectedAvatarGender}
+                onClick={() => setShowEmotionPicker(true)}
+              />
+
+              {/* Tertiary Blade (Controllers) */}
+              <section
+                onClick={() => setActiveTab(2)}
+                className={cn("absolute top-[522px] left-[1721px] w-[538px] h-[659px] transition-all duration-700 pointer-events-auto", activeTab === 2 ? "translate-x-0" : "translate-x-[400px]")}
+                style={{ zIndex: activeTab === 2 ? 80 : 30 }}
+              >
+                <div className="absolute inset-0">
+                  <div className="absolute w-full h-[62.57%] top-0 left-0 rounded-[11px] shadow-[36px_4px_22.4px_-24px_#0000006b] [background:radial-gradient(50%_50%_at_74%_49%,rgba(247,255,153,1)_0%,rgba(230,254,100,1)_18%,rgba(222,252,67,1)_33%,rgba(200,239,53,1)_45%,rgba(159,221,33,1)_70%,rgba(141,209,25,1)_100%)]" />
+                  <div className="absolute w-full h-[34.20%] top-[64.75%] left-0 rounded-[11px] [background:radial-gradient(50%_50%_at_74%_50%,rgba(129,129,129,0.01)_70%,rgba(92,92,91,0.31)_100%)]" />
+                  <div className="absolute w-full h-[29.41%] top-[33.16%] left-0 rounded-b-[11px] bg-[linear-gradient(180deg,rgba(0,0,0,0)_0%,rgba(0,0,0,0.62)_67%,rgba(0,0,0,0.82)_100%)]" />
+                </div>
+                {/* Reflection */}
+                <div
+                  className="absolute top-full left-0 w-full h-full opacity-30 transition-all duration-700 pointer-events-none"
+                  style={{
+                    transform: 'scaleY(-1) translateY(2px)',
+                    maskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 60%)',
+                    WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 60%)',
+                  }}
+                >
+                  <div className="w-full h-full rounded-[11px] bg-white/20 blur-md" />
+                </div>
+                <div className="absolute top-[347px] left-12 font-headline text-white text-[35px] ">Controllers</div>
+              </section>
+            </>
+          )}
         </div>
 
         {/* Emotion Picker Pop-up */}
