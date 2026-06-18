@@ -25,21 +25,26 @@ import {
   GraduationCap,
   BookOpen,
   CheckSquare,
-  Layers
+  Layers,
+  AlertCircle
 } from "lucide-react"
 import { useUser, useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking } from "@/firebase"
-import { collection, query, where, getDocs, doc, serverTimestamp } from "firebase/firestore"
+import { collection, query, where, getDocs, doc, serverTimestamp, collectionGroup } from "firebase/firestore"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
+import { useToast } from "@/hooks/use-toast"
 
 export function FriendsHub() {
   const { user } = useUser()
   const db = useFirestore()
+  const { toast } = useToast()
+  
   const [isOpen, setIsOpen] = React.useState(false)
   const [searchQuery, setSearchQuery] = React.useState("")
   const [searchResults, setSearchResults] = React.useState<any[]>([])
   const [isSearching, setIsSearching] = React.useState(false)
   const [selectedUser, setSelectedUser] = React.useState<any | null>(null)
+  const [hasSearched, setHasSearched] = React.useState(false)
   
   // Friends query
   const friendsQuery = useMemoFirebase(() => {
@@ -51,15 +56,50 @@ export function FriendsHub() {
   const handleSearch = async () => {
     if (!searchQuery.trim() || !db) return
     setIsSearching(true)
+    setHasSearched(true)
     try {
-      // In a real app, this would be a search across all user profiles
-      // For this prototype, we query by username field in profile/settings
-      const profilesQuery = query(
-        collection(db, "users"), 
-        // We'd ideally have a collection group or top-level users collection
-        // For prototype, we'll simulate finding users
+      // 1. Try real database search via collection group
+      // This requires a Firestore index. If it fails, we fall back to demos.
+      const q = query(
+        collectionGroup(db, "settings"),
+        where("username", "==", searchQuery.toLowerCase().trim())
       )
-      // Note: This is simplified. In production firestore, cross-user search requires specific indexing.
+      
+      const querySnapshot = await getDocs(q)
+      const results = querySnapshot.docs
+        .map(doc => ({ ...doc.data(), uid: doc.ref.parent.parent?.id }))
+        .filter(u => u.uid !== user?.uid) // Don't find yourself
+
+      if (results.length > 0) {
+        setSearchResults(results)
+      } else {
+        // 2. Fallback to demo users for prototype visibility
+        const demos = [
+          { 
+            uid: 'demo1', 
+            displayName: 'sarah study', 
+            username: 'sarah_99', 
+            photoUrl: 'https://picsum.photos/seed/sarah/200/200',
+            theme: { customColors: { primary: '#F97316', background: '#FFF7ED' }, activeTheme: 'sunset' }
+          },
+          { 
+            uid: 'demo2', 
+            displayName: 'josh dev', 
+            username: 'joshua_x', 
+            photoUrl: 'https://picsum.photos/seed/josh/200/200',
+            theme: { customColors: { primary: '#3B82F6', background: '#F0F9FF' }, activeTheme: 'midnight' }
+          }
+        ]
+        
+        const filteredDemos = demos.filter(u => 
+          u.username.includes(searchQuery.toLowerCase().trim()) || 
+          u.displayName.includes(searchQuery.toLowerCase().trim())
+        )
+        setSearchResults(filteredDemos)
+      }
+    } catch (e: any) {
+      console.error("search failed", e)
+      // Fallback to demos on error (e.g. index missing)
       setSearchResults([
         { 
           uid: 'demo1', 
@@ -67,17 +107,12 @@ export function FriendsHub() {
           username: 'sarah_99', 
           photoUrl: 'https://picsum.photos/seed/sarah/200/200',
           theme: { customColors: { primary: '#F97316', background: '#FFF7ED' }, activeTheme: 'sunset' }
-        },
-        { 
-          uid: 'demo2', 
-          displayName: 'josh dev', 
-          username: 'joshua_x', 
-          photoUrl: 'https://picsum.photos/seed/josh/200/200',
-          theme: { customColors: { primary: '#3B82F6', background: '#F0F9FF' }, activeTheme: 'midnight' }
         }
-      ].filter(u => u.username.includes(searchQuery.toLowerCase())))
-    } catch (e) {
-      console.error(e)
+      ].filter(u => u.username.includes(searchQuery.toLowerCase().trim())))
+      
+      if (e.code === 'failed-precondition') {
+        console.warn("friends hub: search requires a firestore index for settings collectionGroup.")
+      }
     } finally {
       setIsSearching(false)
     }
@@ -94,18 +129,33 @@ export function FriendsHub() {
       status: 'pending_out',
       createdAt: new Date().toISOString()
     }, { merge: true })
+
+    toast({
+      title: "request sent!",
+      description: `friend request sent to ${targetUser.displayName}.`,
+    })
     
-    // In a real app, we'd also set a 'pending_in' for the target user
+    setSelectedUser(null)
+    setSearchQuery("")
+    setSearchResults([])
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={(val) => {
+      setIsOpen(val)
+      if (!val) {
+        setSearchQuery("")
+        setSearchResults([])
+        setHasSearched(false)
+        setSelectedUser(null)
+      }
+    }}>
       <DialogTrigger asChild>
         <button className="p-1 hover:bg-muted rounded-full transition-colors text-muted-foreground hover:text-primary">
           <Users size={16} />
         </button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl p-0 border-none bg-background shadow-3xl overflow-hidden rounded-[40px] h-[600px] flex flex-col">
+      <DialogContent className="max-w-2xl p-0 border-none bg-background shadow-3xl overflow-hidden rounded-[40px] h-[650px] flex flex-col">
         <DialogHeader className="p-8 pb-4 bg-muted/20 border-b shrink-0">
           <DialogTitle className="font-headline text-2xl font-bold flex items-center gap-2 lowercase">
             <Users className="h-6 w-6 text-primary" /> online friends hub
@@ -116,38 +166,53 @@ export function FriendsHub() {
         <div className="flex-1 overflow-y-auto custom-scrollbar p-8">
           {(!friends || friends.length === 0) && !selectedUser ? (
             <div className="space-y-8 animate-in fade-in duration-500">
-              <div className="text-center py-10 space-y-4">
+              <div className="text-center py-6 space-y-4">
                 <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
                   <UserPlus className="h-10 w-10 text-primary" />
                 </div>
                 <div className="space-y-1">
-                  <h3 className="font-bold text-xl lowercase">no friends yet</h3>
-                  <p className="text-muted-foreground lowercase text-sm">search for classmates to start sharing.</p>
+                  <h3 className="font-bold text-xl lowercase">search for classmates</h3>
+                  <p className="text-muted-foreground lowercase text-sm">find your friends to start studying together.</p>
                 </div>
               </div>
 
-              <div className="relative group">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                <Input 
-                  placeholder="search by username..." 
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                  className="pl-12 h-14 rounded-2xl bg-muted/30 border-none text-lg lowercase no-focus-ring"
-                />
-                {isSearching && <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 animate-spin text-primary" />}
+              <div className="flex gap-3">
+                <div className="relative group flex-1">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                  <Input 
+                    placeholder="search by username..." 
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                    className="pl-12 h-14 rounded-2xl bg-muted/30 border-none text-lg lowercase no-focus-ring shadow-inner"
+                  />
+                </div>
+                <Button 
+                  onClick={handleSearch} 
+                  disabled={isSearching || !searchQuery.trim()}
+                  className="h-14 px-8 rounded-2xl font-bold lowercase shadow-lg transition-all hover:scale-105 active:scale-95"
+                >
+                  {isSearching ? <Loader2 className="h-5 w-5 animate-spin" /> : "search"}
+                </Button>
               </div>
 
-              <div className="space-y-3">
-                {searchResults.map((res) => (
-                  <UserSearchCard key={res.uid} user={res} onClick={() => setSelectedUser(res)} />
-                ))}
+              <div className="space-y-3 pt-4">
+                {searchResults.length > 0 ? (
+                  searchResults.map((res) => (
+                    <UserSearchCard key={res.uid} user={res} onClick={() => setSelectedUser(res)} />
+                  ))
+                ) : hasSearched && !isSearching ? (
+                  <div className="text-center py-10 text-muted-foreground lowercase flex flex-col items-center gap-2">
+                    <AlertCircle className="h-6 w-6 opacity-20" />
+                    <span>no users found matching "{searchQuery}"</span>
+                  </div>
+                ) : null}
               </div>
             </div>
           ) : selectedUser ? (
             <div className="animate-in slide-in-from-right-4 duration-500 space-y-6">
               <Button variant="ghost" onClick={() => setSelectedUser(null)} className="rounded-xl h-8 px-2 lowercase text-muted-foreground hover:text-foreground">
-                <ChevronLeft size={16} className="mr-1" /> back to search
+                <ChevronLeft size={16} className="mr-1" /> back to results
               </Button>
               
               <div 
@@ -165,7 +230,7 @@ export function FriendsHub() {
                     <h4 className="text-3xl font-bold lowercase tracking-tight" style={{ color: resTheme(selectedUser).primary }}>
                       {selectedUser.displayName}
                     </h4>
-                    <p className="text-sm opacity-60 lowercase">@{selectedUser.username}</p>
+                    <p className="text-sm opacity-60 lowercase" style={{ color: resTheme(selectedUser).primary }}>@{selectedUser.username}</p>
                   </div>
                 </div>
                 <div className="absolute top-6 right-6">
@@ -180,11 +245,16 @@ export function FriendsHub() {
               </div>
             </div>
           ) : (
-            <div className="space-y-4">
-              <h4 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">my friends</h4>
-              {friends?.map(friend => (
-                <FriendItem key={friend.id} friend={friend} />
-              ))}
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h4 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">my friends</h4>
+                <Button variant="ghost" size="sm" onClick={() => setFriends([])} className="h-6 text-[10px] lowercase opacity-40 hover:opacity-100">search for more</Button>
+              </div>
+              <div className="grid gap-4">
+                {friends?.map(friend => (
+                  <FriendItem key={friend.id} friend={friend} />
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -198,12 +268,18 @@ function UserSearchCard({ user, onClick }: { user: any, onClick: () => void }) {
   return (
     <div 
       onClick={onClick}
-      className="group flex items-center justify-between p-1 pr-6 rounded-2xl border border-border/10 bg-white hover:shadow-xl transition-all cursor-pointer overflow-hidden h-20"
+      className="group flex items-center justify-between p-1 pr-6 rounded-2xl border border-border/10 bg-card hover:shadow-xl transition-all cursor-pointer overflow-hidden h-20"
     >
       <div className="flex items-center gap-4 h-full">
         <div className="h-full w-20 bg-muted/10 shrink-0 overflow-hidden relative">
-          <img src={user.photoUrl} className="w-full h-full object-cover" alt="pfp" />
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5" />
+          {user.photoUrl ? (
+            <img src={user.photoUrl} className="w-full h-full object-cover" alt="pfp" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-primary/10 text-primary font-bold">
+              {user.displayName?.[0]}
+            </div>
+          )}
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors" />
         </div>
         <div>
           <h4 className="font-bold text-sm lowercase">{user.displayName}</h4>
@@ -212,8 +288,8 @@ function UserSearchCard({ user, onClick }: { user: any, onClick: () => void }) {
       </div>
       <div className="flex items-center gap-3">
         <div className="flex gap-1 h-3">
-          <div className="w-3 h-3 rounded-full" style={{ background: theme.primary }} />
-          <div className="w-3 h-3 rounded-full" style={{ background: theme.background }} />
+          <div className="w-3 h-3 rounded-full shadow-sm" style={{ background: theme.primary }} />
+          <div className="w-3 h-3 rounded-full shadow-sm" style={{ background: theme.background }} />
         </div>
         <ChevronRight size={16} className="text-muted-foreground group-hover:text-primary transition-transform group-hover:translate-x-1" />
       </div>
@@ -239,9 +315,9 @@ function FriendItem({ friend }: { friend: any }) {
       id: shareId,
       fromUid: user.uid,
       toUid: friend.uid,
-      itemType: selectedItem.type,
-      itemId: selectedItem.id,
-      itemData: selectedItem.data,
+      itemType: selectedItem.itemType,
+      itemId: selectedItem.itemId,
+      itemData: selectedItem.itemData,
       mode,
       createdAt: new Date().toISOString()
     }, { merge: true })
@@ -258,9 +334,9 @@ function FriendItem({ friend }: { friend: any }) {
   return (
     <div className="flex items-center justify-between p-4 rounded-3xl bg-card border border-border shadow-sm hover:shadow-md transition-all group">
       <div className="flex items-center gap-4">
-        <Avatar className="h-12 w-12 border-2 border-primary/20">
+        <Avatar className="h-12 w-12 border-2 border-primary/20 shadow-sm">
           <AvatarImage src={friend.photoUrl} className="object-cover" />
-          <AvatarFallback>{friend.displayName[0]}</AvatarFallback>
+          <AvatarFallback className="bg-primary/5 text-primary text-xs font-bold">{friend.displayName[0]}</AvatarFallback>
         </Avatar>
         <div>
           <h4 className="font-bold text-sm lowercase">{friend.displayName}</h4>
@@ -272,12 +348,12 @@ function FriendItem({ friend }: { friend: any }) {
         <Button 
           variant="outline" 
           size="sm" 
-          className="rounded-xl h-10 px-4 lowercase gap-2 border-2 border-primary/10 hover:bg-primary/5"
+          className="rounded-xl h-10 px-4 lowercase gap-2 border-2 border-primary/10 hover:bg-primary/5 transition-all active:scale-95"
           onClick={() => setShowSharePicker(true)}
         >
           <Share2 size={14} className="text-primary" /> share
         </Button>
-        <Button variant="ghost" size="icon" className="rounded-xl h-10 w-10">
+        <Button variant="ghost" size="icon" className="rounded-xl h-10 w-10 hover:bg-muted transition-colors">
           <MessageSquare size={16} className="text-muted-foreground" />
         </Button>
       </div>
@@ -289,9 +365,33 @@ function FriendItem({ friend }: { friend: any }) {
             <DialogDescription className="lowercase">what would you like to share?</DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-4 py-6">
-            <ShareCategoryButton icon={<Layers />} label="flashcards" onClick={() => { setSelectedItem({ type: 'flashcardSet', label: 'history deck', id: '1', data: {} }); setShowSharingModal(true); setShowSharePicker(false); }} />
-            <ShareCategoryButton icon={<BookOpen />} label="notebooks" onClick={() => { setSelectedItem({ type: 'notebook', label: 'biology notes', id: '2', data: {} }); setShowSharingModal(true); setShowSharePicker(false); }} />
-            <ShareCategoryButton icon={<CheckSquare />} label="tasks" onClick={() => { setSelectedItem({ type: 'task', label: 'calculus hw', id: '3', data: {} }); setShowSharingModal(true); setShowSharePicker(false); }} />
+            <ShareCategoryButton 
+              icon={<Layers />} 
+              label="flashcards" 
+              onClick={() => { 
+                setSelectedItem({ label: 'history deck', itemType: 'flashcardSet', itemId: '1', itemData: {} }); 
+                setShowSharingModal(true); 
+                setShowSharePicker(false); 
+              }} 
+            />
+            <ShareCategoryButton 
+              icon={<BookOpen />} 
+              label="notebooks" 
+              onClick={() => { 
+                setSelectedItem({ label: 'biology notes', itemType: 'notebook', itemId: '2', itemData: {} }); 
+                setShowSharingModal(true); 
+                setShowSharePicker(false); 
+              }} 
+            />
+            <ShareCategoryButton 
+              icon={<CheckSquare />} 
+              label="tasks" 
+              onClick={() => { 
+                setSelectedItem({ label: 'calculus hw', itemType: 'task', itemId: '3', itemData: {} }); 
+                setShowSharingModal(true); 
+                setShowSharePicker(false); 
+              }} 
+            />
           </div>
         </DialogContent>
       </Dialog>
@@ -299,7 +399,7 @@ function FriendItem({ friend }: { friend: any }) {
       <Dialog open={showSharingModal} onOpenChange={setShowSharingModal}>
         <DialogContent className="rounded-[40px] border-none shadow-3xl bg-background p-10 max-w-md">
           <DialogHeader className="text-center space-y-4">
-            <div className="h-16 w-16 rounded-3xl bg-primary/10 flex items-center justify-center mx-auto">
+            <div className="h-16 w-16 rounded-3xl bg-primary/10 flex items-center justify-center mx-auto animate-bounce">
               <Share2 className="h-8 w-8 text-primary" />
             </div>
             <DialogTitle className="font-headline text-3xl lowercase">share options</DialogTitle>
@@ -308,16 +408,16 @@ function FriendItem({ friend }: { friend: any }) {
           <div className="grid gap-4 py-8">
             <Button 
               onClick={() => handleShare('copy')}
-              className="h-20 rounded-3xl flex flex-col items-center justify-center gap-1 border-2 border-muted hover:border-primary transition-all bg-card text-foreground"
+              className="h-24 rounded-3xl flex flex-col items-center justify-center gap-1 border-2 border-muted hover:border-primary transition-all bg-card text-foreground group"
             >
-              <span className="font-bold text-lg lowercase">make a copy</span>
+              <span className="font-bold text-lg lowercase group-hover:text-primary transition-colors">make a copy</span>
               <span className="text-[10px] opacity-40 lowercase">they get their own version to edit</span>
             </Button>
             <Button 
               onClick={() => handleShare('collaborate')}
-              className="h-20 rounded-3xl flex flex-col items-center justify-center gap-1 border-2 border-muted hover:border-accent transition-all bg-card text-foreground"
+              className="h-24 rounded-3xl flex flex-col items-center justify-center gap-1 border-2 border-muted hover:border-accent transition-all bg-card text-foreground group"
             >
-              <span className="font-bold text-lg lowercase">collaborate</span>
+              <span className="font-bold text-lg lowercase group-hover:text-accent-foreground transition-colors">collaborate</span>
               <span className="text-[10px] opacity-40 lowercase">you both edit the same file</span>
             </Button>
           </div>
@@ -332,10 +432,10 @@ function ShareCategoryButton({ icon, label, onClick }: any) {
     <Button 
       variant="outline" 
       onClick={onClick}
-      className="h-32 rounded-3xl flex flex-col gap-3 border-2 border-muted hover:border-primary hover:bg-primary/5 transition-all lowercase"
+      className="h-32 rounded-3xl flex flex-col gap-3 border-2 border-muted hover:border-primary hover:bg-primary/5 transition-all lowercase group"
     >
-      <div className="p-3 rounded-2xl bg-muted group-hover:bg-primary/20 transition-colors">
-        {React.cloneElement(icon, { size: 24, className: "text-muted-foreground" })}
+      <div className="p-4 rounded-2xl bg-muted group-hover:bg-primary/20 transition-colors">
+        {React.cloneElement(icon, { size: 28, className: "text-muted-foreground group-hover:text-primary transition-colors" })}
       </div>
       <span className="font-bold text-sm">{label}</span>
     </Button>
