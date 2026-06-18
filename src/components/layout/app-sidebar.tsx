@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -26,7 +25,8 @@ import {
   Gamepad2,
   UserCircle2,
   Wind,
-  Users
+  Users,
+  UserPlus
 } from "lucide-react"
 
 import {
@@ -48,7 +48,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { useFirebase, useUser, useDoc, useMemoFirebase } from "@/firebase"
 import { signOut } from "firebase/auth"
-import { doc, collection, query, orderBy } from 'firebase/firestore'
+import { doc, collection, query, orderBy, where } from 'firebase/firestore'
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ProfileCustomizer } from "@/components/profile/ProfileCustomizer"
 import {
@@ -152,7 +152,7 @@ export function AppSidebar() {
 
                   <Link href="/friends">
                     <button className={cn(
-                      "p-1 rounded-full transition-all text-muted-foreground hover:text-primary",
+                      "p-1 rounded-full transition-all text-muted-foreground hover:text-primary relative",
                       pathname === '/friends' ? "bg-primary/10 text-primary" : "hover:bg-muted"
                     )}>
                       <Users size={16} />
@@ -550,7 +550,7 @@ function AdminPanelDialog({ children, open, onOpenChange }: { children: React.Re
 }
 
 function NotificationCenter({ user, firestore }: any) {
-  // Use simple query to avoid index errors
+  // 1. Task query
   const tasksQuery = useMemoFirebase(() => {
     if (!user || !firestore) return null
     return query(
@@ -558,62 +558,114 @@ function NotificationCenter({ user, firestore }: any) {
       orderBy("dueDate", "asc")
     )
   }, [user, firestore])
-
   const { data: tasks } = useCollection(tasksQuery)
+
+  // 2. Incoming Friend Requests query
+  const requestsQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null
+    return query(
+      collection(firestore, "users", user.uid, "friends"),
+      where("status", "==", "pending_in")
+    )
+  }, [user, firestore])
+  const { data: requests } = useCollection(requestsQuery)
 
   const upcomingTasks = React.useMemo(() => {
     if (!tasks) return []
     const now = new Date()
     const threshold = addDays(now, 2)
-    // Filter for incomplete tasks in memory
     return tasks.filter(t => {
       const due = parseISO(t.dueDate)
       return !t.completed && due <= threshold
     })
   }, [tasks])
 
-  if (upcomingTasks.length === 0) return null
+  const notificationCount = upcomingTasks.length + (requests?.length || 0)
+
+  if (notificationCount === 0) {
+    return (
+      <Popover>
+        <PopoverTrigger asChild>
+          <button className="p-1 hover:bg-muted rounded-full transition-colors text-muted-foreground group">
+            <Bell className="h-4 w-4" />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="w-64 p-8 rounded-3xl border-none shadow-2xl bg-white text-center" align="start" side="right" sideOffset={10}>
+          <div className="flex flex-col items-center gap-4">
+            <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
+              <Bell className="h-5 w-5 text-muted-foreground/30" />
+            </div>
+            <p className="text-xs text-muted-foreground lowercase">all caught up!</p>
+          </div>
+        </PopoverContent>
+      </Popover>
+    )
+  }
 
   return (
     <Popover>
       <PopoverTrigger asChild>
         <button className="relative p-1 hover:bg-muted rounded-full transition-colors group">
           <Bell className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
-          <span className="absolute -top-1 -right-1 h-3 w-3 bg-destructive rounded-full border-2 border-white flex items-center justify-center group-data-[collapsible=icon]:hidden">
-            <span className="sr-only">new notifications</span>
+          <span className="absolute -top-1 -right-1 h-4 w-4 bg-destructive text-[8px] font-bold text-white rounded-full border-2 border-white flex items-center justify-center">
+            {notificationCount}
           </span>
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-80 p-0 rounded-3xl border-none shadow-2xl bg-white overflow-hidden" align="start" side="right" sideOffset={10}>
         <div className="p-6 bg-primary/10 border-b">
-          <h3 className="font-headline font-bold text-lg lowercase">upcoming deadlines</h3>
-          <p className="text-xs text-muted-foreground lowercase">tasks due within 48 hours.</p>
+          <h3 className="font-headline font-bold text-lg lowercase">notifications</h3>
+          <p className="text-xs text-muted-foreground lowercase">updates regarding your classes and classmates.</p>
         </div>
-        <div className="max-h-[300px] overflow-y-auto">
-          {upcomingTasks.map((task) => {
-            const isOverdue = isPast(parseISO(task.dueDate))
-            return (
-              <div key={task.id} className="p-4 border-b last:border-0 flex items-start gap-4 hover:bg-muted/30 transition-colors">
-                <div className={cn(
-                  "mt-1 h-2 w-2 rounded-full shrink-0",
-                  isOverdue ? "bg-destructive" : "bg-primary"
-                )} />
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold text-sm lowercase truncate">{task.title}</p>
-                  <p className={cn(
-                    "text-[10px] font-bold uppercase tracking-widest",
-                    isOverdue ? "text-destructive" : "text-primary"
-                  )}>
-                    {isOverdue ? "overdue" : "due soon"}
-                  </p>
+        <ScrollArea className="max-h-[350px]">
+          {/* Friend Requests Section */}
+          {requests && requests.length > 0 && (
+            <div className="p-2 bg-accent/5 border-b">
+              <span className="text-[9px] font-bold uppercase tracking-widest text-accent-foreground/50 px-2 py-1">friend requests</span>
+              {requests.map(req => (
+                <Link href="/friends" key={req.uid}>
+                  <div className="p-3 rounded-2xl hover:bg-white transition-all flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-full bg-accent/20 flex items-center justify-center text-accent-foreground">
+                      <UserPlus className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold truncate lowercase">{req.displayName} sent a request</p>
+                      <p className="text-[10px] text-muted-foreground lowercase">click to view and accept</p>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+
+          {/* Tasks Section */}
+          <div className="p-2">
+            {upcomingTasks.length > 0 && <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground px-2 py-1">due soon</span>}
+            {upcomingTasks.map((task) => {
+              const isOverdue = isPast(parseISO(task.dueDate))
+              return (
+                <div key={task.id} className="p-3 rounded-2xl hover:bg-muted/30 transition-all flex items-start gap-3">
+                  <div className={cn(
+                    "mt-1.5 h-1.5 w-1.5 rounded-full shrink-0",
+                    isOverdue ? "bg-destructive" : "bg-primary"
+                  )} />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-xs lowercase truncate">{task.title}</p>
+                    <p className={cn(
+                      "text-[9px] font-bold uppercase tracking-tighter opacity-60",
+                      isOverdue ? "text-destructive" : "text-primary"
+                    )}>
+                      {isOverdue ? "overdue" : "approaching"}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            )
-          })}
-        </div>
+              )
+            })}
+          </div>
+        </ScrollArea>
         <div className="p-4 bg-muted/20 text-center">
           <Link href="/tasks" className="text-xs font-bold text-primary hover:underline lowercase">
-            view task manager
+            manage workspace
           </Link>
         </div>
       </PopoverContent>

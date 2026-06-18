@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -21,9 +20,11 @@ import {
   AlertCircle,
   UserCircle2,
   ArrowLeft,
-  Plus
+  Plus,
+  Clock,
+  UserCheck
 } from "lucide-react"
-import { useUser, useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking } from "@/firebase"
+import { useUser, useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase"
 import { collection, query, where, getDocs, doc, collectionGroup, orderBy } from "firebase/firestore"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -61,12 +62,20 @@ export default function FriendsPage() {
   const [selectedUser, setSelectedUser] = React.useState<any | null>(null)
   const [hasSearched, setHasSearched] = React.useState(false)
 
-  // Friends query
-  const friendsQuery = useMemoFirebase(() => {
+  // Current User's Profile (for sending name/photo in requests)
+  const myProfileRef = useMemoFirebase(() => user ? doc(db, 'users', user.uid, 'profile', 'settings') : null, [user, db])
+  const { data: myProfile } = useCollection(useMemoFirebase(() => user ? query(collection(db, 'users', user.uid, 'profile')) : null, [user, db]))
+  const actualMyProfile = myProfile?.[0]
+
+  // Friends query (includes pending)
+  const allFriendsQuery = useMemoFirebase(() => {
     if (!user || !db) return null
-    return query(collection(db, "users", user.uid, "friends"), where("status", "==", "accepted"))
+    return query(collection(db, "users", user.uid, "friends"))
   }, [user, db])
-  const { data: friends, isLoading: isFriendsLoading } = useCollection(friendsQuery)
+  const { data: allFriendDocs, isLoading: isFriendsLoading } = useCollection(allFriendsQuery)
+
+  const acceptedFriends = allFriendDocs?.filter(f => f.status === 'accepted') || []
+  const incomingRequests = allFriendDocs?.filter(f => f.status === 'pending_in') || []
 
   if (isUserLoading) {
     return <div className="flex items-center justify-center min-h-[60vh]"><Loader2 className="animate-spin" /></div>
@@ -114,6 +123,12 @@ export default function FriendsPage() {
 
   const sendRequest = (targetUser: any) => {
     if (!user || !db) return
+    
+    // Check if already requested or friends
+    const existing = allFriendDocs?.find(f => f.uid === targetUser.uid)
+    if (existing) return
+
+    // 1. Write to MY friends list (Pending Out)
     const myFriendRef = doc(db, "users", user.uid, "friends", targetUser.uid)
     setDocumentNonBlocking(myFriendRef, {
       uid: targetUser.uid,
@@ -124,12 +139,45 @@ export default function FriendsPage() {
       createdAt: new Date().toISOString()
     }, { merge: true })
 
+    // 2. Write to THEIR friends list (Pending In)
+    // Using the current user's profile info
+    const theirFriendRef = doc(db, "users", targetUser.uid, "friends", user.uid)
+    setDocumentNonBlocking(theirFriendRef, {
+      uid: user.uid,
+      username: actualMyProfile?.username || user.email?.split('@')[0],
+      displayName: user.displayName || actualMyProfile?.displayName || 'student',
+      photoUrl: user.photoURL || actualMyProfile?.photoUrl || '',
+      status: 'pending_in',
+      createdAt: new Date().toISOString()
+    }, { merge: true })
+
     toast({
       title: "request sent!",
       description: `friend request sent to ${targetUser.displayName}.`,
     })
-    
-    setSelectedUser(null)
+  }
+
+  const handleAcceptRequest = (request: any) => {
+    if (!user || !db) return
+
+    // 1. Update MY record to accepted
+    const myRef = doc(db, "users", user.uid, "friends", request.uid)
+    updateDocumentNonBlocking(myRef, { status: 'accepted' })
+
+    // 2. Update THEIR record to accepted
+    const theirRef = doc(db, "users", request.uid, "friends", user.uid)
+    updateDocumentNonBlocking(theirRef, { status: 'accepted' })
+
+    toast({ title: "request accepted!", description: `you are now friends with ${request.displayName}.` })
+  }
+
+  const handleDeclineRequest = (request: any) => {
+    if (!user || !db) return
+    const myRef = doc(db, "users", user.uid, "friends", request.uid)
+    const theirRef = doc(db, "users", request.uid, "friends", user.uid)
+    deleteDocumentNonBlocking(myRef)
+    deleteDocumentNonBlocking(theirRef)
+    toast({ title: "request declined", description: "friend request removed." })
   }
 
   return (
@@ -147,27 +195,63 @@ export default function FriendsPage() {
       </div>
 
       <div className="grid gap-8 lg:grid-cols-12">
-        {/* Left Column: Friends List */}
+        {/* Left Column: Friends List & Incoming Requests */}
         <div className="lg:col-span-4 space-y-6">
+          {/* Incoming Requests */}
+          {incomingRequests.length > 0 && (
+            <Card className="border-none shadow-lg rounded-[40px] bg-primary/5 overflow-hidden ring-2 ring-primary/20">
+              <CardContent className="p-8 space-y-6">
+                <h3 className="font-bold text-xl lowercase flex items-center gap-2 text-primary">
+                  <UserPlus className="h-5 w-5" /> new requests
+                </h3>
+                <div className="space-y-3">
+                  {incomingRequests.map(req => (
+                    <div key={req.uid} className="flex items-center justify-between p-4 rounded-2xl bg-white border border-primary/10 shadow-sm animate-in zoom-in-95">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={req.photoUrl} className="object-cover" />
+                          <AvatarFallback>{req.displayName?.[0]}</AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0">
+                          <h4 className="font-bold text-xs lowercase truncate">{req.displayName}</h4>
+                          <p className="text-[9px] opacity-40 lowercase">@{req.username}</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-1">
+                        <Button size="icon" variant="ghost" onClick={() => handleAcceptRequest(req)} className="h-8 w-8 rounded-full bg-primary/10 text-primary hover:bg-primary/20">
+                          <Check className="h-4 w-4" />
+                        </Button>
+                        <Button size="icon" variant="ghost" onClick={() => handleDeclineRequest(req)} className="h-8 w-8 rounded-full bg-destructive/10 text-destructive hover:bg-destructive/20">
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Friends List */}
           <Card className="border-none shadow-sm rounded-[40px] bg-card overflow-hidden h-fit">
             <CardContent className="p-8 space-y-6">
               <div className="flex items-center justify-between">
                 <h3 className="font-bold text-xl lowercase flex items-center gap-2">
                   <Users className="h-5 w-5 text-primary" /> my friends
                 </h3>
-                <Badge variant="secondary" className="rounded-full">{friends?.length || 0}</Badge>
+                <Badge variant="secondary" className="rounded-full">{acceptedFriends.length}</Badge>
               </div>
 
               <div className="space-y-3">
                 {isFriendsLoading ? (
                   <div className="flex justify-center py-10"><Loader2 className="animate-spin text-muted-foreground" /></div>
-                ) : friends && friends.length > 0 ? (
-                  friends.map(friend => (
-                    <FriendItem key={friend.id} friend={friend} />
+                ) : acceptedFriends.length > 0 ? (
+                  acceptedFriends.map(friend => (
+                    <FriendItem key={friend.uid} friend={friend} />
                   ))
                 ) : (
                   <div className="text-center py-10 text-muted-foreground lowercase italic text-sm">
-                    you haven't added any friends yet.
+                    {incomingRequests.length > 0 ? "check your requests above!" : "you haven't added any friends yet."}
                   </div>
                 )}
               </div>
@@ -224,7 +308,7 @@ export default function FriendsPage() {
                   <ImmersiveProfilePreview 
                     profile={selectedUser} 
                     onAction={() => sendRequest(selectedUser)} 
-                    actionLabel="add friend"
+                    relationshipStatus={allFriendDocs?.find(f => f.uid === selectedUser.uid)?.status}
                   />
                 </div>
               </div>
@@ -278,7 +362,7 @@ function UserSearchCard({ user, onClick }: { user: any, onClick: () => void }) {
   )
 }
 
-function ImmersiveProfilePreview({ profile, onAction, actionLabel }: { profile: any, onAction: () => void, actionLabel: string }) {
+function ImmersiveProfilePreview({ profile, onAction, relationshipStatus }: { profile: any, onAction: () => void, relationshipStatus?: string }) {
   const containerRef = React.useRef<HTMLDivElement>(null);
   const [scale, setScale] = React.useState(1);
 
@@ -331,6 +415,15 @@ function ImmersiveProfilePreview({ profile, onAction, actionLabel }: { profile: 
 
   const pfpBg = profile.photoUrl ? 'transparent' : 'rgba(0,0,0,0.1)';
   const cornerRadius = `${profile.cornerRounding ?? 16}px`;
+
+  const getActionLabel = () => {
+    if (relationshipStatus === 'accepted') return 'Friends';
+    if (relationshipStatus === 'pending_out') return 'Requested!';
+    if (relationshipStatus === 'pending_in') return 'Accept Request';
+    return 'Add Friend';
+  };
+
+  const isAlreadyActioned = relationshipStatus === 'accepted' || relationshipStatus === 'pending_out';
 
   return (
     <div 
@@ -434,15 +527,21 @@ function ImmersiveProfilePreview({ profile, onAction, actionLabel }: { profile: 
         >
           <Button 
             onClick={onAction}
-            className="w-full h-full p-0 font-bold lowercase border-none shadow-xl hover:scale-105 transition-transform"
+            disabled={isAlreadyActioned}
+            className={cn(
+              "w-full h-full p-0 font-bold lowercase border-none shadow-xl transition-all",
+              !isAlreadyActioned && "hover:scale-105"
+            )}
             style={{ 
               background: getColorStyle(theme.buttons || customColors.primary),
               color: 'white',
               borderRadius: cornerRadius,
+              opacity: isAlreadyActioned ? 0.6 : 1,
               ...getTargetBorderStyle('add', getColorStyle(theme.buttons || customColors.primary))
             }}
           >
-            {actionLabel}
+            {relationshipStatus === 'accepted' && <UserCheck className="mr-2 h-4 w-4" />}
+            {getActionLabel()}
           </Button>
         </div>
 

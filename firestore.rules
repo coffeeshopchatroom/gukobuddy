@@ -13,7 +13,19 @@ service cloud.firestore {
       allow write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // User-specific data (tasks, courses, notebooks, friends)
+    // Friend requests logic: Allow users to 'knock' on others' collections
+    match /users/{userId}/friends/{friendId} {
+      // Users can manage their own friends list
+      allow read, update, delete: if request.auth != null && request.auth.uid == userId;
+      // Allow creation if it's the owner OR if someone is sending a pending_in request
+      // friendId must match the requester's UID in the pending_in case
+      allow create: if request.auth != null && (
+        request.auth.uid == userId || 
+        (request.resource.data.status == 'pending_in' && friendId == request.auth.uid)
+      );
+    }
+
+    // User-specific data (tasks, courses, notebooks)
     match /users/{userId}/{allPaths=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
