@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -34,6 +35,19 @@ import { FirestorePermissionError } from '@/firebase/errors'
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+
+const PORTAL_BASE_W = 600;
+const PORTAL_BASE_H = 400;
+
+const DEFAULT_PROFILE_LAYOUT = {
+  banner: { x: 0, y: 0, w: 600, h: 80, zIndex: 0 },
+  pfp: { x: 24, y: 40, w: 96, h: 96, zIndex: 2 },
+  name: { x: 136, y: 50, w: 280, h: 48, zIndex: 2 },
+  username: { x: 136, y: 98, w: 150, h: 24, zIndex: 2 },
+  bio: { x: 24, y: 200, w: 300, h: 60, zIndex: 2 },
+  addBtn: { x: 440, y: 50, w: 130, h: 44, zIndex: 2 },
+  aboutHeader: { x: 24, y: 175, w: 100, h: 20, zIndex: 2 }
+};
 
 export default function FriendsPage() {
   const { user, isUserLoading } = useUser()
@@ -265,16 +279,24 @@ function UserSearchCard({ user, onClick }: { user: any, onClick: () => void }) {
 }
 
 function ImmersiveProfilePreview({ profile, onAction, actionLabel }: { profile: any, onAction: () => void, actionLabel: string }) {
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const [scale, setScale] = React.useState(1);
+
+  React.useLayoutEffect(() => {
+    const updateScale = () => {
+      if (containerRef.current) {
+        const { width } = containerRef.current.getBoundingClientRect();
+        setScale(width / PORTAL_BASE_W);
+      }
+    };
+    updateScale();
+    const observer = new ResizeObserver(updateScale);
+    if (containerRef.current) observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, []);
+
   const theme = profile.theme || {}
-  const layout = profile.layout || {
-    banner: { x: 0, y: 0, w: 800, h: 120, zIndex: 0 },
-    pfp: { x: 40, y: 80, w: 140, h: 140, zIndex: 2 },
-    name: { x: 200, y: 100, w: 400, h: 60, zIndex: 2 },
-    username: { x: 200, y: 160, w: 200, h: 30, zIndex: 2 },
-    bio: { x: 40, y: 250, w: 500, h: 100, zIndex: 2 },
-    addBtn: { x: 620, y: 100, w: 140, h: 50, zIndex: 2 },
-    aboutHeader: { x: 40, y: 230, w: 100, h: 20, zIndex: 2 }
-  }
+  const layout = profile.layout || DEFAULT_PROFILE_LAYOUT;
   const stickers = profile.stickers || []
   const customColors = theme.customColors || { primary: '#A7C4A0', background: '#FFFFFF', foreground: '#1a1c19' }
 
@@ -308,159 +330,170 @@ function ImmersiveProfilePreview({ profile, onAction, actionLabel }: { profile: 
   };
 
   const pfpBg = profile.photoUrl ? 'transparent' : 'rgba(0,0,0,0.1)';
-  const cornerRadius = `${profile.cornerRounding ?? 48}px`;
+  const cornerRadius = `${profile.cornerRounding ?? 16}px`;
 
   return (
     <div 
-      className="w-full aspect-[16/10] overflow-hidden relative shadow-2xl border border-border"
+      ref={containerRef}
+      className="w-full relative overflow-hidden bg-muted/10 shadow-2xl border border-border"
       style={{ 
-        background: getColorStyle(theme.body || customColors.background),
-        fontFamily: profile.font || 'Plus Jakarta Sans',
+        height: PORTAL_BASE_H * scale,
         borderRadius: cornerRadius,
       }}
     >
-      {/* Banner */}
       <div 
-        className="absolute"
+        className="absolute top-0 left-0 origin-top-left"
         style={{ 
-          left: layout.banner?.x ?? 0, 
-          top: layout.banner?.y ?? 0,
-          width: layout.banner?.w ?? '100%',
-          height: layout.banner?.h ?? 120,
-          zIndex: layout.banner?.zIndex ?? 0
+          width: PORTAL_BASE_W, 
+          height: PORTAL_BASE_H,
+          transform: `scale(${scale})`,
+          background: getColorStyle(theme.body || customColors.background),
+          fontFamily: profile.font || 'Plus Jakarta Sans',
         }}
       >
-        {profile.bannerUrl ? (
-          <img src={profile.bannerUrl} className="w-full h-full object-cover" alt="banner" />
-        ) : (
-          <div className="w-full h-full bg-black/10" />
-        )}
-      </div>
-      
-      {/* PFP */}
-      <div 
-        className="absolute overflow-hidden flex items-center justify-center transition-all"
-        style={{ 
-          left: layout.pfp?.x ?? 40, 
-          top: layout.pfp?.y ?? 80,
-          width: layout.pfp?.w ?? 140,
-          height: layout.pfp?.h ?? 140,
-          borderRadius: `${profile.cornerRounding ?? 24}px`,
-          zIndex: layout.pfp?.zIndex ?? 2,
-          ...getTargetBorderStyle('profile', pfpBg),
-          backgroundColor: pfpBg
-        }}
-      >
-        {profile.photoUrl ? (
-          <img src={profile.photoUrl} className="w-full h-full object-cover" alt="pfp" />
-        ) : (
-          <UserCircle2 className="w-1/2 h-1/2 opacity-20" />
-        )}
-      </div>
-
-      {/* Name */}
-      <div 
-        className="absolute flex flex-col justify-center"
-        style={{ 
-          left: layout.name?.x ?? 200, 
-          top: layout.name?.y ?? 100,
-          width: layout.name?.w ?? 400,
-          height: layout.name?.h ?? 60,
-          zIndex: layout.name?.zIndex ?? 2,
-          color: getColorStyle(theme.text || customColors.foreground)
-        }}
-      >
-        <h4 className="text-5xl font-bold leading-none lowercase truncate drop-shadow-sm">{profile.displayName || 'student'}</h4>
-      </div>
-
-      {/* Username */}
-      <div 
-        className="absolute"
-        style={{ 
-          left: layout.username?.x ?? 200, 
-          top: layout.username?.y ?? 160,
-          width: layout.username?.w ?? 200,
-          height: layout.username?.h ?? 30,
-          zIndex: layout.username?.zIndex ?? 2,
-          color: getColorStyle(theme.text || customColors.foreground),
-          opacity: 0.6
-        }}
-      >
-        <p className="text-xl lowercase truncate">@{profile.username}</p>
-      </div>
-
-      {/* Add Friend Button */}
-      <div 
-        className="absolute"
-        style={{ 
-          left: layout.addBtn?.x ?? 620, 
-          top: layout.addBtn?.y ?? 100,
-          width: layout.addBtn?.w ?? 140,
-          height: layout.addBtn?.h ?? 50,
-          zIndex: layout.addBtn?.zIndex ?? 2
-        }}
-      >
-        <Button 
-          onClick={onAction}
-          className="w-full h-full p-0 font-bold lowercase border-none shadow-xl hover:scale-105 transition-transform"
-          style={{ 
-            background: getColorStyle(theme.buttons || customColors.primary),
-            color: 'white',
-            borderRadius: `${profile.cornerRounding ?? 16}px`,
-            ...getTargetBorderStyle('add', getColorStyle(theme.buttons || customColors.primary))
-          }}
-        >
-          {actionLabel}
-        </Button>
-      </div>
-
-      {/* About Me Label */}
-      <div 
-        className="absolute"
-        style={{ 
-          left: layout.aboutHeader?.x ?? 40, 
-          top: layout.aboutHeader?.y ?? 230,
-          width: layout.aboutHeader?.w ?? 100,
-          height: layout.aboutHeader?.h ?? 20,
-          zIndex: layout.aboutHeader?.zIndex ?? 2,
-          color: getColorStyle(theme.text || customColors.foreground),
-          opacity: 0.4
-        }}
-      >
-        <h5 className="text-[12px] font-bold uppercase tracking-widest">about me</h5>
-      </div>
-
-      {/* Bio */}
-      <div 
-        className="absolute"
-        style={{ 
-          left: layout.bio?.x ?? 40, 
-          top: layout.bio?.y ?? 250,
-          width: layout.bio?.w ?? 500,
-          height: layout.bio?.h ?? 100,
-          zIndex: layout.bio?.zIndex ?? 2,
-          color: getColorStyle(theme.text || customColors.foreground),
-        }}
-      >
-        <p className="text-lg leading-relaxed lowercase opacity-90 italic line-clamp-4">
-          {profile.bio || 'this student has not shared a bio yet.'}
-        </p>
-      </div>
-
-      {/* Stickers */}
-      {stickers.map((sticker: any) => (
+        {/* Banner */}
         <div 
-          key={sticker.id}
-          className="absolute transition-all pointer-events-none"
-          style={{
-            left: sticker.x, top: sticker.y, width: sticker.w, height: sticker.h,
-            zIndex: sticker.zIndex,
-            transform: `rotate(${sticker.rotation || 0}deg)`
+          className="absolute"
+          style={{ 
+            left: layout.banner?.x ?? 0, 
+            top: layout.banner?.y ?? 0,
+            width: layout.banner?.w ?? '100%',
+            height: layout.banner?.h ?? 120,
+            zIndex: layout.banner?.zIndex ?? 0
           }}
         >
-          <img src={sticker.url} className="w-full h-full object-fill" alt="sticker" />
+          {profile.bannerUrl ? (
+            <img src={profile.bannerUrl} className="w-full h-full object-cover" alt="banner" />
+          ) : (
+            <div className="w-full h-full bg-black/10" />
+          )}
         </div>
-      ))}
+        
+        {/* PFP */}
+        <div 
+          className="absolute overflow-hidden flex items-center justify-center transition-all"
+          style={{ 
+            left: layout.pfp?.x ?? 40, 
+            top: layout.pfp?.y ?? 80,
+            width: layout.pfp?.w ?? 140,
+            height: layout.pfp?.h ?? 140,
+            borderRadius: cornerRadius,
+            zIndex: layout.pfp?.zIndex ?? 2,
+            ...getTargetBorderStyle('profile', pfpBg),
+            backgroundColor: pfpBg
+          }}
+        >
+          {profile.photoUrl ? (
+            <img src={profile.photoUrl} className="w-full h-full object-cover" alt="pfp" />
+          ) : (
+            <UserCircle2 className="w-1/2 h-1/2 opacity-20" />
+          )}
+        </div>
+
+        {/* Name */}
+        <div 
+          className="absolute flex flex-col justify-center"
+          style={{ 
+            left: layout.name?.x ?? 200, 
+            top: layout.name?.y ?? 100,
+            width: layout.name?.w ?? 400,
+            height: layout.name?.h ?? 60,
+            zIndex: layout.name?.zIndex ?? 2,
+            color: getColorStyle(theme.text || customColors.foreground)
+          }}
+        >
+          <h4 className="text-3xl font-bold leading-tight lowercase drop-shadow-sm">{profile.displayName || 'student'}</h4>
+        </div>
+
+        {/* Username */}
+        <div 
+          className="absolute"
+          style={{ 
+            left: layout.username?.x ?? 200, 
+            top: layout.username?.y ?? 160,
+            width: layout.username?.w ?? 200,
+            height: layout.username?.h ?? 30,
+            zIndex: layout.username?.zIndex ?? 2,
+            color: getColorStyle(theme.text || customColors.foreground),
+            opacity: 0.6
+          }}
+        >
+          <p className="text-xl lowercase truncate">@{profile.username}</p>
+        </div>
+
+        {/* Add Friend Button */}
+        <div 
+          className="absolute"
+          style={{ 
+            left: layout.addBtn?.x ?? 620, 
+            top: layout.addBtn?.y ?? 100,
+            width: layout.addBtn?.w ?? 140,
+            height: layout.addBtn?.h ?? 50,
+            zIndex: layout.addBtn?.zIndex ?? 2
+          }}
+        >
+          <Button 
+            onClick={onAction}
+            className="w-full h-full p-0 font-bold lowercase border-none shadow-xl hover:scale-105 transition-transform"
+            style={{ 
+              background: getColorStyle(theme.buttons || customColors.primary),
+              color: 'white',
+              borderRadius: cornerRadius,
+              ...getTargetBorderStyle('add', getColorStyle(theme.buttons || customColors.primary))
+            }}
+          >
+            {actionLabel}
+          </Button>
+        </div>
+
+        {/* About Me Label */}
+        <div 
+          className="absolute"
+          style={{ 
+            left: layout.aboutHeader?.x ?? 40, 
+            top: layout.aboutHeader?.y ?? 230,
+            width: layout.aboutHeader?.w ?? 100,
+            height: layout.aboutHeader?.h ?? 20,
+            zIndex: layout.aboutHeader?.zIndex ?? 2,
+            color: getColorStyle(theme.text || customColors.foreground),
+            opacity: 0.4
+          }}
+        >
+          <h5 className="text-[12px] font-bold uppercase tracking-widest">about me</h5>
+        </div>
+
+        {/* Bio */}
+        <div 
+          className="absolute"
+          style={{ 
+            left: layout.bio?.x ?? 40, 
+            top: layout.bio?.y ?? 250,
+            width: layout.bio?.w ?? 500,
+            height: layout.bio?.h ?? 100,
+            zIndex: layout.bio?.zIndex ?? 2,
+            color: getColorStyle(theme.text || customColors.foreground),
+          }}
+        >
+          <p className="text-lg leading-relaxed lowercase opacity-90 italic line-clamp-4">
+            {profile.bio || 'this student has not shared a bio yet.'}
+          </p>
+        </div>
+
+        {/* Stickers */}
+        {stickers.map((sticker: any) => (
+          <div 
+            key={sticker.id}
+            className="absolute transition-all pointer-events-none"
+            style={{
+              left: sticker.x, top: sticker.y, width: sticker.w, height: sticker.h,
+              zIndex: sticker.zIndex,
+              transform: `rotate(${sticker.rotation || 0}deg)`
+            }}
+          >
+            <img src={sticker.url} className="w-full h-full object-fill" alt="sticker" />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -548,8 +581,6 @@ function FriendItem({ friend }: { friend: any }) {
           <Share2 size={12} className="text-primary" /> share
         </Button>
       </div>
-
-      {/* Share Dialogs logic remains the same ... */}
     </div>
   )
 }
