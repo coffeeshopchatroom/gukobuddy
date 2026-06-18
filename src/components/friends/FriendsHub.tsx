@@ -29,12 +29,13 @@ import {
   AlertCircle
 } from "lucide-react"
 import { useUser, useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking } from "@/firebase"
-import { collection, query, where, getDocs, doc, serverTimestamp, collectionGroup } from "firebase/firestore"
+import { collection, query, where, getDocs, doc, serverTimestamp, collectionGroup, orderBy } from "firebase/firestore"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 import { useToast } from "@/hooks/use-toast"
 import { errorEmitter } from '@/firebase/error-emitter'
 import { FirestorePermissionError } from '@/firebase/errors'
+import { ScrollArea } from "@/components/ui/scroll-area"
 
 export function FriendsHub() {
   const { user } = useUser()
@@ -76,33 +77,7 @@ export function FriendsHub() {
         }))
         .filter(u => u.uid !== user?.uid)
 
-      if (results.length > 0) {
-        setSearchResults(results)
-      } else {
-        // Fallback demo results for visualization in prototype
-        const demos = [
-          { 
-            uid: 'demo1', 
-            displayName: 'sarah study', 
-            username: 'sarah_99', 
-            photoUrl: 'https://picsum.photos/seed/sarah/200/200',
-            theme: { customColors: { primary: '#F97316', background: '#FFF7ED' }, activeTheme: 'sunset' }
-          },
-          { 
-            uid: 'demo2', 
-            displayName: 'josh dev', 
-            username: 'joshua_x', 
-            photoUrl: 'https://picsum.photos/seed/josh/200/200',
-            theme: { customColors: { primary: '#3B82F6', background: '#F0F9FF' }, activeTheme: 'midnight' }
-          }
-        ]
-        
-        const filteredDemos = demos.filter(u => 
-          u.username.includes(searchQuery.toLowerCase().trim()) || 
-          u.displayName.includes(searchQuery.toLowerCase().trim())
-        )
-        setSearchResults(filteredDemos)
-      }
+      setSearchResults(results)
     } catch (e: any) {
       if (e.code === 'permission-denied') {
         const contextualError = new FirestorePermissionError({
@@ -110,6 +85,12 @@ export function FriendsHub() {
           path: 'profile (collection group)',
         })
         errorEmitter.emit('permission-error', contextualError);
+      } else if (e.code === 'failed-precondition') {
+        toast({
+          variant: "destructive",
+          title: "index required",
+          description: "please click the link in your developer console to create the required firestore index for searching usernames."
+        })
       } else {
         console.error("search failed", e)
         toast({
@@ -303,12 +284,31 @@ function UserSearchCard({ user, onClick }: { user: any, onClick: () => void }) {
 }
 
 function FriendItem({ friend }: { friend: any }) {
-  const [showSharePicker, setShowSharePicker] = React.useState(false)
-  const [selectedItem, setSelectedItem] = React.useState<any>(null)
-  const [showSharingModal, setShowSharingModal] = React.useState(false)
   const { user } = useUser()
   const db = useFirestore()
   const { toast } = useToast()
+
+  const [showSharePicker, setShowSharePicker] = React.useState(false)
+  const [shareCategory, setShareCategory] = React.useState<'flashcardSet' | 'notebook' | 'task' | null>(null)
+  const [selectedItem, setSelectedItem] = React.useState<any>(null)
+  const [showSharingModal, setShowSharingModal] = React.useState(false)
+
+  // Fetch real data for sharing
+  const coursesQuery = useMemoFirebase(() => user ? query(collection(db, "users", user.uid, "courses")) : null, [user, db])
+  const { data: courses } = useCollection(coursesQuery)
+  
+  const flashcardSetsQuery = useMemoFirebase(() => {
+    if (!user || !courses || courses.length === 0) return null
+    // Just grab first course sets for simplicity in this hub
+    return query(collection(db, "users", user.uid, "courses", courses[0].id, "flashcardSets"))
+  }, [user, db, courses])
+  const { data: decks } = useCollection(flashcardSetsQuery)
+
+  const notesQuery = useMemoFirebase(() => user ? query(collection(db, "users", user.uid, "notes"), orderBy("updatedAt", "desc")) : null, [user, db])
+  const { data: notes } = useCollection(notesQuery)
+
+  const tasksQuery = useMemoFirebase(() => user ? query(collection(db, "users", user.uid, "tasks"), orderBy("dueDate", "asc")) : null, [user, db])
+  const { data: tasks } = useCollection(tasksQuery)
 
   const handleShare = (mode: 'copy' | 'collaborate') => {
     if (!user || !db || !selectedItem) return
@@ -320,20 +320,28 @@ function FriendItem({ friend }: { friend: any }) {
       id: shareId,
       fromUid: user.uid,
       toUid: friend.uid,
-      itemType: selectedItem.itemType,
-      itemId: selectedItem.itemId,
-      itemData: selectedItem.itemData,
+      itemType: shareCategory,
+      itemId: selectedItem.id,
+      itemData: selectedItem, // snapshot for copy mode
       mode,
       createdAt: new Date().toISOString()
     }, { merge: true })
 
     toast({
       title: "item shared!",
-      description: `successfully shared ${selectedItem.label} via ${mode}.`,
+      description: `successfully shared ${selectedItem.title || selectedItem.name} via ${mode}.`,
     })
     
     setShowSharingModal(false)
     setSelectedItem(null)
+    setShareCategory(null)
+  }
+
+  const getItemsForCategory = () => {
+    if (shareCategory === 'flashcardSet') return decks || []
+    if (shareCategory === 'notebook') return notes || []
+    if (shareCategory === 'task') return tasks || []
+    return []
   }
 
   return (
@@ -364,40 +372,51 @@ function FriendItem({ friend }: { friend: any }) {
       </div>
 
       <Dialog open={showSharePicker} onOpenChange={setShowSharePicker}>
-        <DialogContent className="rounded-[32px] border-none shadow-2xl bg-card p-8">
+        <DialogContent className="rounded-[32px] border-none shadow-2xl bg-card p-8 sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="font-headline text-2xl lowercase">share with {friend.displayName}</DialogTitle>
-            <DialogDescription className="lowercase">what would you like to share?</DialogDescription>
+            <DialogDescription className="lowercase">
+              {!shareCategory ? "what would you like to share?" : `select a ${shareCategory === 'flashcardSet' ? 'deck' : shareCategory}`}
+            </DialogDescription>
           </DialogHeader>
-          <div className="grid grid-cols-2 gap-4 py-6">
-            <ShareCategoryButton 
-              icon={<Layers />} 
-              label="flashcards" 
-              onClick={() => { 
-                setSelectedItem({ label: 'history deck', itemType: 'flashcardSet', itemId: '1', itemData: {} }); 
-                setShowSharingModal(true); 
-                setShowSharePicker(false); 
-              }} 
-            />
-            <ShareCategoryButton 
-              icon={<BookOpen />} 
-              label="notebooks" 
-              onClick={() => { 
-                setSelectedItem({ label: 'biology notes', itemType: 'notebook', itemId: '2', itemData: {} }); 
-                setShowSharingModal(true); 
-                setShowSharePicker(false); 
-              }} 
-            />
-            <ShareCategoryButton 
-              icon={<CheckSquare />} 
-              label="tasks" 
-              onClick={() => { 
-                setSelectedItem({ label: 'calculus hw', itemType: 'task', itemId: '3', itemData: {} }); 
-                setShowSharingModal(true); 
-                setShowSharePicker(false); 
-              }} 
-            />
-          </div>
+
+          {!shareCategory ? (
+            <div className="grid grid-cols-1 gap-3 py-6">
+              <ShareCategoryRow icon={<Layers />} label="flashcard decks" onClick={() => setShareCategory('flashcardSet')} />
+              <ShareCategoryRow icon={<BookOpen />} label="notebook pages" onClick={() => setShareCategory('notebook')} />
+              <ShareCategoryRow icon={<CheckSquare />} label="assigned tasks" onClick={() => setShareCategory('task')} />
+            </div>
+          ) : (
+            <div className="py-4 space-y-4">
+              <Button variant="ghost" size="sm" onClick={() => setShareCategory(null)} className="rounded-xl h-8 px-2 lowercase text-muted-foreground">
+                <ChevronLeft size={16} className="mr-1" /> change category
+              </Button>
+              <ScrollArea className="h-64 pr-4">
+                <div className="space-y-2">
+                  {getItemsForCategory().length > 0 ? (
+                    getItemsForCategory().map((item: any) => (
+                      <button
+                        key={item.id}
+                        onClick={() => {
+                          setSelectedItem(item);
+                          setShowSharingModal(true);
+                          setShowSharePicker(false);
+                        }}
+                        className="w-full flex items-center justify-between p-4 rounded-2xl bg-muted/30 hover:bg-primary/10 transition-all border border-transparent hover:border-primary/20 text-left group"
+                      >
+                        <span className="font-bold text-sm lowercase truncate">{item.title || item.name}</span>
+                        <ChevronRight size={14} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </button>
+                    ))
+                  ) : (
+                    <div className="text-center py-10 text-muted-foreground lowercase italic text-sm">
+                      you don't have any {shareCategory === 'flashcardSet' ? 'decks' : shareCategory + 's'} yet.
+                    </div>
+                  )}
+                </div>
+              </ScrollArea>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
@@ -408,7 +427,7 @@ function FriendItem({ friend }: { friend: any }) {
               <Share2 className="h-8 w-8 text-primary" />
             </div>
             <DialogTitle className="font-headline text-3xl lowercase">share options</DialogTitle>
-            <p className="text-muted-foreground lowercase">how should {friend.displayName} receive this?</p>
+            <p className="text-muted-foreground lowercase">how should {friend.displayName} receive "{selectedItem?.title || selectedItem?.name}"?</p>
           </DialogHeader>
           <div className="grid gap-4 py-8">
             <Button 
@@ -432,18 +451,18 @@ function FriendItem({ friend }: { friend: any }) {
   )
 }
 
-function ShareCategoryButton({ icon, label, onClick }: any) {
+function ShareCategoryRow({ icon, label, onClick }: any) {
   return (
-    <Button 
-      variant="outline" 
+    <button 
       onClick={onClick}
-      className="h-32 rounded-3xl flex flex-col gap-3 border-2 border-muted hover:border-primary hover:bg-primary/5 transition-all lowercase group"
+      className="flex items-center gap-4 p-4 rounded-2xl bg-muted/30 hover:bg-primary/5 border border-transparent hover:border-primary/20 transition-all text-left group"
     >
-      <div className="p-4 rounded-2xl bg-muted group-hover:bg-primary/20 transition-colors">
-        {React.cloneElement(icon, { size: 28, className: "text-muted-foreground group-hover:text-primary transition-colors" })}
+      <div className="p-2 rounded-xl bg-white border border-border shadow-sm group-hover:text-primary transition-colors">
+        {React.cloneElement(icon, { size: 20 })}
       </div>
-      <span className="font-bold text-sm">{label}</span>
-    </Button>
+      <span className="font-bold text-sm lowercase flex-1">{label}</span>
+      <ChevronRight size={16} className="text-muted-foreground opacity-40 group-hover:opacity-100" />
+    </button>
   )
 }
 
