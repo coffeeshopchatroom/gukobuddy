@@ -2,12 +2,12 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     // Allows collection group queries for searching profiles by username
-    // This is required for the Friends Hub search to work across all user profiles
-    match /{path=**}/profile/settings {
+    // This matches the 'settings' document within any 'profile' collection
+    match /{path=**}/profile/{docId} {
       allow read: if request.auth != null;
     }
 
-    // Allows users to read any profile settings for search and display
+    // Explicit rules for user settings
     match /users/{userId}/profile/settings {
       allow read: if request.auth != null;
       allow write: if request.auth != null && request.auth.uid == userId;

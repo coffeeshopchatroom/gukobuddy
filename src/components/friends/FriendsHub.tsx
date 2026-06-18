@@ -33,6 +33,8 @@ import { collection, query, where, getDocs, doc, serverTimestamp, collectionGrou
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 import { useToast } from "@/hooks/use-toast"
+import { errorEmitter } from '@/firebase/error-emitter'
+import { FirestorePermissionError } from '@/firebase/errors'
 
 export function FriendsHub() {
   const { user } = useUser()
@@ -57,10 +59,10 @@ export function FriendsHub() {
     if (!searchQuery.trim() || !db) return
     setIsSearching(true)
     setHasSearched(true)
-    setSearchResults([]) // Clear previous results
+    setSearchResults([]) 
 
     try {
-      // Search across the 'profile' collection group to find users by username
+      // Search across the 'profile' collection group
       const q = query(
         collectionGroup(db, "profile"),
         where("username", "==", searchQuery.toLowerCase().trim())
@@ -70,14 +72,14 @@ export function FriendsHub() {
       const results = querySnapshot.docs
         .map(doc => ({ 
           ...doc.data(), 
-          uid: doc.ref.parent.parent?.id // Extract the user UID from the path users/{uid}/profile/settings
+          uid: doc.ref.parent.parent?.id 
         }))
-        .filter(u => u.uid !== user?.uid) // Exclude current user from results
+        .filter(u => u.uid !== user?.uid)
 
       if (results.length > 0) {
         setSearchResults(results)
       } else {
-        // Prototype Fallback: If no real user found, show demo matches for visualization
+        // Fallback demo results for visualization in prototype
         const demos = [
           { 
             uid: 'demo1', 
@@ -102,12 +104,20 @@ export function FriendsHub() {
         setSearchResults(filteredDemos)
       }
     } catch (e: any) {
-      console.error("search failed", e)
-      toast({
-        variant: "destructive",
-        title: "search error",
-        description: e.message || "could not complete search."
-      })
+      if (e.code === 'permission-denied') {
+        const contextualError = new FirestorePermissionError({
+          operation: 'list',
+          path: 'profile (collection group)',
+        })
+        errorEmitter.emit('permission-error', contextualError);
+      } else {
+        console.error("search failed", e)
+        toast({
+          variant: "destructive",
+          title: "search error",
+          description: e.message || "could not complete search."
+        })
+      }
     } finally {
       setIsSearching(false)
     }

@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -12,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
-import { GraduationCap, Mail, Lock, Loader2, ArrowRight, ArrowLeft, Sparkles, School, BookOpen, Layers, CheckSquare } from 'lucide-react';
+import { GraduationCap, Mail, Lock, Loader2, ArrowRight, ArrowLeft, Sparkles, School, BookOpen, Layers, CheckSquare, User } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
@@ -31,6 +30,7 @@ export default function SignupPage() {
   const [error, setError] = useState<string | null>(null);
 
   // profile data
+  const [username, setUsername] = useState('');
   const [studentType, setStudentType] = useState<'high-school' | 'college'>('college');
   const [useAi, setUseAi] = useState(true);
   const [focus, setFocus] = useState<'flashcards' | 'notebooks' | 'tasks' | 'all'>('all');
@@ -63,12 +63,17 @@ export default function SignupPage() {
 
   const handleSaveProfile = async () => {
     if (!user || !db) return;
+    if (!username) {
+      setError('please pick a unique username');
+      return;
+    }
     setIsProcessing(true);
     setError(null);
     try {
       const profileRef = doc(db, 'users', user.uid, 'profile', 'settings');
       await setDoc(profileRef, {
         id: user.uid,
+        username: username.toLowerCase().trim(),
         studentType,
         useAi,
         focus,
@@ -150,48 +155,63 @@ export default function SignupPage() {
             <div className="space-y-8">
               <div className="space-y-2">
                 <CardTitle className="text-2xl font-bold font-headline lowercase">student profile</CardTitle>
-                <CardDescription className="lowercase text-base">what level are you currently studying at?</CardDescription>
+                <CardDescription className="lowercase text-base">set your username and study level.</CardDescription>
               </div>
 
-              <RadioGroup value={studentType} onValueChange={(v: any) => setStudentType(v)} className="grid gap-4">
-                <Label
-                  htmlFor="college"
-                  className={cn(
-                    "flex items-center justify-between p-6 rounded-3xl border-2 transition-all cursor-pointer hover:border-primary/50",
-                    studentType === 'college' ? "border-primary bg-primary/5 shadow-md shadow-primary/5" : "border-muted"
-                  )}
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 rounded-2xl bg-muted group-hover:bg-primary/20">
-                      <GraduationCap className={cn("h-6 w-6", studentType === 'college' ? "text-primary" : "text-muted-foreground")} />
-                    </div>
-                    <div>
-                      <div className="font-bold text-lg lowercase">college student</div>
-                      <div className="text-sm text-muted-foreground lowercase">experience organized by courses.</div>
-                    </div>
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">choose username</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value.toLowerCase())}
+                      placeholder="cool_student_99"
+                      className="pl-10 rounded-2xl h-14 no-focus-ring border-muted bg-background"
+                    />
                   </div>
-                  <RadioGroupItem value="college" id="college" className="sr-only" />
-                </Label>
+                </div>
 
-                <Label
-                  htmlFor="high-school"
-                  className={cn(
-                    "flex items-center justify-between p-6 rounded-3xl border-2 transition-all cursor-pointer hover:border-primary/50",
-                    studentType === 'high-school' ? "border-primary bg-primary/5 shadow-md shadow-primary/5" : "border-muted"
-                  )}
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 rounded-2xl bg-muted group-hover:bg-primary/20">
-                      <School className={cn("h-6 w-6", studentType === 'high-school' ? "text-primary" : "text-muted-foreground")} />
+                <RadioGroup value={studentType} onValueChange={(v: any) => setStudentType(v)} className="grid gap-4">
+                  <Label
+                    htmlFor="college"
+                    className={cn(
+                      "flex items-center justify-between p-6 rounded-3xl border-2 transition-all cursor-pointer hover:border-primary/50",
+                      studentType === 'college' ? "border-primary bg-primary/5 shadow-md shadow-primary/5" : "border-muted"
+                    )}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 rounded-2xl bg-muted group-hover:bg-primary/20">
+                        <GraduationCap className={cn("h-6 w-6", studentType === 'college' ? "text-primary" : "text-muted-foreground")} />
+                      </div>
+                      <div>
+                        <div className="font-bold text-lg lowercase">college student</div>
+                        <div className="text-sm text-muted-foreground lowercase">experience organized by courses.</div>
+                      </div>
                     </div>
-                    <div>
-                      <div className="font-bold text-lg lowercase">high school student</div>
-                      <div className="text-sm text-muted-foreground lowercase">experience organized by classes.</div>
+                    <RadioGroupItem value="college" id="college" className="sr-only" />
+                  </Label>
+
+                  <Label
+                    htmlFor="high-school"
+                    className={cn(
+                      "flex items-center justify-between p-6 rounded-3xl border-2 transition-all cursor-pointer hover:border-primary/50",
+                      studentType === 'high-school' ? "border-primary bg-primary/5 shadow-md shadow-primary/5" : "border-muted"
+                    )}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 rounded-2xl bg-muted group-hover:bg-primary/20">
+                        <School className={cn("h-6 w-6", studentType === 'high-school' ? "text-primary" : "text-muted-foreground")} />
+                      </div>
+                      <div>
+                        <div className="font-bold text-lg lowercase">high school student</div>
+                        <div className="text-sm text-muted-foreground lowercase">experience organized by classes.</div>
+                      </div>
                     </div>
-                  </div>
-                  <RadioGroupItem value="high-school" id="high-school" className="sr-only" />
-                </Label>
-              </RadioGroup>
+                    <RadioGroupItem value="high-school" id="high-school" className="sr-only" />
+                  </Label>
+                </RadioGroup>
+              </div>
 
               <Button onClick={() => setStep('preferences')} className="w-full rounded-2xl h-16 text-lg font-bold shadow-xl shadow-primary/20 lowercase">
                 continue <ArrowRight className="ml-2 h-5 w-5" />

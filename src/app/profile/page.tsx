@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -28,6 +27,7 @@ export default function ProfilePage() {
   const { data: profile, isLoading: isProfileLoading } = useDoc(profileRef);
 
   const [displayName, setDisplayName] = React.useState('');
+  const [username, setUsername] = React.useState('');
   const [photoUrl, setPhotoUrl] = React.useState('');
   const [studentType, setStudentType] = React.useState<'high-school' | 'college'>('college');
   const [useAi, setUseAi] = React.useState(true);
@@ -45,6 +45,7 @@ export default function ProfilePage() {
       setStudentType(profile.studentType || 'college');
       setUseAi(profile.useAi ?? true);
       setFocus(profile.focus || 'all');
+      setUsername(profile.username || '');
     }
   }, [user, profile]);
 
@@ -96,6 +97,7 @@ export default function ProfilePage() {
 
       await setDoc(profileRef, {
         displayName,
+        username: username.toLowerCase().trim(),
         photoUrl,
         studentType,
         useAi,
@@ -167,6 +169,7 @@ export default function ProfilePage() {
                 {isAdmin && <ShieldCheck className="h-5 w-5 text-primary" />}
               </div>
               <p className="text-xs text-muted-foreground lowercase truncate max-w-full">{user.email}</p>
+              {username && <p className="text-[10px] font-bold text-primary uppercase tracking-widest">@{username}</p>}
             </div>
             <div className="flex flex-col gap-2">
               <Badge variant="secondary" className="rounded-full px-4 py-1 lowercase">
@@ -187,14 +190,25 @@ export default function ProfilePage() {
               <h2 className="text-2xl font-bold font-headline lowercase">personal info</h2>
             </CardHeader>
             <CardContent className="p-8 pt-4 space-y-6">
-              <div className="space-y-2">
-                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">display name</Label>
-                <Input 
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  placeholder="your name"
-                  className="rounded-2xl h-14 no-focus-ring border-muted bg-background lowercase"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">display name</Label>
+                  <Input 
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    placeholder="your name"
+                    className="rounded-2xl h-14 no-focus-ring border-muted bg-background lowercase"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">username</Label>
+                  <Input 
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value.toLowerCase())}
+                    placeholder="unique_username"
+                    className="rounded-2xl h-14 no-focus-ring border-muted bg-background lowercase"
+                  />
+                </div>
               </div>
 
               <div className="space-y-4">
