@@ -36,6 +36,13 @@ export default function ProfilePage() {
   const [isUpdating, setIsUpdating] = React.useState(false);
   const [uploading, setUploading] = React.useState(false);
 
+  // Handle protected route redirection
+  React.useEffect(() => {
+    if (!user && !isUserLoading) {
+      router.push('/login');
+    }
+  }, [user, isUserLoading, router]);
+
   React.useEffect(() => {
     if (user) {
       setDisplayName(user.displayName || '');
@@ -121,17 +128,12 @@ export default function ProfilePage() {
     }
   };
 
-  if (isUserLoading || isProfileLoading) {
+  if (isUserLoading || isProfileLoading || !user) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
-  }
-
-  if (!user) {
-    router.push('/login');
-    return null;
   }
 
   const isAdmin = profile?.isAdmin === true;

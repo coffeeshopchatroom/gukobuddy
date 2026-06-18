@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useFirebase, useAuth, initiateAnonymousSignIn } from '@/firebase';
 import { initiateEmailSignIn } from '@/firebase/non-blocking-login';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -19,10 +18,20 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // If user is already logged in, redirect to dashboard
-  if (user && !isUserLoading) {
-    router.push('/');
-    return null;
+  // Use useEffect for navigation side effects
+  useEffect(() => {
+    if (user && !isUserLoading) {
+      router.push('/');
+    }
+  }, [user, isUserLoading, router]);
+
+  // Return a loading state or null while redirecting/loading
+  if (isUserLoading || user) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
   }
 
   const handleSignIn = () => {

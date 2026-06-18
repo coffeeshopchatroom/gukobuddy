@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -76,6 +75,13 @@ export default function SettingsPage() {
   const [bgBlur, setBgBlur] = React.useState(0);
   const [fontFamily, setFontFamily] = React.useState('IBM Plex Sans Devanagari');
   const [fontSize, setFontSize] = React.useState('base');
+
+  // Handle protected route redirection
+  React.useEffect(() => {
+    if (!user && !isUserLoading) {
+      router.push('/login');
+    }
+  }, [user, isUserLoading, router]);
 
   React.useEffect(() => {
     if (profile) {
@@ -176,17 +182,12 @@ export default function SettingsPage() {
     }
   };
 
-  if (isUserLoading || isProfileLoading) {
+  if (isUserLoading || isProfileLoading || !user) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
-  }
-
-  if (!user) {
-    router.push('/login');
-    return null;
   }
 
   return (
@@ -510,7 +511,6 @@ export default function SettingsPage() {
               delete account
             </Button>
           </CardContent>
-        </Card>
 
         <div className="flex justify-end pt-4">
           <Button 
@@ -526,4 +526,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-
