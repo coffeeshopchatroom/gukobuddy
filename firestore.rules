@@ -1,15 +1,25 @@
-
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // simplified recursive match for all user-specific data
-    // this ensures that any path starting with /users/{userId} is accessible
-    // only to the user with that matching UID.
+    // Allows users to read any profile settings for search and display
+    match /users/{userId}/profile/settings {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // User-specific data
     match /users/{userId}/{allPaths=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
+
+    // Shared items rules
+    match /sharedItems/{shareId} {
+      allow read: if request.auth != null && (resource.data.fromUid == request.auth.uid || resource.data.toUid == request.auth.uid);
+      allow create: if request.auth != null && request.resource.data.fromUid == request.auth.uid;
+      allow update, delete: if false; // Shared items are immutable for now
+    }
     
-    // global fallback: deny everything else
+    // Global fallback: deny everything else
     match /{document=**} {
       allow read, write: if false;
     }

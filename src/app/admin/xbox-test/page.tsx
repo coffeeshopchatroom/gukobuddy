@@ -35,9 +35,12 @@ const MOCK_FRIENDS = [
   { id: '1', username: 'joshua', status: 'offline', lastActive: '1h ago', avatarId: 'mii-m1', gender: 'male', emotion: 'default' },
   { id: '2', username: 'sarah', status: 'online', activity: 'flashcard session', statusMsg: 'at a dinner party ugh', avatarId: 'mii-f2', gender: 'female', emotion: 'surprised' },
   { id: '3', username: 'mike_99', status: 'active', activity: "this user is not currently on the channel. they're focusing by themselves", statusMsg: 'so much work', avatarId: 'mii-f3', gender: 'female', emotion: 'bored' },
-  { id: '4', username: 'leila', status: 'offline', lastActive: '3h ago', avatarId: 'mii-f1', gender: 'female', emotion: 'sad' },
+  { id: '4', username: 'leila', status: 'offline', lastActive: '3h ago', avatarId: 'mii-f4', gender: 'female', emotion: 'sad' },
   { id: '5', username: 'kyle', status: 'online', activity: 'notebooks', statusMsg: 'no joins!', joinsOff: true, avatarId: 'mii-m2', gender: 'male', emotion: 'happy' },
-  { id: '6', username: 'dev_mode', status: 'active', activity: 'debugging the dashboard...', avatarId: 'mii-m3', gender: 'male', emotion: 'angry' },
+  { id: '6', username: 'dev_mode', status: 'active', activity: 'debugging the dashboard...', avatarId: 'mii-m5', gender: 'male', emotion: 'angry' },
+  { id: '7', username: 'gamer_gurl', status: 'online', activity: 'playing games', avatarId: 'mii-f8', gender: 'female', emotion: 'happy' },
+  { id: '8', username: 'new_user', status: 'offline', lastActive: '5h ago', avatarId: 'mii-m9', gender: 'male', emotion: 'default' },
+  { id: '9', username: 'chloe', status: 'active', activity: 'studying for exams', avatarId: 'mii-f6', gender: 'female', emotion: 'bored' },
 ]
 
 const GradientCard = ({
@@ -366,6 +369,7 @@ export default function Xbox360ThemeReplica() {
                 >
                   <div className="w-full h-full rounded-[11px] bg-white/20 blur-md" />
                 </div>
+                <img src="/icons/open-tray.png" alt="Open Tray" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40" />
                 <div className="absolute top-[489px] left-12 [text-shadow:0px_4px_4px_#00000040] font-headline text-white text-[50px] ">Open Channel</div>
                 <div className="absolute bottom-[320px] left-0 font-normal text-black/40 text-3xl px-12">1 of 8</div>
               </section>
@@ -411,6 +415,7 @@ export default function Xbox360ThemeReplica() {
                 >
                   <div className="w-full h-full rounded-[11px] bg-white/20 blur-md" />
                 </div>
+                <img src="/icons/controllers.png" alt="Controllers" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-4" />
                 <div className="absolute top-[347px] left-12 font-headline text-white text-[35px] ">Controllers</div>
               </section>
           </div>

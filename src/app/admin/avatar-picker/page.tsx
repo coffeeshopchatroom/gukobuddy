@@ -1,5 +1,4 @@
-
-"use client"
+'use client';
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
@@ -12,12 +11,23 @@ const MALE_AVATARS = [
   { id: 'mii-m1'},
   { id: 'mii-m2'},
   { id: 'mii-m3'},
+  { id: 'mii-m4'},
+  { id: 'mii-m5'},
+  { id: 'mii-m6'},
+  { id: 'mii-m7'},
+  { id: 'mii-m8'},
+  { id: 'mii-m9'},
 ]
 
 const FEMALE_AVATARS = [
   { id: 'mii-f1'},
   { id: 'mii-f2'},
   { id: 'mii-f3'},
+  { id: 'mii-f4'},
+  { id: 'mii-f5'},
+  { id: 'mii-f6'},
+  { id: 'mii-f7'},
+  { id: 'mii-f8'},
 ]
 
 export default function AvatarPickerPage() {

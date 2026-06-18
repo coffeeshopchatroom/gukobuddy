@@ -1,4 +1,3 @@
-
 {
   "entities": {
     "UserProfile": {
@@ -15,6 +14,10 @@
           "type": "string",
           "description": "The user's chosen display name."
         },
+        "username": {
+          "type": "string",
+          "description": "Unique username for searching."
+        },
         "studentType": {
           "type": "string",
           "enum": ["high-school", "college", "hobbyist"],
@@ -23,35 +26,6 @@
         "selectedAvatar": {
           "type": "string",
           "description": "The ID of the chosen avatar (e.g., mii-m2)."
-        },
-        "blackbaudConnected": {
-          "type": "boolean",
-          "description": "Whether the user has connected their blackbaud account."
-        },
-        "useAi": {
-          "type": "boolean",
-          "description": "Whether the user wants to enable generative AI features."
-        },
-        "focus": {
-          "type": "string",
-          "enum": ["flashcards", "notebooks", "tasks", "all"],
-          "description": "The primary tool the user wants to focus on."
-        },
-        "isAdmin": {
-          "type": "boolean",
-          "description": "Whether the user has administrative privileges."
-        },
-        "focusHours": {
-          "type": "number",
-          "description": "Total hours spent focusing (for hobbyists)."
-        },
-        "studyStreak": {
-          "type": "number",
-          "description": "Consecutive days of engagement (for hobbyists)."
-        },
-        "stickyNote": {
-          "type": "string",
-          "description": "Quick dashboard thoughts (for hobbyists)."
         },
         "theme": {
           "type": "object",
@@ -75,102 +49,40 @@
           }
         }
       },
-      "required": [
-        "id",
-        "studentType",
-        "useAi",
-        "focus"
-      ]
+      "required": ["id", "studentType", "username"]
     },
-    "Course": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Course",
+    "Friend": {
+      "title": "Friend",
       "type": "object",
-      "description": "Represents an academic course or subject.",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        },
-        "code": {
-          "type": "string"
-        },
-        "grade": {
-          "type": "number"
-        },
-        "letterGrade": {
-          "type": "string"
-        },
-        "credits": {
-          "type": "number"
-        }
-      },
-      "required": [
-        "id",
-        "name"
-      ]
-    },
-    "Task": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Task",
-      "type": "object",
-      "description": "An academic task or to-do item.",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "title": {
-          "type": "string"
-        },
-        "description": {
-          "type": "string"
-        },
-        "dueDate": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "priority": {
-          "type": "string",
-          "enum": ["low", "medium", "high"]
-        },
-        "completed": {
-          "type": "boolean"
-        },
-        "courseId": {
-          "type": "string"
-        },
-        "createdAt": {
-          "type": "string",
-          "format": "date-time"
-        }
-      },
-      "required": ["id", "title", "dueDate", "priority", "completed"]
-    },
-    "Note": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Note",
-      "type": "object",
-      "description": "A digital note or page.",
       "properties": {
         "id": { "type": "string" },
-        "title": { "type": "string" },
-        "content": { "type": "string", "description": "HTML content from the rich text editor." },
-        "icon": { "type": "string" },
-        "coverImage": { "type": "string" },
-        "iconType": { "type": "string", "enum": ["emoji", "icon", "image"] },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "updatedAt": { "type": "string", "format": "date-time" }
+        "uid": { "type": "string" },
+        "username": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoUrl": { "type": "string" },
+        "status": { "type": "string", "enum": ["accepted", "pending_out", "pending_in"] },
+        "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["id", "title", "content"]
+      "required": ["id", "uid", "status"]
+    },
+    "SharedItem": {
+      "title": "SharedItem",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "fromUid": { "type": "string" },
+        "toUid": { "type": "string" },
+        "itemType": { "type": "string", "enum": ["notebook", "flashcardSet", "task"] },
+        "itemId": { "type": "string" },
+        "itemData": { "type": "object" },
+        "mode": { "type": "string", "enum": ["copy", "collaborate"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "fromUid", "toUid", "itemType", "itemId", "mode"]
     }
   },
   "auth": {
-    "providers": [
-      "password",
-      "anonymous"
-    ]
+    "providers": ["password", "anonymous"]
   },
   "firestore": {
     "structure": [
@@ -178,40 +90,24 @@
         "path": "/users/{userId}/profile/settings",
         "definition": {
           "entityName": "UserProfile",
-          "schema": {
-            "$ref": "#/backend/entities/UserProfile"
-          },
+          "schema": { "$ref": "#/backend/entities/UserProfile" },
           "description": "User personalization preferences."
         }
       },
       {
-        "path": "/users/{userId}/courses/{courseId}",
+        "path": "/users/{userId}/friends/{friendId}",
         "definition": {
-          "entityName": "Course",
-          "schema": {
-            "$ref": "#/backend/entities/Course"
-          },
-          "description": "User-specific collection of academic courses."
+          "entityName": "Friend",
+          "schema": { "$ref": "#/backend/entities/Friend" },
+          "description": "Friends and pending requests."
         }
       },
       {
-        "path": "/users/{userId}/tasks/{taskId}",
+        "path": "/sharedItems/{shareId}",
         "definition": {
-          "entityName": "Task",
-          "schema": {
-            "$ref": "#/backend/entities/Task"
-          },
-          "description": "User tasks and deadlines."
-        }
-      },
-      {
-        "path": "/users/{userId}/notes/{noteId}",
-        "definition": {
-          "entityName": "Note",
-          "schema": {
-            "$ref": "#/backend/entities/Note"
-          },
-          "description": "User digital notes and pages."
+          "entityName": "SharedItem",
+          "schema": { "$ref": "#/backend/entities/SharedItem" },
+          "description": "Shared learning resources."
         }
       }
     ]

@@ -24,7 +24,8 @@ import {
   Settings,
   Gamepad2,
   UserCircle2,
-  Wind
+  Wind,
+  Users
 } from "lucide-react"
 
 import {
@@ -49,6 +50,7 @@ import { signOut } from "firebase/auth"
 import { doc, collection, query, orderBy } from 'firebase/firestore'
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ProfileCustomizer } from "@/components/profile/ProfileCustomizer"
+import { FriendsHub } from "@/components/friends/FriendsHub"
 import {
   Popover,
   PopoverContent,
@@ -133,7 +135,27 @@ export function AppSidebar() {
         <SidebarGroup>
           <div className="flex items-center justify-between px-6 mb-2 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center">
             <SidebarGroupLabel className="p-0 text-[10px] uppercase tracking-widest font-bold opacity-30 group-data-[collapsible=icon]:hidden">menu</SidebarGroupLabel>
-            {user && !user.isAnonymous && <NotificationCenter user={user} firestore={firestore} />}
+            
+            <div className="flex items-center gap-2 group-data-[collapsible=icon]:hidden">
+              {user && !user.isAnonymous && (
+                <>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button className="p-1 hover:bg-muted rounded-full transition-colors text-muted-foreground hover:text-primary">
+                        <Radio size={16} />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent side="bottom" align="end" className="w-48 p-4 rounded-2xl border-none shadow-xl bg-card">
+                      <p className="text-xs font-bold lowercase text-center">radio coming soon.</p>
+                    </PopoverContent>
+                  </Popover>
+
+                  <FriendsHub />
+                  
+                  <NotificationCenter user={user} firestore={firestore} />
+                </>
+              )}
+            </div>
           </div>
           <SidebarGroupContent>
             <SidebarMenu className="px-4 py-2 group-data-[collapsible=icon]:px-2">
