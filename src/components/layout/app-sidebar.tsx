@@ -69,6 +69,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import { addDays, isPast, parseISO } from "date-fns"
 import { cn } from "@/lib/utils"
 import { useToast } from "@/hooks/use-toast"
