@@ -2,7 +2,6 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     // Allows collection group queries for searching profiles by username
-    // This matches the 'settings' document within any 'profile' collection
     match /{path=**}/profile/{docId} {
       allow read: if request.auth != null;
     }

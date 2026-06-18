@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -607,7 +608,10 @@ function NotificationCenter({ user, firestore }: any) {
     <Popover>
       <PopoverTrigger asChild>
         <button className="relative p-1 hover:bg-muted rounded-full transition-colors group">
-          <Bell className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
+          <Bell className={cn("h-4 w-4 text-muted-foreground group-hover:text-primary", notificationCount > 0 && "animate-pulse")} />
+          {notificationCount > 0 && (
+            <span className="absolute -top-0.5 -right-0.5 h-2 w-2 bg-destructive rounded-full border border-white animate-ping" />
+          )}
           <span className="absolute -top-1 -right-1 h-4 w-4 bg-destructive text-[8px] font-bold text-white rounded-full border-2 border-white flex items-center justify-center">
             {notificationCount}
           </span>
@@ -626,8 +630,12 @@ function NotificationCenter({ user, firestore }: any) {
               {requests.map(req => (
                 <Link href="/friends" key={req.uid}>
                   <div className="p-3 rounded-2xl hover:bg-white transition-all flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-accent/20 flex items-center justify-center text-accent-foreground">
-                      <UserPlus className="h-4 w-4" />
+                    <div className="h-10 w-10 rounded-full bg-accent/20 flex items-center justify-center text-accent-foreground overflow-hidden border border-accent/20">
+                      {req.photoUrl ? (
+                        <img src={req.photoUrl} className="w-full h-full object-cover" alt="request" />
+                      ) : (
+                        <UserPlus className="h-5 w-5" />
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-bold truncate lowercase">{req.displayName} sent a request</p>
@@ -665,7 +673,7 @@ function NotificationCenter({ user, firestore }: any) {
           </div>
         </ScrollArea>
         <div className="p-4 bg-muted/20 text-center">
-          <Link href="/tasks" className="text-xs font-bold text-primary hover:underline lowercase">
+          <Link href="/friends" className="text-xs font-bold text-primary hover:underline lowercase">
             manage workspace
           </Link>
         </div>

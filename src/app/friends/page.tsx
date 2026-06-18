@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -11,7 +12,7 @@ import {
   Check, 
   X, 
   Loader2, 
-  ChevronRight,
+  ChevronRight, 
   ChevronLeft,
   GraduationCap,
   BookOpen,
@@ -22,7 +23,8 @@ import {
   ArrowLeft,
   Plus,
   Clock,
-  UserCheck
+  UserCheck,
+  Bell
 } from "lucide-react"
 import { useUser, useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase"
 import { collection, query, where, getDocs, doc, collectionGroup, orderBy } from "firebase/firestore"
@@ -36,6 +38,13 @@ import { FirestorePermissionError } from '@/firebase/errors'
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 const PORTAL_BASE_W = 600;
 const PORTAL_BASE_H = 400;
@@ -63,9 +72,9 @@ export default function FriendsPage() {
   const [hasSearched, setHasSearched] = React.useState(false)
 
   // Current User's Profile (for sending name/photo in requests)
-  const myProfileRef = useMemoFirebase(() => user ? doc(db, 'users', user.uid, 'profile', 'settings') : null, [user, db])
-  const { data: myProfile } = useCollection(useMemoFirebase(() => user ? query(collection(db, 'users', user.uid, 'profile')) : null, [user, db]))
-  const actualMyProfile = myProfile?.[0]
+  const myProfileQuery = useMemoFirebase(() => user ? query(collection(db, 'users', user.uid, 'profile')) : null, [user, db])
+  const { data: myProfile } = useCollection(myProfileQuery)
+  const actualMyProfile = myProfile?.find(p => p.id === 'settings')
 
   // Friends query (includes pending)
   const allFriendsQuery = useMemoFirebase(() => {
@@ -77,8 +86,21 @@ export default function FriendsPage() {
   const acceptedFriends = allFriendDocs?.filter(f => f.status === 'accepted') || []
   const incomingRequests = allFriendDocs?.filter(f => f.status === 'pending_in') || []
 
+  // Auto-show requests if they exist
+  const [isRequestModalOpen, setIsRequestModalOpen] = React.useState(false);
+  
+  React.useEffect(() => {
+    if (incomingRequests.length > 0) {
+      setIsRequestModalOpen(true);
+    }
+  }, [incomingRequests.length]);
+
   if (isUserLoading) {
-    return <div className="flex items-center justify-center min-h-[60vh]"><Loader2 className="animate-spin" /></div>
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="animate-spin text-primary" />
+      </div>
+    )
   }
 
   const handleSearch = async () => {
@@ -126,7 +148,10 @@ export default function FriendsPage() {
     
     // Check if already requested or friends
     const existing = allFriendDocs?.find(f => f.uid === targetUser.uid)
-    if (existing) return
+    if (existing) {
+      toast({ title: "already pending", description: "a request is already being processed for this student." })
+      return
+    }
 
     // 1. Write to MY friends list (Pending Out)
     const myFriendRef = doc(db, "users", user.uid, "friends", targetUser.uid)
@@ -140,13 +165,12 @@ export default function FriendsPage() {
     }, { merge: true })
 
     // 2. Write to THEIR friends list (Pending In)
-    // Using the current user's profile info
     const theirFriendRef = doc(db, "users", targetUser.uid, "friends", user.uid)
     setDocumentNonBlocking(theirFriendRef, {
       uid: user.uid,
-      username: actualMyProfile?.username || user.email?.split('@')[0],
-      displayName: user.displayName || actualMyProfile?.displayName || 'student',
-      photoUrl: user.photoURL || actualMyProfile?.photoUrl || '',
+      username: actualMyProfile?.username || user.displayName?.split(' ')[0] || user.email?.split('@')[0] || "student",
+      displayName: actualMyProfile?.displayName || user.displayName || 'guko student',
+      photoUrl: actualMyProfile?.photoUrl || user.photoURL || '',
       status: 'pending_in',
       createdAt: new Date().toISOString()
     }, { merge: true })
@@ -169,6 +193,7 @@ export default function FriendsPage() {
     updateDocumentNonBlocking(theirRef, { status: 'accepted' })
 
     toast({ title: "request accepted!", description: `you are now friends with ${request.displayName}.` })
+    if (incomingRequests.length <= 1) setIsRequestModalOpen(false)
   }
 
   const handleDeclineRequest = (request: any) => {
@@ -178,6 +203,7 @@ export default function FriendsPage() {
     deleteDocumentNonBlocking(myRef)
     deleteDocumentNonBlocking(theirRef)
     toast({ title: "request declined", description: "friend request removed." })
+    if (incomingRequests.length <= 1) setIsRequestModalOpen(false)
   }
 
   return (
@@ -195,48 +221,12 @@ export default function FriendsPage() {
       </div>
 
       <div className="grid gap-8 lg:grid-cols-12">
-        {/* Left Column: Friends List & Incoming Requests */}
+        {/* Left Column: Friends List */}
         <div className="lg:col-span-4 space-y-6">
-          {/* Incoming Requests */}
-          {incomingRequests.length > 0 && (
-            <Card className="border-none shadow-lg rounded-[40px] bg-primary/5 overflow-hidden ring-2 ring-primary/20">
-              <CardContent className="p-8 space-y-6">
-                <h3 className="font-bold text-xl lowercase flex items-center gap-2 text-primary">
-                  <UserPlus className="h-5 w-5" /> new requests
-                </h3>
-                <div className="space-y-3">
-                  {incomingRequests.map(req => (
-                    <div key={req.uid} className="flex items-center justify-between p-4 rounded-2xl bg-white border border-primary/10 shadow-sm animate-in zoom-in-95">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-10 w-10">
-                          <AvatarImage src={req.photoUrl} className="object-cover" />
-                          <AvatarFallback>{req.displayName?.[0]}</AvatarFallback>
-                        </Avatar>
-                        <div className="min-w-0">
-                          <h4 className="font-bold text-xs lowercase truncate">{req.displayName}</h4>
-                          <p className="text-[9px] opacity-40 lowercase">@{req.username}</p>
-                        </div>
-                      </div>
-                      <div className="flex gap-1">
-                        <Button size="icon" variant="ghost" onClick={() => handleAcceptRequest(req)} className="h-8 w-8 rounded-full bg-primary/10 text-primary hover:bg-primary/20">
-                          <Check className="h-4 w-4" />
-                        </Button>
-                        <Button size="icon" variant="ghost" onClick={() => handleDeclineRequest(req)} className="h-8 w-8 rounded-full bg-destructive/10 text-destructive hover:bg-destructive/20">
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Friends List */}
           <Card className="border-none shadow-sm rounded-[40px] bg-card overflow-hidden h-fit">
             <CardContent className="p-8 space-y-6">
               <div className="flex items-center justify-between">
-                <h3 className="font-bold text-xl lowercase flex items-center gap-2">
+                <h3 className="font-bold text-xl lowercase flex items-center gap-2 text-foreground">
                   <Users className="h-5 w-5 text-primary" /> my friends
                 </h3>
                 <Badge variant="secondary" className="rounded-full">{acceptedFriends.length}</Badge>
@@ -251,7 +241,7 @@ export default function FriendsPage() {
                   ))
                 ) : (
                   <div className="text-center py-10 text-muted-foreground lowercase italic text-sm">
-                    {incomingRequests.length > 0 ? "check your requests above!" : "you haven't added any friends yet."}
+                    you haven't added any friends yet. search for classmates to get started!
                   </div>
                 )}
               </div>
@@ -316,6 +306,57 @@ export default function FriendsPage() {
           </div>
         </div>
       </div>
+
+      {/* Incoming Requests Dialog */}
+      <Dialog open={isRequestModalOpen} onOpenChange={setIsRequestModalOpen}>
+        <DialogContent className="sm:max-w-md rounded-[40px] border-none shadow-3xl bg-card overflow-hidden p-0">
+          <DialogHeader className="p-8 bg-primary/10 text-left border-b">
+             <DialogTitle className="font-headline text-3xl font-bold flex items-center gap-3 lowercase text-foreground">
+               <Bell className="h-7 w-7 text-primary animate-pulse" /> classmate requests
+             </DialogTitle>
+             <DialogDescription className="lowercase text-lg mt-2">
+               the following students want to connect with you.
+             </DialogDescription>
+          </DialogHeader>
+          <div className="p-8 space-y-4 max-h-[400px] overflow-y-auto custom-scrollbar">
+            {incomingRequests.map(req => (
+              <div key={req.uid} className="flex items-center justify-between p-5 rounded-3xl bg-muted/30 border border-border/50 shadow-sm hover:bg-muted/50 transition-colors group">
+                <div className="flex items-center gap-4">
+                  <Avatar className="h-14 w-14 border-4 border-white shadow-md group-hover:scale-110 transition-transform">
+                    <AvatarImage src={req.photoUrl} className="object-cover" />
+                    <AvatarFallback className="bg-primary/20 text-primary text-xl font-bold">{req.displayName?.[0]}</AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0">
+                    <h4 className="font-bold text-lg lowercase truncate text-foreground">{req.displayName}</h4>
+                    <p className="text-xs opacity-60 lowercase">@{req.username}</p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                   <Button size="icon" onClick={() => handleAcceptRequest(req)} className="h-10 w-10 rounded-full bg-primary text-primary-foreground hover:scale-110 transition-transform">
+                     <Check className="h-5 w-5" />
+                   </Button>
+                   <Button size="icon" variant="ghost" onClick={() => handleDeclineRequest(req)} className="h-10 w-10 rounded-full bg-destructive/10 text-destructive hover:bg-destructive/20 hover:scale-110 transition-transform">
+                     <X className="h-5 w-5" />
+                   </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="p-6 pt-0 flex justify-center">
+             <Button variant="ghost" onClick={() => setIsRequestModalOpen(false)} className="rounded-xl lowercase text-muted-foreground font-medium">review later</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      <style jsx global>{`
+        @keyframes bounce-slow {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-5px); }
+        }
+        .animate-bounce-slow {
+          animation: bounce-slow 3s infinite ease-in-out;
+        }
+      `}</style>
     </div>
   )
 }
@@ -327,9 +368,9 @@ function UserSearchCard({ user, onClick }: { user: any, onClick: () => void }) {
   return (
     <div 
       onClick={onClick}
-      className="group relative h-48 rounded-3xl overflow-hidden border border-border/10 cursor-pointer shadow-sm hover:shadow-2xl transition-all duration-500 bg-card"
+      className="group relative h-56 rounded-[32px] overflow-hidden border border-border/10 cursor-pointer shadow-sm hover:shadow-2xl transition-all duration-500 bg-card"
     >
-      {/* Top banner, Bottom color background */}
+      {/* Vertical Split: Top Banner / Bottom Background */}
       <div className="absolute inset-0 flex flex-col">
         <div className="h-1/2 bg-cover bg-center relative" style={{ backgroundImage: `url(${user.bannerUrl})`, backgroundColor: primary }}>
           <div className="absolute inset-0 bg-black/20" />
@@ -338,7 +379,7 @@ function UserSearchCard({ user, onClick }: { user: any, onClick: () => void }) {
       </div>
 
       <div className="relative h-full flex flex-col items-center justify-center gap-3">
-        <div className="h-20 w-20 rounded-[20px] overflow-hidden border-4 border-white shadow-xl bg-white shrink-0 group-hover:scale-110 transition-transform">
+        <div className="h-20 w-20 rounded-[20px] overflow-hidden border-4 border-white shadow-xl bg-white shrink-0 group-hover:scale-110 transition-transform mt-4">
           {user.photoUrl ? (
             <img src={user.photoUrl} className="w-full h-full object-cover" alt="avatar" />
           ) : (
@@ -348,8 +389,8 @@ function UserSearchCard({ user, onClick }: { user: any, onClick: () => void }) {
           )}
         </div>
         <div className="text-center px-4 w-full">
-          <h4 className="font-bold text-base lowercase truncate drop-shadow-sm">{user.displayName}</h4>
-          <p className="text-[11px] lowercase truncate opacity-60">@{user.username}</p>
+          <h4 className="font-bold text-base lowercase truncate drop-shadow-sm text-foreground">{user.displayName}</h4>
+          <p className="text-[11px] lowercase truncate opacity-60 text-foreground">@{user.username}</p>
         </div>
       </div>
       
@@ -518,7 +559,7 @@ function ImmersiveProfilePreview({ profile, onAction, relationshipStatus }: { pr
         <div 
           className="absolute"
           style={{ 
-            left: layout.addBtn?.x ?? 620, 
+            left: layout.addBtn?.x ?? 440, 
             top: layout.addBtn?.y ?? 100,
             width: layout.addBtn?.w ?? 140,
             height: layout.addBtn?.h ?? 50,
@@ -526,11 +567,11 @@ function ImmersiveProfilePreview({ profile, onAction, relationshipStatus }: { pr
           }}
         >
           <Button 
-            onClick={onAction}
+            onClick={(e) => { e.stopPropagation(); onAction(); }}
             disabled={isAlreadyActioned}
             className={cn(
               "w-full h-full p-0 font-bold lowercase border-none shadow-xl transition-all",
-              !isAlreadyActioned && "hover:scale-105"
+              !isAlreadyActioned && "hover:scale-105 active:scale-95"
             )}
             style={{ 
               background: getColorStyle(theme.buttons || customColors.primary),
@@ -658,15 +699,15 @@ function FriendItem({ friend }: { friend: any }) {
   }
 
   return (
-    <div className="flex items-center justify-between p-4 rounded-[24px] bg-card border border-border shadow-sm hover:shadow-md transition-all group">
+    <div className="flex items-center justify-between p-4 rounded-[32px] bg-card border border-border shadow-sm hover:shadow-md transition-all group">
       <div className="flex items-center gap-3">
         <Avatar className="h-10 w-10 border-2 border-primary/20">
           <AvatarImage src={friend.photoUrl} className="object-cover" />
           <AvatarFallback className="bg-primary/5 text-primary text-[10px] font-bold">{friend.displayName?.[0]}</AvatarFallback>
         </Avatar>
         <div className="min-w-0">
-          <h4 className="font-bold text-xs lowercase truncate">{friend.displayName}</h4>
-          <p className="text-[9px] opacity-40 lowercase">@{friend.username}</p>
+          <h4 className="font-bold text-xs lowercase truncate text-foreground">{friend.displayName}</h4>
+          <p className="text-[9px] opacity-40 lowercase text-foreground">@{friend.username}</p>
         </div>
       </div>
       
@@ -674,12 +715,98 @@ function FriendItem({ friend }: { friend: any }) {
         <Button 
           variant="outline" 
           size="sm" 
-          className="h-8 px-3 rounded-lg lowercase text-[11px] gap-1.5"
+          className="h-8 px-3 rounded-lg lowercase text-[11px] gap-1.5 border-2 border-primary/10 hover:bg-primary/5"
           onClick={() => setShowSharePicker(true)}
         >
           <Share2 size={12} className="text-primary" /> share
         </Button>
       </div>
+
+      <Dialog open={showSharePicker} onOpenChange={setShowSharePicker}>
+        <DialogContent className="rounded-[32px] border-none shadow-2xl bg-card p-8 sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-headline text-2xl lowercase">share with {friend.displayName}</DialogTitle>
+            <DialogDescription className="lowercase">
+              {!shareCategory ? "what would you like to share?" : `select a ${shareCategory === 'flashcardSet' ? 'deck' : shareCategory}`}
+            </DialogDescription>
+          </DialogHeader>
+
+          {!shareCategory ? (
+            <div className="grid grid-cols-1 gap-3 py-6">
+              <ShareCategoryRow icon={<Layers />} label="flashcard decks" onClick={() => setShareCategory('flashcardSet')} />
+              <ShareCategoryRow icon={<BookOpen />} label="notebook pages" onClick={() => setShareCategory('notebook')} />
+              <ShareCategoryRow icon={<CheckSquare />} label="assigned tasks" onClick={() => setShareCategory('task')} />
+            </div>
+          ) : (
+            <div className="py-4 space-y-4">
+              <Button variant="ghost" size="sm" onClick={() => setShareCategory(null)} className="rounded-xl h-8 px-2 lowercase text-muted-foreground">
+                <ChevronLeft size={16} className="mr-1" /> change category
+              </Button>
+              <ScrollArea className="h-64 pr-4">
+                <div className="space-y-2">
+                  {getItemsForCategory().map((item: any) => (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        setSelectedItem(item);
+                        setShowSharingModal(true);
+                        setShowSharePicker(false);
+                      }}
+                      className="w-full flex items-center justify-between p-4 rounded-2xl bg-muted/30 hover:bg-primary/10 transition-all border border-transparent hover:border-primary/20 text-left group"
+                    >
+                      <span className="font-bold text-sm lowercase truncate">{item.title || item.name}</span>
+                      <ChevronRight size={14} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </button>
+                  ))}
+                </div>
+              </ScrollArea>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showSharingModal} onOpenChange={setShowSharingModal}>
+        <DialogContent className="rounded-[40px] border-none shadow-3xl bg-background p-10 max-w-md text-center">
+          <DialogHeader className="space-y-4">
+            <div className="h-16 w-16 rounded-3xl bg-primary/10 flex items-center justify-center mx-auto animate-bounce">
+              <Share2 className="h-8 w-8 text-primary" />
+            </div>
+            <DialogTitle className="font-headline text-3xl lowercase">sharing mode</DialogTitle>
+            <DialogDescription className="lowercase text-lg">how should {friend.displayName} receive "{selectedItem?.title || selectedItem?.name}"?</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-8">
+            <Button 
+              onClick={() => handleShare('copy')}
+              className="h-24 rounded-3xl flex flex-col items-center justify-center gap-1 border-2 border-muted hover:border-primary transition-all bg-card text-foreground group"
+            >
+              <span className="font-bold text-lg lowercase group-hover:text-primary transition-colors">send a copy</span>
+              <span className="text-[10px] opacity-40 lowercase">they get their own version to edit separately</span>
+            </Button>
+            <Button 
+              onClick={() => handleShare('collaborate')}
+              className="h-24 rounded-3xl flex flex-col items-center justify-center gap-1 border-2 border-muted hover:border-accent transition-all bg-card text-foreground group"
+            >
+              <span className="font-bold text-lg lowercase group-hover:text-accent-foreground transition-colors">collaborate</span>
+              <span className="text-[10px] opacity-40 lowercase">you will both work on the same exact file</span>
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
+  )
+}
+
+function ShareCategoryRow({ icon, label, onClick }: any) {
+  return (
+    <button 
+      onClick={onClick}
+      className="flex items-center gap-4 p-4 rounded-2xl bg-muted/30 hover:bg-primary/5 border border-transparent hover:border-primary/20 transition-all text-left group"
+    >
+      <div className="p-2 rounded-xl bg-white border border-border shadow-sm group-hover:text-primary transition-colors text-muted-foreground">
+        {React.cloneElement(icon, { size: 20 })}
+      </div>
+      <span className="font-bold text-sm lowercase flex-1 text-foreground">{label}</span>
+      <ChevronRight size={16} className="text-muted-foreground opacity-40 group-hover:opacity-100" />
+    </button>
   )
 }
