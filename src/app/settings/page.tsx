@@ -511,6 +511,7 @@ export default function SettingsPage() {
               delete account
             </Button>
           </CardContent>
+        </Card>
 
         <div className="flex justify-end pt-4">
           <Button 
