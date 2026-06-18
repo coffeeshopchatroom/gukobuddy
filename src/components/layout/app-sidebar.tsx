@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -50,7 +51,6 @@ import { signOut } from "firebase/auth"
 import { doc, collection, query, orderBy } from 'firebase/firestore'
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ProfileCustomizer } from "@/components/profile/ProfileCustomizer"
-import { FriendsHub } from "@/components/friends/FriendsHub"
 import {
   Popover,
   PopoverContent,
@@ -150,7 +150,14 @@ export function AppSidebar() {
                     </PopoverContent>
                   </Popover>
 
-                  <FriendsHub />
+                  <Link href="/friends">
+                    <button className={cn(
+                      "p-1 rounded-full transition-all text-muted-foreground hover:text-primary",
+                      pathname === '/friends' ? "bg-primary/10 text-primary" : "hover:bg-muted"
+                    )}>
+                      <Users size={16} />
+                    </button>
+                  </Link>
                   
                   <NotificationCenter user={user} firestore={firestore} />
                 </>
