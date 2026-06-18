@@ -221,7 +221,7 @@ export function FriendsHub() {
                 </div>
                 <div className="absolute top-6 right-6">
                   <Button onClick={() => sendRequest(selectedUser)} className="rounded-2xl h-12 px-8 font-bold shadow-lg lowercase transition-all hover:scale-105" style={{ background: resTheme(selectedUser).primary, color: 'white' }}>
-                    send friend request
+                    add friend
                   </Button>
                 </div>
               </div>

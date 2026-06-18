@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -34,6 +33,7 @@ import { errorEmitter } from '@/firebase/error-emitter'
 import { FirestorePermissionError } from '@/firebase/errors'
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 
 export default function FriendsPage() {
   const { user, isUserLoading } = useUser()
@@ -187,7 +187,7 @@ export default function FriendsPage() {
 
             {/* Results or Selection */}
             {!selectedUser ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {searchResults.map((res) => (
                   <UserSearchCard key={res.uid} user={res} onClick={() => setSelectedUser(res)} />
                 ))}
@@ -210,7 +210,7 @@ export default function FriendsPage() {
                   <ImmersiveProfilePreview 
                     profile={selectedUser} 
                     onAction={() => sendRequest(selectedUser)} 
-                    actionLabel="send friend request"
+                    actionLabel="add friend"
                   />
                 </div>
               </div>
@@ -229,18 +229,18 @@ function UserSearchCard({ user, onClick }: { user: any, onClick: () => void }) {
   return (
     <div 
       onClick={onClick}
-      className="group relative h-24 rounded-3xl overflow-hidden border border-border/10 cursor-pointer shadow-sm hover:shadow-2xl transition-all duration-500"
+      className="group relative h-48 rounded-3xl overflow-hidden border border-border/10 cursor-pointer shadow-sm hover:shadow-2xl transition-all duration-500 bg-card"
     >
-      {/* Half banner, half bg background */}
-      <div className="absolute inset-0 flex">
-        <div className="flex-1 bg-cover bg-center" style={{ backgroundImage: `url(${user.bannerUrl})`, backgroundColor: primary }}>
-          <div className="w-full h-full bg-black/20" />
+      {/* Top banner, Bottom color background */}
+      <div className="absolute inset-0 flex flex-col">
+        <div className="h-1/2 bg-cover bg-center relative" style={{ backgroundImage: `url(${user.bannerUrl})`, backgroundColor: primary }}>
+          <div className="absolute inset-0 bg-black/20" />
         </div>
-        <div className="flex-1" style={{ backgroundColor: background }} />
+        <div className="h-1/2" style={{ backgroundColor: background }} />
       </div>
 
-      <div className="relative h-full flex items-center gap-4 px-4">
-        <div className="h-16 w-16 rounded-2xl overflow-hidden border-2 border-white shadow-lg bg-white shrink-0 group-hover:scale-110 transition-transform">
+      <div className="relative h-full flex flex-col items-center justify-center gap-3">
+        <div className="h-20 w-20 rounded-[20px] overflow-hidden border-4 border-white shadow-xl bg-white shrink-0 group-hover:scale-110 transition-transform">
           {user.photoUrl ? (
             <img src={user.photoUrl} className="w-full h-full object-cover" alt="avatar" />
           ) : (
@@ -249,11 +249,16 @@ function UserSearchCard({ user, onClick }: { user: any, onClick: () => void }) {
             </div>
           )}
         </div>
-        <div className="flex-1 min-w-0">
-          <h4 className="font-bold text-sm lowercase truncate drop-shadow-sm">{user.displayName}</h4>
-          <p className="text-[10px] lowercase truncate opacity-60">@{user.username}</p>
+        <div className="text-center px-4 w-full">
+          <h4 className="font-bold text-base lowercase truncate drop-shadow-sm">{user.displayName}</h4>
+          <p className="text-[11px] lowercase truncate opacity-60">@{user.username}</p>
         </div>
-        <ChevronRight size={18} className="text-foreground/40 group-hover:text-primary transition-transform group-hover:translate-x-1" />
+      </div>
+      
+      <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-hover:translate-x-0 translate-x-2 transition-all">
+        <div className="h-10 w-10 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-lg">
+          <ChevronRight size={20} className="text-primary" />
+        </div>
       </div>
     </div>
   )
@@ -303,13 +308,15 @@ function ImmersiveProfilePreview({ profile, onAction, actionLabel }: { profile: 
   };
 
   const pfpBg = profile.photoUrl ? 'transparent' : 'rgba(0,0,0,0.1)';
+  const cornerRadius = `${profile.cornerRounding ?? 48}px`;
 
   return (
     <div 
-      className="w-full aspect-[16/10] overflow-hidden relative shadow-2xl rounded-[48px] border border-border"
+      className="w-full aspect-[16/10] overflow-hidden relative shadow-2xl border border-border"
       style={{ 
         background: getColorStyle(theme.body || customColors.background),
         fontFamily: profile.font || 'Plus Jakarta Sans',
+        borderRadius: cornerRadius,
       }}
     >
       {/* Banner */}
@@ -542,16 +549,7 @@ function FriendItem({ friend }: { friend: any }) {
         </Button>
       </div>
 
-      {/* Share Dialogs here (can keep existing simplified logic) */}
-      {/* ... implementation details omitted for brevity, logic remains similar to previous hub ... */}
+      {/* Share Dialogs logic remains the same ... */}
     </div>
-  )
-}
-
-function Badge({ children, className, variant }: any) {
-  return (
-    <span className={cn("px-2 py-0.5 text-[10px] font-bold uppercase rounded-full bg-muted text-muted-foreground", className)}>
-      {children}
-    </span>
   )
 }
