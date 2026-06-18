@@ -1,22 +1,31 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Allows collection group queries for searching profiles by username
+    // This is required for the Friends Hub search to work across all user profiles
+    match /{path=**}/profile/settings {
+      allow read: if request.auth != null;
+    }
+
     // Allows users to read any profile settings for search and display
     match /users/{userId}/profile/settings {
       allow read: if request.auth != null;
       allow write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // User-specific data
+    // User-specific data (tasks, courses, notebooks, friends)
     match /users/{userId}/{allPaths=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
     // Shared items rules
     match /sharedItems/{shareId} {
+      // Users can read if they are the sender or the recipient
       allow read: if request.auth != null && (resource.data.fromUid == request.auth.uid || resource.data.toUid == request.auth.uid);
+      // Users can create if they are the sender
       allow create: if request.auth != null && request.resource.data.fromUid == request.auth.uid;
-      allow update, delete: if false; // Shared items are immutable for now
+      // Shared items are immutable for now to ensure integrity
+      allow update, delete: if false;
     }
     
     // Global fallback: deny everything else

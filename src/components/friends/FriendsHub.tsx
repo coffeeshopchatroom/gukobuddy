@@ -57,23 +57,27 @@ export function FriendsHub() {
     if (!searchQuery.trim() || !db) return
     setIsSearching(true)
     setHasSearched(true)
+    setSearchResults([]) // Clear previous results
+
     try {
-      // 1. Try real database search via collection group
-      // This requires a Firestore index. If it fails, we fall back to demos.
+      // Search across the 'profile' collection group to find users by username
       const q = query(
-        collectionGroup(db, "settings"),
+        collectionGroup(db, "profile"),
         where("username", "==", searchQuery.toLowerCase().trim())
       )
       
       const querySnapshot = await getDocs(q)
       const results = querySnapshot.docs
-        .map(doc => ({ ...doc.data(), uid: doc.ref.parent.parent?.id }))
-        .filter(u => u.uid !== user?.uid) // Don't find yourself
+        .map(doc => ({ 
+          ...doc.data(), 
+          uid: doc.ref.parent.parent?.id // Extract the user UID from the path users/{uid}/profile/settings
+        }))
+        .filter(u => u.uid !== user?.uid) // Exclude current user from results
 
       if (results.length > 0) {
         setSearchResults(results)
       } else {
-        // 2. Fallback to demo users for prototype visibility
+        // Prototype Fallback: If no real user found, show demo matches for visualization
         const demos = [
           { 
             uid: 'demo1', 
@@ -99,20 +103,11 @@ export function FriendsHub() {
       }
     } catch (e: any) {
       console.error("search failed", e)
-      // Fallback to demos on error (e.g. index missing)
-      setSearchResults([
-        { 
-          uid: 'demo1', 
-          displayName: 'sarah study', 
-          username: 'sarah_99', 
-          photoUrl: 'https://picsum.photos/seed/sarah/200/200',
-          theme: { customColors: { primary: '#F97316', background: '#FFF7ED' }, activeTheme: 'sunset' }
-        }
-      ].filter(u => u.username.includes(searchQuery.toLowerCase().trim())))
-      
-      if (e.code === 'failed-precondition') {
-        console.warn("friends hub: search requires a firestore index for settings collectionGroup.")
-      }
+      toast({
+        variant: "destructive",
+        title: "search error",
+        description: e.message || "could not complete search."
+      })
     } finally {
       setIsSearching(false)
     }
@@ -248,7 +243,7 @@ export function FriendsHub() {
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h4 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">my friends</h4>
-                <Button variant="ghost" size="sm" onClick={() => setFriends([])} className="h-6 text-[10px] lowercase opacity-40 hover:opacity-100">search for more</Button>
+                <Button variant="ghost" size="sm" onClick={() => { setSearchResults([]); setHasSearched(false); }} className="h-6 text-[10px] lowercase opacity-40 hover:opacity-100">search for more</Button>
               </div>
               <div className="grid gap-4">
                 {friends?.map(friend => (
