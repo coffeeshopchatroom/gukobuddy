@@ -39,6 +39,7 @@ import {
   query, 
   where, 
   getDocs, 
+  getDoc,
   doc, 
   collectionGroup, 
   orderBy, 
@@ -600,11 +601,13 @@ function ImmersiveProfilePreview({ profile, onAction, relationshipStatus }: { pr
 }
 
 function ChatInterface({ friend, user, db, actualMyProfile }: any) {
+  const { toast } = useToast();
   const [inputText, setInputText] = React.useState("")
   const [showSharePicker, setShowSharePicker] = React.useState(false)
   const [shareCategory, setShareCategory] = React.useState<'flashcardSet' | 'notebook' | 'task' | null>(null)
   const [selectedItem, setSelectedItem] = React.useState<any>(null)
   const [showConfirmModal, setShowConfirmModal] = React.useState(false)
+  const [isAccepting, setIsAccepting] = React.useState<string | null>(null);
   const scrollRef = React.useRef<HTMLDivElement>(null)
 
   const chatId = [user.uid, friend.uid].sort().join('_')
@@ -655,16 +658,105 @@ function ChatInterface({ friend, user, db, actualMyProfile }: any) {
   }
 
   const handleConfirmShare = (mode: 'copy' | 'collaborate') => {
+    if (!user || !db || !selectedItem) return;
+
+    const shareId = doc(collection(db, "temp")).id;
+    const shareRef = doc(db, "sharedItems", shareId);
+
     const shareData = {
       itemType: shareCategory,
       itemId: selectedItem.id,
       itemName: selectedItem.title || selectedItem.name,
-      mode
+      mode,
+      shareId
+    };
+
+    setDocumentNonBlocking(shareRef, {
+      id: shareId,
+      fromUid: user.uid,
+      toUid: friend.uid,
+      itemType: shareCategory,
+      itemId: selectedItem.id,
+      itemData: selectedItem, 
+      mode,
+      createdAt: new Date().toISOString()
+    }, { merge: true });
+
+    handleSendMessage('share-invite', shareData);
+    setShowConfirmModal(false);
+    setSelectedItem(null);
+    setShareCategory(null);
+  }
+
+  const handleAcceptInvite = async (msg: any) => {
+    if (!user || !db || !msg.shareData?.shareId) return;
+    setIsAccepting(msg.id);
+
+    try {
+      const shareRef = doc(db, "sharedItems", msg.shareData.shareId);
+      const shareSnap = await getDoc(shareRef);
+
+      if (!shareSnap.exists()) {
+        toast({ variant: "destructive", title: "Invite expired", description: "This resource is no longer available." });
+        return;
+      }
+
+      const shareInfo = shareSnap.data();
+
+      if (msg.shareData.mode === 'copy') {
+        if (msg.shareData.itemType === 'notebook') {
+          const newNoteId = doc(collection(db, "temp")).id;
+          const newNoteRef = doc(db, "users", user.uid, "notes", newNoteId);
+          await setDoc(newNoteRef, {
+            ...shareInfo.itemData,
+            id: newNoteId,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          });
+          toast({ title: "Page added!", description: "Check your workspace." });
+        } else if (msg.shareData.itemType === 'task') {
+          const newTaskId = doc(collection(db, "temp")).id;
+          const newTaskRef = doc(db, "users", user.uid, "tasks", newTaskId);
+          await setDoc(newTaskRef, {
+            ...shareInfo.itemData,
+            id: newTaskId,
+            createdAt: new Date().toISOString()
+          });
+          toast({ title: "Task added!", description: "Check your manager." });
+        } else if (msg.shareData.itemType === 'flashcardSet') {
+          // Copy Deck: find/create a course first
+          const coursesRef = collection(db, "users", user.uid, "courses");
+          const coursesSnap = await getDocs(query(coursesRef, limit(1)));
+          let courseId = coursesSnap.docs[0]?.id;
+          
+          if (!courseId) {
+            courseId = doc(collection(db, "temp")).id;
+            await setDoc(doc(db, "users", user.uid, "courses", courseId), {
+              id: courseId,
+              name: "shared studies",
+              createdAt: new Date().toISOString()
+            });
+          }
+
+          const newDeckId = doc(collection(db, "temp")).id;
+          await setDoc(doc(db, "users", user.uid, "courses", courseId, "flashcardSets", newDeckId), {
+            ...shareInfo.itemData,
+            id: newDeckId,
+            courseId,
+            createdAt: new Date().toISOString()
+          });
+          toast({ title: "Deck copied!", description: "Added to your flashcards." });
+        }
+      } else {
+        // Collaborate mode logic (acknowledgment for MVP)
+        toast({ title: "Joined collaboration!", description: `You now have access to ${msg.shareData.itemName}.` });
+      }
+    } catch (error) {
+      console.error("Failed to accept invite", error);
+      toast({ variant: "destructive", title: "Action failed", description: "Could not process the invite." });
+    } finally {
+      setIsAccepting(null);
     }
-    handleSendMessage('share-invite', shareData)
-    setShowConfirmModal(false)
-    setSelectedItem(null)
-    setShareCategory(null)
   }
 
   const getItems = () => {
@@ -712,12 +804,16 @@ function ChatInterface({ friend, user, db, actualMyProfile }: any) {
                           <h5 className="font-bold text-sm truncate lowercase">{msg.shareData.itemName}</h5>
                        </div>
                     </div>
-                    <p className="text-xs text-muted-foreground lowercase">
+                    <p className="text-xs text-muted-foreground lowercase leading-relaxed">
                       {msg.senderId === user.uid ? 'you sent an invite.' : `${friend.displayName} wants to ${msg.shareData.mode === 'collaborate' ? 'collaborate' : 'share this'} with you.`}
                     </p>
                     {msg.senderId !== user.uid && (
-                      <Button className="w-full rounded-xl h-10 font-bold lowercase bg-primary text-primary-foreground shadow-lg shadow-primary/10">
-                        accept invite
+                      <Button 
+                        disabled={isAccepting === msg.id}
+                        onClick={() => handleAcceptInvite(msg)}
+                        className="w-full rounded-xl h-10 font-bold lowercase bg-primary text-primary-foreground shadow-lg shadow-primary/10"
+                      >
+                        {isAccepting === msg.id ? <Loader2 className="h-4 w-4 animate-spin" /> : 'accept invite'}
                       </Button>
                     )}
                   </div>
@@ -770,16 +866,20 @@ function ChatInterface({ friend, user, db, actualMyProfile }: any) {
               <ShareRow icon={<CheckSquare />} label="tasks" onClick={() => setShareCategory('task')} />
             </div>
           ) : (
-            <ScrollArea className="h-64 mt-4">
-              <div className="space-y-2 pr-4">
-                <Button variant="ghost" size="sm" onClick={() => setShareCategory(null)} className="mb-2 lowercase text-[10px]"><ChevronLeft className="h-3 w-3" /> back</Button>
-                {getItems().map(item => (
-                  <button key={item.id} onClick={() => { setSelectedItem(item); setShowConfirmModal(true); setShowSharePicker(false); }} className="w-full text-left p-4 rounded-2xl hover:bg-primary/5 border border-transparent hover:border-primary/20 transition-all lowercase text-sm font-bold truncate">
-                    {item.title || item.name}
-                  </button>
-                ))}
-              </div>
-            </ScrollArea>
+            <div className="space-y-4">
+              <Button variant="ghost" size="sm" onClick={() => setShareCategory(null)} className="mb-2 lowercase text-[10px] hover:bg-muted"><ChevronLeft className="h-3 w-3" /> back</Button>
+              <ScrollArea className="h-64 pr-4">
+                <div className="space-y-2">
+                  {getItems().length > 0 ? getItems().map(item => (
+                    <button key={item.id} onClick={() => { setSelectedItem(item); setShowConfirmModal(true); setShowSharePicker(false); }} className="w-full text-left p-4 rounded-2xl hover:bg-primary/5 border border-transparent hover:border-primary/20 transition-all lowercase text-sm font-bold truncate">
+                      {item.title || item.name}
+                    </button>
+                  )) : (
+                    <p className="text-center py-10 text-xs text-muted-foreground italic lowercase">no items found in this category.</p>
+                  )}
+                </div>
+              </ScrollArea>
+            </div>
           )}
         </DialogContent>
       </Dialog>
@@ -798,7 +898,7 @@ function ChatInterface({ friend, user, db, actualMyProfile }: any) {
             </Button>
             <Button onClick={() => handleConfirmShare('collaborate')} className="h-24 rounded-3xl flex flex-col gap-1 border-2 border-muted hover:border-accent transition-all bg-card text-foreground group">
               <span className="font-bold text-lg lowercase group-hover:text-accent-foreground">collaborate</span>
-              <span className="text-[10px] opacity-40 lowercase">you will both work on the same file</span>
+              <span className="text-[10px] opacity-40 lowercase">invite them to the same file</span>
             </Button>
           </div>
         </DialogContent>
