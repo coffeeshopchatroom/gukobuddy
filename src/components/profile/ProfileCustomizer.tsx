@@ -275,7 +275,7 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+<Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
@@ -853,180 +853,184 @@ function AdvancedProfileEditor({
   };
 
   return (
-    <div 
-      className="flex-1 overflow-hidden relative flex items-center justify-center p-20 bg-muted/5"
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onClick={() => setSelectedId(null)}
-    >
-      <div 
-        className="w-[600px] h-[400px] relative shadow-2xl overflow-hidden shrink-0 border border-border"
-        style={{ 
-          borderRadius: previewRounding,
-          fontFamily: formData.font,
-          background: bodyBgStyle,
-        }}
-      >
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-none w-screen h-screen p-0 border-none flex items-center justify-center bg-black/50">
         <div 
-          className={cn("absolute cursor-pointer", selectedId === 'banner' ? "z-[100]" : "z-[1]")}
-          onPointerDown={(e) => handlePointerDown(e, 'banner', 'move')}
-          onClick={e => e.stopPropagation()}
-          style={{ 
-            left: formData.layout.banner?.x ?? 0, 
-            top: formData.layout.banner?.y ?? 0,
-            width: formData.layout.banner?.w ?? 0,
-            height: formData.layout.banner?.h ?? 0,
-            zIndex: formData.layout.banner?.zIndex ?? 0
-          }}
+          className="flex-1 overflow-hidden relative flex items-center justify-center p-20 bg-muted/5 max-w-[90vw] max-h-[90vh] aspect-video rounded-2xl"
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onClick={() => setSelectedId(null)}
         >
-          {formData.bannerUrl ? (
-            <img src={formData.bannerUrl} className="w-full h-full object-cover select-none pointer-events-none" alt="banner" />
-          ) : (
-            <div className="w-full h-full bg-muted/10" />
-          )}
-        </div>
-
-        <div 
-          className={cn("absolute cursor-pointer", selectedId === 'pfp' ? "z-[100]" : "z-[10]")}
-          onPointerDown={(e) => handlePointerDown(e, 'pfp', 'move')}
-          onClick={e => e.stopPropagation()}
-          style={{ 
-            left: formData.layout.pfp?.x ?? 0, 
-            top: formData.layout.pfp?.y ?? 0,
-            width: formData.layout.pfp?.w ?? 0,
-            height: formData.layout.pfp?.h ?? 0,
-            borderRadius: previewRounding,
-            zIndex: formData.layout.pfp?.zIndex ?? 2,
-            ...getTargetBorderStyle('profile', bodyBgStyle),
-            overflow: 'hidden'
-          }}
-        >
-          {formData.photoUrl ? (
-            <img src={formData.photoUrl} className="w-full h-full object-cover select-none pointer-events-none" alt="pfp" />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center bg-muted/10"><UserCircle2 className="h-8 w-8 opacity-20" /></div>
-          )}
-        </div>
-
-        <div 
-          className={cn("absolute cursor-pointer", selectedId === 'name' ? "z-[100]" : "z-[10]")}
-          onPointerDown={(e) => handlePointerDown(e, 'name', 'move')}
-          onClick={e => e.stopPropagation()}
-          style={{ 
-            left: formData.layout.name?.x ?? 0, 
-            top: formData.layout.name?.y ?? 0,
-            width: formData.layout.name?.w ?? 0,
-            height: formData.layout.name?.h ?? 0,
-            zIndex: formData.layout.name?.zIndex ?? 2,
-            color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor'
-          }}
-        >
-          <h4 className="text-3xl font-bold leading-tight lowercase truncate select-none pointer-events-none">
-            {formData.displayName || 'name'}
-          </h4>
-        </div>
-
-        <div 
-          className={cn("absolute cursor-pointer", selectedId === 'username' ? "z-[100]" : "z-[10]")}
-          onPointerDown={(e) => handlePointerDown(e, 'username', 'move')}
-          onClick={e => e.stopPropagation()}
-          style={{ 
-            left: formData.layout.username?.x ?? 0, 
-            top: formData.layout.username?.y ?? 0,
-            width: formData.layout.username?.w ?? 0,
-            height: formData.layout.username?.h ?? 0,
-            zIndex: formData.layout.username?.zIndex ?? 2,
-            color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor',
-            opacity: 0.6
-          }}
-        >
-          <p className="text-sm lowercase truncate select-none pointer-events-none">{formData.username ? `@${formData.username}` : '@username'}</p>
-        </div>
-
-        <div 
-          className={cn("absolute cursor-pointer", selectedId === 'addBtn' ? "z-[100]" : "z-[10]")}
-          onPointerDown={(e) => handlePointerDown(e, 'addBtn', 'move')}
-          onClick={e => e.stopPropagation()}
-          style={{ 
-            left: formData.layout.addBtn?.x ?? 0, 
-            top: formData.layout.addBtn?.y ?? 0,
-            width: formData.layout.addBtn?.w ?? 0,
-            height: formData.layout.addBtn?.h ?? 0,
-            zIndex: formData.layout.addBtn?.zIndex ?? 2
-          }}
-        >
-          <Button 
-            className="w-full h-full p-0 text-[11px] font-bold lowercase border-none shadow-none pointer-events-none"
-            style={{ 
-              background: getColorStyle(formData.theme.buttons),
-              color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'white',
-              borderRadius: previewRounding,
-              ...getTargetBorderStyle('add', getColorStyle(formData.theme.buttons))
-            }}
-          >
-            add friend
-          </Button>
-        </div>
-
-        <div 
-          className={cn("absolute cursor-pointer", selectedId === 'aboutHeader' ? "z-[100]" : "z-[10]")}
-          onPointerDown={(e) => handlePointerDown(e, 'aboutHeader', 'move')}
-          onClick={e => e.stopPropagation()}
-          style={{ 
-            left: formData.layout.aboutHeader?.x ?? 0, 
-            top: formData.layout.aboutHeader?.y ?? 0,
-            width: formData.layout.aboutHeader?.w ?? 0,
-            height: formData.layout.aboutHeader?.h ?? 0,
-            zIndex: formData.layout.aboutHeader?.zIndex ?? 2,
-            color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor',
-            opacity: 0.4
-          }}
-        >
-          <h5 className="text-[10px] font-bold uppercase tracking-widest select-none pointer-events-none">about me</h5>
-        </div>
-
-        <div 
-          className={cn("absolute cursor-pointer", selectedId === 'bio' ? "z-[100]" : "z-[10]")}
-          onPointerDown={(e) => handlePointerDown(e, 'bio', 'move')}
-          onClick={e => e.stopPropagation()}
-          style={{ 
-            left: formData.layout.bio?.x ?? 0, 
-            top: formData.layout.bio?.y ?? 0,
-            width: formData.layout.bio?.w ?? 0,
-            height: formData.layout.bio?.h ?? 0,
-            zIndex: formData.layout.bio?.zIndex ?? 2,
-            color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor',
-          }}
-        >
-          <p className="text-xs leading-relaxed lowercase opacity-90 italic line-clamp-3 select-none pointer-events-none">
-            {formData.bio || 'your bio will appear here...'}
-          </p>
-        </div>
-
-        {formData.stickers.map((sticker: Sticker) => (
           <div 
-            key={sticker.id}
-            className={cn("absolute cursor-pointer", selectedId === `sticker-${sticker.id}` ? "z-[150]" : "z-[15]")}
-            onPointerDown={(e) => handlePointerDown(e, `sticker-${sticker.id}`, 'move')}
-            onClick={e => e.stopPropagation()}
-            style={{
-              left: sticker.x, top: sticker.y, width: sticker.w, height: sticker.h,
-              zIndex: sticker.zIndex,
-              transform: `rotate(${sticker.rotation || 0}deg)`
+            className="w-[600px] h-[400px] relative shadow-2xl overflow-hidden shrink-0 border border-border"
+            style={{ 
+              borderRadius: previewRounding,
+              fontFamily: formData.font,
+              background: bodyBgStyle,
             }}
           >
-            <img src={sticker.url} className="w-full h-full object-fill select-none pointer-events-none" alt="sticker" />
-          </div>
-        ))}
+            <div 
+              className={cn("absolute cursor-pointer", selectedId === 'banner' ? "z-[100]" : "z-[1]")}
+              onPointerDown={(e) => handlePointerDown(e, 'banner', 'move')}
+              onClick={e => e.stopPropagation()}
+              style={{ 
+                left: formData.layout.banner?.x ?? 0, 
+                top: formData.layout.banner?.y ?? 0,
+                width: formData.layout.banner?.w ?? 0,
+                height: formData.layout.banner?.h ?? 0,
+                zIndex: formData.layout.banner?.zIndex ?? 0
+              }}
+            >
+              {formData.bannerUrl ? (
+                <img src={formData.bannerUrl} className="w-full h-full object-cover select-none pointer-events-none" alt="banner" />
+              ) : (
+                <div className="w-full h-full bg-muted/10" />
+              )}
+            </div>
 
-        {Object.keys(formData.layout).map(key =>
-          renderSelectionBox(key, formData.layout[key as keyof ProfileLayout])
-        )}
-        {formData.stickers.map((sticker: Sticker) => (
-          renderSelectionBox(`sticker-${sticker.id}`, sticker)
-        ))}
-      </div>
-    </div>
+            <div 
+              className={cn("absolute cursor-pointer", selectedId === 'pfp' ? "z-[100]" : "z-[10]")}
+              onPointerDown={(e) => handlePointerDown(e, 'pfp', 'move')}
+              onClick={e => e.stopPropagation()}
+              style={{ 
+                left: formData.layout.pfp?.x ?? 0, 
+                top: formData.layout.pfp?.y ?? 0,
+                width: formData.layout.pfp?.w ?? 0,
+                height: formData.layout.pfp?.h ?? 0,
+                borderRadius: previewRounding,
+                zIndex: formData.layout.pfp?.zIndex ?? 2,
+                ...getTargetBorderStyle('profile', bodyBgStyle),
+                overflow: 'hidden'
+              }}
+            >
+              {formData.photoUrl ? (
+                <img src={formData.photoUrl} className="w-full h-full object-cover select-none pointer-events-none" alt="pfp" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-muted/10"><UserCircle2 className="h-8 w-8 opacity-20" /></div>
+              )}
+            </div>
+
+            <div 
+              className={cn("absolute cursor-pointer", selectedId === 'name' ? "z-[100]" : "z-[10]")}
+              onPointerDown={(e) => handlePointerDown(e, 'name', 'move')}
+              onClick={e => e.stopPropagation()}
+              style={{ 
+                left: formData.layout.name?.x ?? 0, 
+                top: formData.layout.name?.y ?? 0,
+                width: formData.layout.name?.w ?? 0,
+                height: formData.layout.name?.h ?? 0,
+                zIndex: formData.layout.name?.zIndex ?? 2,
+                color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor'
+              }}
+            >
+              <h4 className="text-3xl font-bold leading-tight lowercase truncate select-none pointer-events-none">
+                {formData.displayName || 'name'}
+              </h4>
+            </div>
+
+            <div 
+              className={cn("absolute cursor-pointer", selectedId === 'username' ? "z-[100]" : "z-[10]")}
+              onPointerDown={(e) => handlePointerDown(e, 'username', 'move')}
+              onClick={e => e.stopPropagation()}
+              style={{ 
+                left: formData.layout.username?.x ?? 0, 
+                top: formData.layout.username?.y ?? 0,
+                width: formData.layout.username?.w ?? 0,
+                height: formData.layout.username?.h ?? 0,
+                zIndex: formData.layout.username?.zIndex ?? 2,
+                color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor',
+                opacity: 0.6
+              }}
+            >
+              <p className="text-sm lowercase truncate select-none pointer-events-none">{formData.username ? `@${formData.username}` : '@username'}</p>
+            </div>
+
+            <div 
+              className={cn("absolute cursor-pointer", selectedId === 'addBtn' ? "z-[100]" : "z-[10]")}
+              onPointerDown={(e) => handlePointerDown(e, 'addBtn', 'move')}
+              onClick={e => e.stopPropagation()}
+              style={{ 
+                left: formData.layout.addBtn?.x ?? 0, 
+                top: formData.layout.addBtn?.y ?? 0,
+                width: formData.layout.addBtn?.w ?? 0,
+                height: formData.layout.addBtn?.h ?? 0,
+                zIndex: formData.layout.addBtn?.zIndex ?? 2
+              }}
+            >
+              <Button 
+                className="w-full h-full p-0 text-[11px] font-bold lowercase border-none shadow-none pointer-events-none"
+                style={{ 
+                  background: getColorStyle(formData.theme.buttons),
+                  color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'white',
+                  borderRadius: previewRounding,
+                  ...getTargetBorderStyle('add', getColorStyle(formData.theme.buttons))
+                }}
+              >
+                add friend
+              </Button>
+            </div>
+
+            <div 
+              className={cn("absolute cursor-pointer", selectedId === 'aboutHeader' ? "z-[100]" : "z-[10]")}
+              onPointerDown={(e) => handlePointerDown(e, 'aboutHeader', 'move')}
+              onClick={e => e.stopPropagation()}
+              style={{ 
+                left: formData.layout.aboutHeader?.x ?? 0, 
+                top: formData.layout.aboutHeader?.y ?? 0,
+                width: formData.layout.aboutHeader?.w ?? 0,
+                height: formData.layout.aboutHeader?.h ?? 0,
+                zIndex: formData.layout.aboutHeader?.zIndex ?? 2,
+                color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor',
+                opacity: 0.4
+              }}
+            >
+              <h5 className="text-[10px] font-bold uppercase tracking-widest select-none pointer-events-none">about me</h5>
+            </div>
+
+            <div 
+              className={cn("absolute cursor-pointer", selectedId === 'bio' ? "z-[100]" : "z-[10]")}
+              onPointerDown={(e) => handlePointerDown(e, 'bio', 'move')}
+              onClick={e => e.stopPropagation()}
+              style={{ 
+                left: formData.layout.bio?.x ?? 0, 
+                top: formData.layout.bio?.y ?? 0,
+                width: formData.layout.bio?.w ?? 0,
+                height: formData.layout.bio?.h ?? 0,
+                zIndex: formData.layout.bio?.zIndex ?? 2,
+                color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor',
+              }}
+            >
+              <p className="text-xs leading-relaxed lowercase opacity-90 italic line-clamp-3 select-none pointer-events-none">
+                {formData.bio || 'your bio will appear here...'}
+              </p>
+            </div>
+
+            {formData.stickers.map((sticker: Sticker) => (
+              <div 
+                key={sticker.id}
+                className={cn("absolute cursor-pointer", selectedId === `sticker-${sticker.id}` ? "z-[150]" : "z-[15]")}
+                onPointerDown={(e) => handlePointerDown(e, `sticker-${sticker.id}`, 'move')}
+                onClick={e => e.stopPropagation()}
+                style={{
+                  left: sticker.x, top: sticker.y, width: sticker.w, height: sticker.h,
+                  zIndex: sticker.zIndex,
+                  transform: `rotate(${sticker.rotation || 0}deg)`
+                }}
+              >
+                <img src={sticker.url} className="w-full h-full object-fill select-none pointer-events-none" alt="sticker" />
+              </div>
+            ))}
+
+            {Object.keys(formData.layout).map(key =>
+              renderSelectionBox(key, formData.layout[key as keyof ProfileLayout])
+            )}
+            {formData.stickers.map((sticker: Sticker) => (
+              renderSelectionBox(`sticker-${sticker.id}`, sticker)
+            ))}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
