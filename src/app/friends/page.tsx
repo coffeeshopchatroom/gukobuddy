@@ -23,7 +23,8 @@ import {
   BookOpen,
   CheckSquare,
   Smile,
-  Paperclip
+  Paperclip,
+  Image as ImageIcon
 } from "lucide-react"
 import { 
   useUser, 
@@ -55,6 +56,12 @@ import { useToast } from "@/hooks/use-toast"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Card, CardContent } from "@/components/ui/card"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { GiphyPicker } from "@/components/friends/GiphyPicker"
 import {
   Dialog,
   DialogContent,
@@ -608,6 +615,7 @@ function ChatInterface({ friend, user, db, actualMyProfile }: any) {
   const [showConfirmModal, setShowConfirmModal] = React.useState(false)
   const [isAccepting, setIsAccepting] = React.useState<string | null>(null);
   const [isSharing, setIsSharing] = React.useState(false);
+  const [showGiphyPicker, setShowGiphyPicker] = React.useState(false);
   const scrollRef = React.useRef<HTMLDivElement>(null)
 
   const chatId = [user.uid, friend.uid].sort().join('_')
@@ -632,30 +640,44 @@ function ChatInterface({ friend, user, db, actualMyProfile }: any) {
     if (scrollRef.current) scrollRef.current.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  const handleSendMessage = (type: 'text' | 'share-invite' = 'text', shareData?: any) => {
-    if (type === 'text' && !inputText.trim()) return
-    
-    const chatRef = doc(db, "chats", chatId)
+  const handleSendMessage = (type: 'text' | 'share-invite' | 'gif' = 'text', content?: any) => {
+    if (type === 'text' && !inputText.trim()) return;
+
+    const chatRef = doc(db, "chats", chatId);
     setDocumentNonBlocking(chatRef, {
       participants: [user.uid, friend.uid],
-      lastMessage: type === 'text' ? inputText : `shared a ${shareData.itemType}`,
+      lastMessage: type === 'text' ? inputText : type === 'gif' ? 'Sent a GIF' : `shared a ${content.itemType}`,
       updatedAt: new Date().toISOString()
-    }, { merge: true })
+    }, { merge: true });
 
-    const msgId = doc(collection(db, "temp")).id
-    const msgRef = doc(db, "chats", chatId, "messages", msgId)
-    
-    setDocumentNonBlocking(msgRef, {
+    const msgId = doc(collection(db, "temp")).id;
+    const msgRef = doc(db, "chats", chatId, "messages", msgId);
+
+    let messageData: any = {
       id: msgId,
       senderId: user.uid,
-      text: type === 'text' ? inputText : "",
       type,
-      shareData: shareData || null,
       createdAt: new Date().toISOString()
-    }, { merge: true })
+    };
 
-    if (type === 'text') setInputText("")
-  }
+    if (type === 'text') {
+      messageData.text = inputText;
+    } else if (type === 'gif') {
+      messageData.text = content; // content is the GIF URL
+    } else if (type === 'share-invite') {
+      messageData.shareData = content;
+      messageData.text = "";
+    }
+
+    setDocumentNonBlocking(msgRef, messageData, { merge: true });
+
+    if (type === 'text') setInputText("");
+  };
+
+  const handleSelectGif = (url: string) => {
+    handleSendMessage('gif', url);
+    setShowGiphyPicker(false);
+  };
 
   const handleConfirmShare = async (mode: 'copy' | 'collaborate') => {
     if (!user || !db || !selectedItem) return;
@@ -667,7 +689,6 @@ function ChatInterface({ friend, user, db, actualMyProfile }: any) {
 
       let itemDataWithChildren = { ...selectedItem };
 
-      // If it's a deck, we need to grab the cards too for a full copy
       if (shareCategory === 'flashcardSet') {
         const cardsRef = collection(db, "users", user.uid, "courses", selectedItem.courseId, "flashcardSets", selectedItem.id, "flashcards");
         const cardsSnap = await getDocs(cardsRef);
@@ -741,7 +762,6 @@ function ChatInterface({ friend, user, db, actualMyProfile }: any) {
           }, { merge: true });
           toast({ title: "Task added!", description: "Check your manager." });
         } else if (msg.shareData.itemType === 'flashcardSet') {
-          // Find/create course context
           const coursesRef = collection(db, "users", user.uid, "courses");
           const coursesSnap = await getDocs(query(coursesRef, limit(1)));
           let courseId = coursesSnap.docs[0]?.id;
@@ -758,7 +778,6 @@ function ChatInterface({ friend, user, db, actualMyProfile }: any) {
           const newDeckId = doc(collection(db, "temp")).id;
           const deckRef = doc(db, "users", user.uid, "courses", courseId, "flashcardSets", newDeckId);
           
-          // Copy deck metadata
           setDocumentNonBlocking(deckRef, {
             ...shareInfo.itemData,
             id: newDeckId,
@@ -766,7 +785,6 @@ function ChatInterface({ friend, user, db, actualMyProfile }: any) {
             createdAt: new Date().toISOString()
           }, { merge: true });
 
-          // Copy cards if they exist in snapshot
           if (shareInfo.itemData.cards && Array.isArray(shareInfo.itemData.cards)) {
             shareInfo.itemData.cards.forEach((card: any) => {
                const newCardId = doc(collection(db, "temp")).id;
@@ -818,12 +836,14 @@ function ChatInterface({ friend, user, db, actualMyProfile }: any) {
             <div key={msg.id} className={cn("flex", msg.senderId === user.uid ? "justify-end" : "justify-start")}>
               <div className={cn(
                 "max-w-[80%] rounded-[24px] overflow-hidden shadow-sm",
-                msg.senderId === user.uid ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
+                msg.type === 'gif' ? '' : (msg.senderId === user.uid ? "bg-primary text-primary-foreground" : "bg-muted text-foreground")
               )}>
                 {msg.type === 'text' ? (
                   <div className="p-4 px-6 text-sm leading-relaxed lowercase">
                     {msg.text}
                   </div>
+                ) : msg.type === 'gif' ? (
+                  <img src={msg.text} alt="gif" className="rounded-[24px] max-w-[200px] h-auto" />
                 ) : (
                   <div className="p-6 space-y-4 bg-card border-2 border-primary/10 min-w-[280px]">
                     <div className="flex items-center gap-3 text-foreground">
@@ -868,17 +888,31 @@ function ChatInterface({ friend, user, db, actualMyProfile }: any) {
           >
             <Plus className="h-6 w-6" />
           </Button>
+          <Popover open={showGiphyPicker} onOpenChange={setShowGiphyPicker}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-12 w-12 rounded-2xl border-none bg-muted/50 hover:bg-primary/20 hover:text-primary transition-all shrink-0"
+              >
+                <ImageIcon className="h-6 w-6" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80 p-0 border-none">
+              <GiphyPicker onSelectGif={handleSelectGif} />
+            </PopoverContent>
+          </Popover>
           <div className="relative flex-1">
             <Input 
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+              onKeyDown={(e) => e.key === 'Enter' && handleSendMessage('text', inputText)}
               placeholder="type a message..." 
               className="h-12 rounded-2xl bg-muted/50 border-none px-6 lowercase no-focus-ring"
             />
           </div>
           <Button 
-            onClick={() => handleSendMessage()}
+            onClick={() => handleSendMessage('text', inputText)}
             className="h-12 w-12 rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95 shrink-0"
           >
             <Send className="h-5 w-5" />
