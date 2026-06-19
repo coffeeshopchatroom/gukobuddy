@@ -200,7 +200,7 @@ export default function NotebooksPage() {
           if (editor.isEmpty) {
             return "type '/' for commands...";
           }
-          return;
+          return ''
         },
       }),
       TaskList.configure({
@@ -691,7 +691,7 @@ export default function NotebooksPage() {
                     >
                       {emoji}
                     </button>
-                  )) undermined}
+                  ))}
                 </div>
               </TabsContent>
 
