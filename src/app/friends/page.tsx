@@ -44,7 +44,6 @@ import {
   collectionGroup, 
   orderBy, 
   limit, 
-  addDoc, 
   setDoc,
   serverTimestamp 
 } from "firebase/firestore"
@@ -110,7 +109,7 @@ export default function FriendsPage() {
   }, [user, db])
   const { data: incomingRequests } = useCollection(incomingRequestsQuery)
 
-  // My Requests query (to check "requested!" status)
+  // My Requests query
   const myRequestsQuery = useMemoFirebase(() => {
     if (!user || !db) return null
     return query(collection(db, "users", user.uid, "friends"))
@@ -608,6 +607,7 @@ function ChatInterface({ friend, user, db, actualMyProfile }: any) {
   const [selectedItem, setSelectedItem] = React.useState<any>(null)
   const [showConfirmModal, setShowConfirmModal] = React.useState(false)
   const [isAccepting, setIsAccepting] = React.useState<string | null>(null);
+  const [isSharing, setIsSharing] = React.useState(false);
   const scrollRef = React.useRef<HTMLDivElement>(null)
 
   const chatId = [user.uid, friend.uid].sort().join('_')
@@ -636,7 +636,7 @@ function ChatInterface({ friend, user, db, actualMyProfile }: any) {
     if (type === 'text' && !inputText.trim()) return
     
     const chatRef = doc(db, "chats", chatId)
-    setDoc(chatRef, {
+    setDocumentNonBlocking(chatRef, {
       participants: [user.uid, friend.uid],
       lastMessage: type === 'text' ? inputText : `shared a ${shareData.itemType}`,
       updatedAt: new Date().toISOString()
@@ -657,35 +657,52 @@ function ChatInterface({ friend, user, db, actualMyProfile }: any) {
     if (type === 'text') setInputText("")
   }
 
-  const handleConfirmShare = (mode: 'copy' | 'collaborate') => {
+  const handleConfirmShare = async (mode: 'copy' | 'collaborate') => {
     if (!user || !db || !selectedItem) return;
+    setIsSharing(true);
 
-    const shareId = doc(collection(db, "temp")).id;
-    const shareRef = doc(db, "sharedItems", shareId);
+    try {
+      const shareId = doc(collection(db, "temp")).id;
+      const shareRef = doc(db, "sharedItems", shareId);
 
-    const shareData = {
-      itemType: shareCategory,
-      itemId: selectedItem.id,
-      itemName: selectedItem.title || selectedItem.name,
-      mode,
-      shareId
-    };
+      let itemDataWithChildren = { ...selectedItem };
 
-    setDocumentNonBlocking(shareRef, {
-      id: shareId,
-      fromUid: user.uid,
-      toUid: friend.uid,
-      itemType: shareCategory,
-      itemId: selectedItem.id,
-      itemData: selectedItem, 
-      mode,
-      createdAt: new Date().toISOString()
-    }, { merge: true });
+      // If it's a deck, we need to grab the cards too for a full copy
+      if (shareCategory === 'flashcardSet') {
+        const cardsRef = collection(db, "users", user.uid, "courses", selectedItem.courseId, "flashcardSets", selectedItem.id, "flashcards");
+        const cardsSnap = await getDocs(cardsRef);
+        itemDataWithChildren.cards = cardsSnap.docs.map(d => ({ ...d.data(), id: d.id }));
+      }
 
-    handleSendMessage('share-invite', shareData);
-    setShowConfirmModal(false);
-    setSelectedItem(null);
-    setShareCategory(null);
+      const shareData = {
+        itemType: shareCategory,
+        itemId: selectedItem.id,
+        itemName: selectedItem.title || selectedItem.name,
+        mode,
+        shareId
+      };
+
+      setDocumentNonBlocking(shareRef, {
+        id: shareId,
+        fromUid: user.uid,
+        toUid: friend.uid,
+        itemType: shareCategory,
+        itemId: selectedItem.id,
+        itemData: itemDataWithChildren, 
+        mode,
+        createdAt: new Date().toISOString()
+      }, { merge: true });
+
+      handleSendMessage('share-invite', shareData);
+      setShowConfirmModal(false);
+      setSelectedItem(null);
+      setShareCategory(null);
+    } catch (e) {
+      console.error("Failed to share", e);
+      toast({ variant: "destructive", title: "Share failed", description: "Could not prepare shared data." });
+    } finally {
+      setIsSharing(false);
+    }
   }
 
   const handleAcceptInvite = async (msg: any) => {
@@ -707,48 +724,64 @@ function ChatInterface({ friend, user, db, actualMyProfile }: any) {
         if (msg.shareData.itemType === 'notebook') {
           const newNoteId = doc(collection(db, "temp")).id;
           const newNoteRef = doc(db, "users", user.uid, "notes", newNoteId);
-          await setDoc(newNoteRef, {
+          setDocumentNonBlocking(newNoteRef, {
             ...shareInfo.itemData,
             id: newNoteId,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
-          });
+          }, { merge: true });
           toast({ title: "Page added!", description: "Check your workspace." });
         } else if (msg.shareData.itemType === 'task') {
           const newTaskId = doc(collection(db, "temp")).id;
           const newTaskRef = doc(db, "users", user.uid, "tasks", newTaskId);
-          await setDoc(newTaskRef, {
+          setDocumentNonBlocking(newTaskRef, {
             ...shareInfo.itemData,
             id: newTaskId,
             createdAt: new Date().toISOString()
-          });
+          }, { merge: true });
           toast({ title: "Task added!", description: "Check your manager." });
         } else if (msg.shareData.itemType === 'flashcardSet') {
-          // Copy Deck: find/create a course first
+          // Find/create course context
           const coursesRef = collection(db, "users", user.uid, "courses");
           const coursesSnap = await getDocs(query(coursesRef, limit(1)));
           let courseId = coursesSnap.docs[0]?.id;
           
           if (!courseId) {
             courseId = doc(collection(db, "temp")).id;
-            await setDoc(doc(db, "users", user.uid, "courses", courseId), {
+            setDocumentNonBlocking(doc(db, "users", user.uid, "courses", courseId), {
               id: courseId,
               name: "shared studies",
               createdAt: new Date().toISOString()
-            });
+            }, { merge: true });
           }
 
           const newDeckId = doc(collection(db, "temp")).id;
-          await setDoc(doc(db, "users", user.uid, "courses", courseId, "flashcardSets", newDeckId), {
+          const deckRef = doc(db, "users", user.uid, "courses", courseId, "flashcardSets", newDeckId);
+          
+          // Copy deck metadata
+          setDocumentNonBlocking(deckRef, {
             ...shareInfo.itemData,
             id: newDeckId,
             courseId,
             createdAt: new Date().toISOString()
-          });
+          }, { merge: true });
+
+          // Copy cards if they exist in snapshot
+          if (shareInfo.itemData.cards && Array.isArray(shareInfo.itemData.cards)) {
+            shareInfo.itemData.cards.forEach((card: any) => {
+               const newCardId = doc(collection(db, "temp")).id;
+               const cardRef = doc(db, "users", user.uid, "courses", courseId, "flashcardSets", newDeckId, "flashcards", newCardId);
+               setDocumentNonBlocking(cardRef, {
+                 ...card,
+                 id: newCardId,
+                 flashcardSetId: newDeckId
+               }, { merge: true });
+            });
+          }
+
           toast({ title: "Deck copied!", description: "Added to your flashcards." });
         }
       } else {
-        // Collaborate mode logic (acknowledgment for MVP)
         toast({ title: "Joined collaboration!", description: `You now have access to ${msg.shareData.itemName}.` });
       }
     } catch (error) {
@@ -887,16 +920,26 @@ function ChatInterface({ friend, user, db, actualMyProfile }: any) {
       <Dialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>
         <DialogContent className="rounded-[40px] border-none shadow-3xl bg-background p-10 max-w-md text-center">
           <DialogHeader className="space-y-4">
-            <div className="h-16 w-16 rounded-3xl bg-primary/10 flex items-center justify-center mx-auto animate-bounce"><Share2 className="h-8 w-8 text-primary" /></div>
+            <div className="h-16 w-16 rounded-3xl bg-primary/10 flex items-center justify-center mx-auto animate-bounce">
+              {isSharing ? <Loader2 className="h-8 w-8 animate-spin text-primary" /> : <Share2 className="h-8 w-8 text-primary" />}
+            </div>
             <DialogTitle className="font-headline text-3xl lowercase">sharing mode</DialogTitle>
             <DialogDescription className="lowercase">how should {friend.displayName} receive this?</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-8">
-            <Button onClick={() => handleConfirmShare('copy')} className="h-24 rounded-3xl flex flex-col gap-1 border-2 border-muted hover:border-primary transition-all bg-card text-foreground group">
+            <Button 
+              disabled={isSharing}
+              onClick={() => handleConfirmShare('copy')} 
+              className="h-24 rounded-3xl flex flex-col gap-1 border-2 border-muted hover:border-primary transition-all bg-card text-foreground group"
+            >
               <span className="font-bold text-lg lowercase group-hover:text-primary">send a copy</span>
               <span className="text-[10px] opacity-40 lowercase">they get their own version to edit</span>
             </Button>
-            <Button onClick={() => handleConfirmShare('collaborate')} className="h-24 rounded-3xl flex flex-col gap-1 border-2 border-muted hover:border-accent transition-all bg-card text-foreground group">
+            <Button 
+              disabled={isSharing}
+              onClick={() => handleConfirmShare('collaborate')} 
+              className="h-24 rounded-3xl flex flex-col gap-1 border-2 border-muted hover:border-accent transition-all bg-card text-foreground group"
+            >
               <span className="font-bold text-lg lowercase group-hover:text-accent-foreground">collaborate</span>
               <span className="text-[10px] opacity-40 lowercase">invite them to the same file</span>
             </Button>
