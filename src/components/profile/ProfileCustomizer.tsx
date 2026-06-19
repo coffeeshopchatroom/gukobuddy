@@ -650,6 +650,12 @@ function AdvancedProfileEditor({
     setHistoryIndex(prev => prev + 1);
   }, [historyIndex]);
 
+  React.useEffect(() => {
+    if (open) {
+      saveToHistory(formData);
+    }
+  }, [open]);
+
   const undo = () => {
     if (historyIndex > 0) {
       const prev = history[historyIndex - 1];
@@ -773,38 +779,33 @@ function AdvancedProfileEditor({
     if (!selectedId) return;
     
     setFormData((prev: any) => {
+      const newFormData = JSON.parse(JSON.stringify(prev));
       if (selectedId.startsWith('sticker-')) {
         const sid = selectedId.replace('sticker-', '');
-        return {
-          ...prev,
-          stickers: prev.stickers.map((s: any) => 
-            s.id === sid ? { ...s, zIndex: Math.max(0, (s.zIndex || 0) + delta) } : s
-          )
-        };
+        const sticker = newFormData.stickers.find((s:any) => s.id === sid);
+        if(sticker) sticker.zIndex = Math.max(0, (sticker.zIndex || 0) + delta);
       } else {
-        const currentZ = prev.layout[selectedId as keyof ProfileLayout]?.zIndex ?? 0;
-        return {
-          ...prev,
-          layout: {
-            ...prev.layout,
-            [selectedId]: { ...prev.layout[selectedId as keyof ProfileLayout], zIndex: Math.max(0, currentZ + delta) }
-          }
-        };
+        const element = newFormData.layout[selectedId as keyof ProfileLayout];
+        if(element) element.zIndex = Math.max(0, (element.zIndex || 0) + delta);
       }
+      saveToHistory(newFormData);
+      return newFormData;
     });
-    saveToHistory(formData);
   };
 
   const deleteSelected = () => {
     if (!selectedId) return;
     if (selectedId.startsWith('sticker-')) {
       const stickerId = selectedId.replace('sticker-', '');
-      setFormData((prev: any) => ({
-        ...prev,
-        stickers: prev.stickers.filter((s: any) => s.id !== stickerId)
-      }));
+      setFormData((prev: any) => {
+        const newFormData = {
+          ...prev,
+          stickers: prev.stickers.filter((s: any) => s.id !== stickerId)
+        };
+        saveToHistory(newFormData);
+        return newFormData;
+      });
       setSelectedId(null);
-      saveToHistory(formData);
     }
   };
 
@@ -854,16 +855,58 @@ function AdvancedProfileEditor({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-none w-screen h-screen p-0 border-none flex items-center justify-center bg-black/50">
-        <div 
-          className="flex-1 overflow-hidden relative flex items-center justify-center p-20 bg-muted/5 max-w-[90vw] max-h-[90vh] aspect-video rounded-2xl"
+      <DialogContent className="max-w-none w-screen h-screen p-0 border-none flex items-center justify-center bg-black/50 backdrop-blur-sm">
+        <div
+          className="w-full h-full overflow-hidden relative flex items-center justify-center"
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onClick={() => setSelectedId(null)}
         >
+          <div className="absolute top-6 right-6 z-[250]">
+            <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="text-foreground bg-background/50 hover:bg-background/80 rounded-full h-10 w-10">
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+
+          <div className="absolute top-6 left-6 z-[250] flex items-center gap-2 bg-background/50 backdrop-blur-md rounded-2xl border border-white/10 p-2 shadow-xl">
+            <Button variant="ghost" size="icon" onClick={undo} disabled={historyIndex <= 0} className="text-foreground hover:bg-white/10 rounded-xl h-9 w-9 disabled:opacity-50">
+              <Undo2 className="h-5 w-5" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={redo} disabled={historyIndex >= history.length - 1} className="text-foreground hover:bg-white/10 rounded-xl h-9 w-9 disabled:opacity-50">
+              <Redo2 className="h-5 w-5" />
+            </Button>
+          </div>
+
+          <div className="absolute top-1/2 -translate-y-1/2 left-6 z-[250] flex flex-col items-center gap-2 bg-background/50 backdrop-blur-md rounded-2xl border border-white/10 p-2 shadow-xl">
+            <label className="relative h-10 w-10 flex items-center justify-center rounded-xl hover:bg-white/10 cursor-pointer text-foreground">
+              {uploadingSticker ? <Loader2 className="h-5 w-5 animate-spin" /> : <Star className="h-5 w-5" />}
+              <input type="file" className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && onStickerUpload(e.target.files[0])} />
+            </label>
+          </div>
+
+          {selectedId && (
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[250] flex items-center gap-2 bg-background/50 backdrop-blur-md rounded-2xl border border-white/10 p-2 shadow-xl">
+              <Button variant="ghost" size="icon" onClick={() => changeLayer(-1)} className="text-foreground hover:bg-white/10 rounded-xl h-9 w-9">
+                <Layers className="h-5 w-5" />
+              </Button>
+              <Button variant="ghost" size="icon" onClick={() => changeLayer(1)} className="text-foreground hover:bg-white/10 rounded-xl h-9 w-9">
+                <Layers className="h-5 w-5" style={{transform: 'scaleY(-1)'}}/>
+              </Button>
+              {selectedId.startsWith('sticker-') && (
+                <>
+                  <div className="w-px h-6 bg-white/10 mx-1"></div>
+                  <Button variant="ghost" size="icon" onClick={deleteSelected} className="text-destructive hover:bg-destructive/10 rounded-xl h-9 w-9">
+                    <Trash2 className="h-5 w-5" />
+                  </Button>
+                </>
+              )}
+            </div>
+          )}
+
           <div 
-            className="w-[600px] h-[400px] relative shadow-2xl overflow-hidden shrink-0 border border-border"
+            className="w-[600px] h-[400px] relative shadow-2xl overflow-hidden shrink-0 border-2 border-border/20"
             style={{ 
+              transform: 'scale(1.2)',
               borderRadius: previewRounding,
               fontFamily: formData.font,
               background: bodyBgStyle,
