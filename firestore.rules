@@ -19,10 +19,9 @@ service cloud.firestore {
       allow read, write: if request.auth != null && request.auth.uid == userId;
       
       // Allow others to 'knock' (send a pending request)
-      // They can create/update the document if friendId matches their UID and status is pending_in
-      allow create, update: if request.auth != null && 
-        friendId == request.auth.uid && 
-        request.resource.data.status == 'pending_in';
+      // OR allow the recipient to mark themselves as accepted/declined in the sender's list
+      // They can create/update/delete the document if friendId matches their UID
+      allow create, update, delete: if request.auth != null && friendId == request.auth.uid;
         
       // Allow users to see their own status in someone else's list (e.g., to see if they already sent a request)
       allow read: if request.auth != null && friendId == request.auth.uid;

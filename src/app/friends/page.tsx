@@ -109,6 +109,13 @@ export default function FriendsPage() {
   }, [user, db])
   const { data: incomingRequests } = useCollection(incomingRequestsQuery)
 
+  // My Requests query (to check "requested!" status)
+  const myRequestsQuery = useMemoFirebase(() => {
+    if (!user || !db) return null
+    return query(collection(db, "users", user.uid, "friends"))
+  }, [user, db])
+  const { data: allMyFriends } = useCollection(myRequestsQuery)
+
   const [isRequestModalOpen, setIsRequestModalOpen] = React.useState(false);
   
   React.useEffect(() => {
@@ -298,7 +305,7 @@ export default function FriendsPage() {
                   <ImmersiveProfilePreview 
                     profile={selectedUser} 
                     onAction={() => sendRequest(selectedUser)} 
-                    relationshipStatus={acceptedFriends?.find(f => f.uid === selectedUser.uid) ? 'accepted' : undefined}
+                    relationshipStatus={allMyFriends?.find(f => f.uid === selectedUser.uid)?.status}
                   />
                 </div>
               )}
@@ -552,7 +559,7 @@ function ImmersiveProfilePreview({ profile, onAction, relationshipStatus }: { pr
               ...getTargetBorderStyle('add', getColorStyle(theme.buttons || customColors.primary))
             }}
           >
-            {relationshipStatus === 'accepted' ? 'friends' : relationshipStatus === 'pending_out' ? 'requested!' : 'add friend'}
+            {relationshipStatus === 'accepted' ? 'friends' : (relationshipStatus === 'pending_out' || relationshipStatus === 'pending_in') ? 'requested!' : 'add friend'}
           </Button>
         </div>
 
@@ -809,4 +816,3 @@ function ShareRow({ icon, label, onClick }: any) {
     </button>
   )
 }
-
