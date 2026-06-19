@@ -37,8 +37,8 @@ import {
   deleteDocumentNonBlocking 
 } from "@/firebase"
 import { collection, doc, query, orderBy } from "firebase/firestore"
-import { useEditor, EditorContent } from '@tiptap/react'
-import { Node, mergeAttributes } from '@tiptap/core'
+import { useEditor, EditorContent, Editor } from '@tiptap/react'
+import { Node as TipTapNode, mergeAttributes } from '@tiptap/core'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
 import TaskList from '@tiptap/extension-task-list'
@@ -62,7 +62,7 @@ import { Clock } from "lucide-react"
 
 // --- CUSTOM NODES ---
 
-const Details = Node.create({
+const Details = TipTapNode.create({
   name: 'details',
   group: 'block',
   content: 'summary block+',
@@ -89,7 +89,7 @@ const Details = Node.create({
   },
 });
 
-const Summary = Node.create({
+const Summary = TipTapNode.create({
   name: 'summary',
   content: 'inline*',
   parseHTML() {
@@ -100,7 +100,7 @@ const Summary = Node.create({
   },
 });
 
-const Column = Node.create({
+const Column = TipTapNode.create({
   name: 'column',
   content: 'block+',
   renderHTML() {
@@ -111,7 +111,7 @@ const Column = Node.create({
   },
 })
 
-const Columns = Node.create({
+const Columns = TipTapNode.create({
   name: 'columns',
   group: 'block',
   content: 'column{2,}',
@@ -124,7 +124,7 @@ const Columns = Node.create({
 })
 
 // Custom Page Link Node (Atom - Non-editable block)
-const PageLinkNode = Node.create({
+const PageLinkNode = TipTapNode.create({
   name: 'pageLink',
   group: 'block',
   content: '',
@@ -200,7 +200,7 @@ export default function NotebooksPage() {
           if (editor.isEmpty) {
             return "type '/' for commands...";
           }
-          return null;
+          return;
         },
       }),
       TaskList.configure({
@@ -437,7 +437,7 @@ export default function NotebooksPage() {
         type="file" 
         className="hidden" 
         accept="image/*" 
-        onChange={(e) => handleFileUpload(e, 'inline-image')} 
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleFileUpload(e, 'inline-image')} 
       />
 
       <aside className="w-[240px] flex flex-col shrink-0 bg-[#fbfbfa] border-r border-[#0000000f] h-full overflow-hidden group/sidebar">
@@ -489,7 +489,7 @@ export default function NotebooksPage() {
                     note={note}
                     isActive={selectedNoteId === note.id}
                     onClick={() => setSelectedNoteId(note.id)}
-                    onDelete={(e) => handleDeleteNote(e, note.id)}
+                    onDelete={(e: React.MouseEvent) => handleDeleteNote(e, note.id)}
                  />
                ))
              ) : (
@@ -545,7 +545,7 @@ export default function NotebooksPage() {
                     key={note.id} 
                     note={note} 
                     onClick={() => setSelectedNoteId(note.id)} 
-                    onDelete={(e) => handleDeleteNote(e, note.id)}
+                    onDelete={(e: React.MouseEvent) => handleDeleteNote(e, note.id)}
                   />
                 ))}
                 <button 
@@ -691,7 +691,7 @@ export default function NotebooksPage() {
                     >
                       {emoji}
                     </button>
-                  ))}
+                  )) undermined}
                 </div>
               </TabsContent>
 
@@ -710,7 +710,7 @@ export default function NotebooksPage() {
                     type="file" 
                     className="hidden" 
                     accept="image/*" 
-                    onChange={(e) => handleFileUpload(e, pickerType)} 
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleFileUpload(e, pickerType)} 
                   />
                 </div>
                 <div className="space-y-2">
@@ -735,7 +735,7 @@ export default function NotebooksPage() {
   )
 }
 
-function SlashCommandMenu({ editor, onApply, notes, onClose, query }: { editor: any, onApply: (cmd: string, params?: any) => void, notes: any[], onClose: () => void, query: string }) {
+function SlashCommandMenu({ editor, onApply, notes, onClose, query }: { editor: Editor, onApply: (cmd: string, params?: any) => void, notes: any[], onClose: () => void, query: string }) {
   const menuRef = React.useRef<HTMLDivElement>(null)
   const [showSubpagePicker, setShowSubpagePicker] = React.useState(false)
 
