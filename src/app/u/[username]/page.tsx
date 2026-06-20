@@ -26,7 +26,8 @@ import {
   Layers, 
   BookOpen, 
   Download,
-  UserCircle2
+  UserCircle2,
+  AlertCircle
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -60,6 +61,8 @@ export default function PublicProfilePage() {
         const result = await getDocs(q)
         if (!result.empty) {
           const profileDoc = result.docs[0]
+          // The profile document is at /users/{uid}/profile/settings
+          // parent is 'profile' collection, parent.parent is the 'users/{uid}' document
           const uid = profileDoc.ref.parent.parent?.id
           setProfile({ ...profileDoc.data(), uid })
         }
@@ -72,11 +75,18 @@ export default function PublicProfilePage() {
     resolveProfile()
   }, [username, db])
 
+  // Fetch user posts
   const postsQuery = useMemoFirebase(() => {
     if (!profile?.uid || !db) return null
-    return query(collection(db, "posts"), where("authorUid", "==", profile.uid), orderBy("createdAt", "desc"))
+    // Filter by authorUid
+    return query(
+      collection(db, "posts"), 
+      where("authorUid", "==", profile.uid), 
+      orderBy("createdAt", "desc")
+    )
   }, [profile?.uid, db])
-  const { data: userPosts } = useCollection(postsQuery)
+
+  const { data: userPosts, error: postsError } = useCollection(postsQuery)
 
   const filteredPosts = React.useMemo(() => {
     if (!userPosts) return []
@@ -177,7 +187,7 @@ export default function PublicProfilePage() {
         fontFamily: profile.font || 'Plus Jakarta Sans',
       }}
     >
-      {/* Dynamic Portal Header - Stretched full width */}
+      {/* Dynamic Portal Header - FULL STRETCH */}
       <div className="relative w-full min-h-[500px]">
         {/* Banner - stretches edge to edge */}
         <div 
@@ -195,8 +205,8 @@ export default function PublicProfilePage() {
           )}
         </div>
 
-        {/* Content wrapper for centered elements if needed, or edge layout */}
-        <div className="max-w-[1200px] mx-auto w-full relative h-[500px]">
+        {/* Layout container - Stretches full width with side padding */}
+        <div className="w-full px-10 relative h-[500px]">
           {/* PFP */}
           <div 
             className="absolute overflow-hidden flex items-center justify-center bg-muted" 
@@ -286,7 +296,7 @@ export default function PublicProfilePage() {
         </div>
       </div>
 
-      {/* Tabs Bar - Stretched full width */}
+      {/* Tabs Bar - FULL STRETCH */}
       <div 
         className="w-full sticky top-0 z-50 border-y border-black/5"
         style={{ background: btnStyle, opacity: 0.9, backdropBlur: '10px' }}
@@ -302,22 +312,31 @@ export default function PublicProfilePage() {
       {/* Main Feed Content Area */}
       <div className="flex-1 w-full pb-40">
         <div className="max-w-[1200px] mx-auto px-10 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-             {filteredPosts.map(post => (
-               <FeedCard 
-                key={post.id} 
-                post={post} 
-                profile={profile} 
-                onCopy={() => handleCopyToLibrary(post, currentUser, db, toast)} 
-                textPrimary={textPrimary}
-               />
-             ))}
-             {filteredPosts.length === 0 && (
-               <div className="col-span-full py-40 text-center opacity-30">
-                 <p className="font-bold text-xl lowercase" style={{ color: textPrimary }}>no posts found in this section.</p>
-               </div>
-             )}
-          </div>
+          {postsError ? (
+            <div className="py-20 text-center space-y-4 opacity-50">
+               <AlertCircle className="mx-auto h-12 w-12" style={{ color: textPrimary }} />
+               <p className="font-bold lowercase" style={{ color: textPrimary }}>
+                 one moment! we are preparing your profile logs...
+               </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+               {filteredPosts.map(post => (
+                 <FeedCard 
+                  key={post.id} 
+                  post={post} 
+                  profile={profile} 
+                  onCopy={() => handleCopyToLibrary(post, currentUser, db, toast)} 
+                  textPrimary={textPrimary}
+                 />
+               ))}
+               {filteredPosts.length === 0 && (
+                 <div className="col-span-full py-40 text-center opacity-30">
+                   <p className="font-bold text-xl lowercase" style={{ color: textPrimary }}>no posts found in this section.</p>
+                 </div>
+               )}
+            </div>
+          )}
         </div>
       </div>
     </div>
