@@ -286,7 +286,9 @@ function SessionTabBtn({ active, onClick, icon, label }: { active: boolean, onCl
           : "text-muted-foreground hover:text-foreground"
       )}
     >
-      {React.cloneElement(icon as React.ReactElement, { className: active ? "text-primary" : "opacity-40" })}
+      <span className={cn(active ? 'text-primary' : 'opacity-40')}>
+        {icon}
+      </span>
       {label}
     </button>
   )
