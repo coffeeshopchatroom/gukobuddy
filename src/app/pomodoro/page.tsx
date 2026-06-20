@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -13,20 +14,20 @@ import {
   CheckCircle2, 
   Clock, 
   Coffee, 
-  Moon,
+  TrendingUp,
   ChevronRight,
   Sparkles,
-  Layers,
   Settings2,
-  Bell,
   Volume2,
-  Loader2
+  Loader2,
+  Zap,
+  Activity
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection, query, where, orderBy } from "firebase/firestore"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Slider } from "@/components/ui/slider"
 import {
   Dialog,
   DialogContent,
@@ -106,45 +107,84 @@ export default function PomodoroPage() {
                 <Settings2 className="h-5 w-5 text-muted-foreground" />
               </Button>
             </DialogTrigger>
-            <DialogContent className="rounded-[32px] border-none shadow-2xl bg-card p-10 max-w-md">
-              <DialogHeader>
-                <DialogTitle className="font-headline text-2xl lowercase">timer settings</DialogTitle>
-                <DialogDescription className="lowercase">customize your session lengths (minutes).</DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-6 py-6">
-                <div className="space-y-3">
-                  <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">focus duration</Label>
-                  <Input 
-                    type="number" 
-                    value={tempTimes.work} 
-                    onChange={e => setTempTimes(p => ({ ...p, work: parseInt(e.target.value) || 1 }))}
-                    className="h-12 rounded-xl no-focus-ring bg-background border-muted"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-3">
-                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">short break</Label>
-                    <Input 
-                      type="number" 
-                      value={tempTimes.shortBreak} 
-                      onChange={e => setTempTimes(p => ({ ...p, shortBreak: parseInt(e.target.value) || 1 }))}
-                      className="h-12 rounded-xl no-focus-ring bg-background border-muted"
-                    />
+            <DialogContent className="rounded-[40px] border-none shadow-3xl bg-card p-0 max-w-2xl overflow-hidden">
+              <div className="flex flex-col h-full">
+                <DialogHeader className="p-10 pb-0 text-left">
+                  <DialogTitle className="font-headline text-3xl font-bold lowercase flex items-center gap-3">
+                    <Zap className="h-7 w-7 text-primary" /> design your flow
+                  </DialogTitle>
+                  <DialogDescription className="lowercase text-base">adjust timers to find your perfect focus rhythm.</DialogDescription>
+                </DialogHeader>
+
+                <div className="p-10 pt-6 space-y-10">
+                  {/* Focus Flow Chart */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between px-2">
+                       <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">estimated focus trajectory</Label>
+                       {tempTimes.work >= 45 && <Badge className="bg-primary/20 text-primary-foreground border-none text-[8px] font-bold lowercase">deep work mode</Badge>}
+                    </div>
+                    <div className="h-40 w-full bg-muted/20 rounded-3xl border border-border relative overflow-hidden p-4">
+                       <FocusFlowGraph 
+                        work={tempTimes.work} 
+                        short={tempTimes.shortBreak} 
+                        long={tempTimes.longBreak} 
+                       />
+                    </div>
                   </div>
-                  <div className="space-y-3">
-                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">long break</Label>
-                    <Input 
-                      type="number" 
-                      value={tempTimes.longBreak} 
-                      onChange={e => setTempTimes(p => ({ ...p, longBreak: parseInt(e.target.value) || 1 }))}
-                      className="h-12 rounded-xl no-focus-ring bg-background border-muted"
-                    />
+
+                  {/* Sliders */}
+                  <div className="grid gap-10">
+                    <div className="space-y-5">
+                      <div className="flex justify-between items-center">
+                        <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">focus duration</Label>
+                        <span className="text-xl font-bold font-mono text-primary">{tempTimes.work}m</span>
+                      </div>
+                      <Slider 
+                        value={[tempTimes.work]} 
+                        min={5} 
+                        max={90} 
+                        step={5} 
+                        onValueChange={v => setTempTimes(p => ({ ...p, work: v[0] }))}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-10">
+                      <div className="space-y-5">
+                        <div className="flex justify-between items-center">
+                          <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">short break</Label>
+                          <span className="text-xl font-bold font-mono text-accent-foreground">{tempTimes.shortBreak}m</span>
+                        </div>
+                        <Slider 
+                          value={[tempTimes.shortBreak]} 
+                          min={1} 
+                          max={15} 
+                          step={1} 
+                          onValueChange={v => setTempTimes(p => ({ ...p, shortBreak: v[0] }))}
+                        />
+                      </div>
+                      <div className="space-y-5">
+                        <div className="flex justify-between items-center">
+                          <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">long break</Label>
+                          <span className="text-xl font-bold font-mono text-indigo-500">{tempTimes.longBreak}m</span>
+                        </div>
+                        <Slider 
+                          value={[tempTimes.longBreak]} 
+                          min={5} 
+                          max={45} 
+                          step={5} 
+                          onValueChange={v => setTempTimes(p => ({ ...p, longBreak: v[0] }))}
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
+
+                <DialogFooter className="p-10 pt-0">
+                  <Button onClick={handleSaveSettings} className="w-full h-16 rounded-2xl text-xl font-bold lowercase shadow-xl shadow-primary/20 bg-primary hover:bg-primary/90 transition-all hover:scale-[1.02] active:scale-95">
+                    apply session settings
+                  </Button>
+                </DialogFooter>
               </div>
-              <DialogFooter>
-                <Button onClick={handleSaveSettings} className="w-full h-14 rounded-2xl font-bold lowercase shadow-lg shadow-primary/20">apply changes</Button>
-              </DialogFooter>
             </DialogContent>
           </Dialog>
         </div>
@@ -296,6 +336,106 @@ export default function PomodoroPage() {
       </div>
     </div>
   )
+}
+
+function FocusFlowGraph({ work, short, long }: { work: number, short: number, long: number }) {
+  // Simple heuristic: 
+  // Peak focus happens around 25-45 mins. 
+  // Longer work times = higher initial potential but sharper fatigue curves.
+  // Breaks restore potential.
+
+  const generatePath = () => {
+    const segments = 4; // Visualizing 4 cycles
+    const width = 500;
+    const height = 120;
+    const points: string[] = ["M 0 120"];
+    
+    let currentX = 0;
+    const totalTime = (work + short) * 3 + work + long;
+    
+    // Normalize focus level (0-100)
+    // Rises during work, dips during break
+    for (let i = 0; i < segments; i++) {
+      const isLast = i === segments - 1;
+      const breakTime = isLast ? long : short;
+      
+      // Work Segment
+      const workWidth = (work / totalTime) * width;
+      const peakY = Math.min(100, (work / 25) * 60 + 20); // Focus peak logic
+      
+      const cp1X = currentX + workWidth * 0.4;
+      const cp1Y = 120 - peakY;
+      const cp2X = currentX + workWidth * 0.8;
+      const cp2Y = 120 - (peakY + 10);
+      const endX = currentX + workWidth;
+      const endY = 120 - (peakY * 0.8);
+      
+      points.push(`C ${cp1X} ${cp1Y}, ${cp2X} ${cp2Y}, ${endX} ${endY}`);
+      currentX = endX;
+      
+      // Break Segment
+      const breakWidth = (breakTime / totalTime) * width;
+      const bcp1X = currentX + breakWidth * 0.5;
+      const bcp1Y = 120;
+      const bendX = currentX + breakWidth;
+      const bendY = 120;
+      
+      points.push(`Q ${bcp1X} ${bcp1Y}, ${bendX} bendY`);
+      currentX = bendX;
+    }
+
+    return points.join(" ");
+  };
+
+  // Simplified Aesthetic Curve for the UI
+  // Rises for work, drops for break
+  const workRatio = Math.min(1, work / 60);
+  const peakFocusY = 20 + workRatio * 80;
+  
+  return (
+    <div className="relative w-full h-full">
+      <svg viewBox="0 0 500 120" className="w-full h-full preserve-3d" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="focusGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.6" />
+            <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        
+        {/* The Area */}
+        <path 
+          d={`M 0 120 Q ${125} ${120 - peakFocusY}, ${250} ${120 - (peakFocusY * 0.5)} T 500 120 L 500 120 L 0 120`}
+          fill="url(#focusGradient)"
+          className="transition-all duration-700 ease-in-out"
+        />
+
+        {/* The Line */}
+        <path 
+          d={`M 0 120 Q ${125} ${120 - peakFocusY}, ${250} ${120 - (peakFocusY * 0.5)} T 500 120`}
+          fill="none"
+          stroke="hsl(var(--primary))"
+          strokeWidth="4"
+          strokeLinecap="round"
+          className="transition-all duration-700 ease-in-out"
+        />
+
+        {/* Peak Focus Marker */}
+        <g className="transition-all duration-700 ease-in-out" style={{ transform: `translate(${125}px, ${120 - peakFocusY}px)` }}>
+          <circle r="6" fill="hsl(var(--primary))" className="animate-pulse" />
+          <circle r="12" fill="hsl(var(--primary))" opacity="0.2" className="animate-ping" />
+          <text y="-20" textAnchor="middle" className="text-[10px] font-bold fill-primary lowercase tracking-tighter">top focus</text>
+        </g>
+
+        {/* Grid Lines */}
+        <line x1="0" y1="120" x2="500" y2="120" stroke="currentColor" strokeOpacity="0.1" strokeWidth="1" />
+      </svg>
+      
+      <div className="absolute top-2 left-2 flex items-center gap-1 opacity-40">
+        <TrendingUp className="h-3 w-3" />
+        <span className="text-[8px] font-bold uppercase tracking-widest">focus potential</span>
+      </div>
+    </div>
+  );
 }
 
 function TabButton({ active, onClick, label }: { active: boolean, onClick: () => void, label: string }) {
