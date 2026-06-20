@@ -15,7 +15,6 @@ import {
   query, 
   where, 
   getDocs, 
-  orderBy,
   doc,
   collectionGroup
 } from "firebase/firestore"
@@ -25,12 +24,10 @@ import {
   Bell,
   Layers, 
   BookOpen, 
-  Download,
   UserCircle2,
   AlertCircle
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 import { useToast } from "@/hooks/use-toast"
 
@@ -61,8 +58,6 @@ export default function PublicProfilePage() {
         const result = await getDocs(q)
         if (!result.empty) {
           const profileDoc = result.docs[0]
-          // The profile document is at /users/{uid}/profile/settings
-          // parent is 'profile' collection, parent.parent is the 'users/{uid}' document
           const uid = profileDoc.ref.parent.parent?.id
           setProfile({ ...profileDoc.data(), uid })
         }
@@ -75,14 +70,12 @@ export default function PublicProfilePage() {
     resolveProfile()
   }, [username, db])
 
-  // Fetch user posts
+  // Fetch user posts - using a simple query to avoid composite index requirements
   const postsQuery = useMemoFirebase(() => {
     if (!profile?.uid || !db) return null
-    // Filter by authorUid
     return query(
       collection(db, "posts"), 
-      where("authorUid", "==", profile.uid), 
-      orderBy("createdAt", "desc")
+      where("authorUid", "==", profile.uid)
     )
   }, [profile?.uid, db])
 
@@ -90,11 +83,17 @@ export default function PublicProfilePage() {
 
   const filteredPosts = React.useMemo(() => {
     if (!userPosts) return []
-    if (activeTab === 'all') return userPosts
-    if (activeTab === 'notebooks') return userPosts.filter(p => p.type === 'notebook')
-    if (activeTab === 'flashcards') return userPosts.filter(p => p.type === 'flashcardSet')
-    if (activeTab === 'thoughts') return userPosts.filter(p => p.type === 'thought')
-    return userPosts
+    
+    // Sort in memory to ensure immediate functionality without complex indices
+    const sorted = [...userPosts].sort((a, b) => 
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    )
+
+    if (activeTab === 'all') return sorted
+    if (activeTab === 'notebooks') return sorted.filter(p => p.type === 'notebook')
+    if (activeTab === 'flashcards') return sorted.filter(p => p.type === 'flashcardSet')
+    if (activeTab === 'thoughts') return sorted.filter(p => p.type === 'thought')
+    return sorted
   }, [userPosts, activeTab])
 
   const sendRequest = () => {
@@ -133,7 +132,7 @@ export default function PublicProfilePage() {
 
   if (!profile) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-6 p-6">
+      <div className="min-h-screen flex flex-col items-center justify-center gap-6 p-6 bg-background">
          <div className="h-20 w-20 rounded-full bg-destructive/10 flex items-center justify-center text-destructive">
             <ArrowLeft className="h-10 w-10" />
          </div>
@@ -189,7 +188,7 @@ export default function PublicProfilePage() {
     >
       {/* Dynamic Portal Header - FULL STRETCH */}
       <div className="relative w-full min-h-[500px]">
-        {/* Banner - stretches edge to edge */}
+        {/* Banner */}
         <div 
           className="absolute overflow-hidden" 
           style={{ 
@@ -205,7 +204,7 @@ export default function PublicProfilePage() {
           )}
         </div>
 
-        {/* Layout container - Stretches full width with side padding */}
+        {/* Layout container - Full Width */}
         <div className="w-full px-10 relative h-[500px]">
           {/* PFP */}
           <div 
@@ -242,9 +241,7 @@ export default function PublicProfilePage() {
               <p className="text-sm opacity-60 lowercase" style={{ color: textPrimary }}>@{profile.username}</p>
             </div>
             
-            <div 
-              className="flex items-center gap-3"
-            >
+            <div className="flex items-center gap-3">
               <button 
                 onClick={sendRequest}
                 className="px-10 py-3 text-sm font-bold lowercase transition-all shadow-md hover:brightness-95 active:scale-95"
@@ -316,7 +313,7 @@ export default function PublicProfilePage() {
             <div className="py-20 text-center space-y-4 opacity-50">
                <AlertCircle className="mx-auto h-12 w-12" style={{ color: textPrimary }} />
                <p className="font-bold lowercase" style={{ color: textPrimary }}>
-                 one moment! we are preparing your profile logs...
+                 something went wrong loading the log.
                </p>
             </div>
           ) : (
@@ -410,6 +407,9 @@ async function handleCopyToLibrary(post: any, user: any, db: any, toast: any) {
   if (!user || !db) return
   
   try {
+    const { setDocumentNonBlocking } = await import("@/firebase")
+    const { getDocs, query, collection, doc, orderBy } = await import("firebase/firestore")
+
     if (post.type === 'notebook') {
       const noteId = doc(collection(db, "temp")).id
       const noteRef = doc(db, "users", user.uid, "notes", noteId)
