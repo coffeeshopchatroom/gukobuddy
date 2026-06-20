@@ -177,14 +177,14 @@ export default function PublicProfilePage() {
         fontFamily: profile.font || 'Plus Jakarta Sans',
       }}
     >
-      {/* Dynamic Portal Header */}
-      <div className="relative w-full max-w-[1200px] mx-auto min-h-[500px]">
-        {/* Banner */}
+      {/* Dynamic Portal Header - Stretched full width */}
+      <div className="relative w-full min-h-[500px]">
+        {/* Banner - stretches edge to edge */}
         <div 
           className="absolute overflow-hidden" 
           style={{ 
-            left: layout.banner?.x ?? 0, top: layout.banner?.y ?? 0,
-            width: layout.banner?.w ?? '100%', height: layout.banner?.h ?? 220,
+            left: 0, top: 0,
+            width: '100%', height: layout.banner?.h ?? 220,
             zIndex: layout.banner?.zIndex ?? 0
           }}
         >
@@ -195,105 +195,103 @@ export default function PublicProfilePage() {
           )}
         </div>
 
-        {/* PFP */}
-        <div 
-          className="absolute overflow-hidden flex items-center justify-center bg-muted" 
-          style={{ 
-            left: layout.pfp?.x ?? 40, top: layout.pfp?.y ?? 140,
-            width: layout.pfp?.w ?? 176, height: layout.pfp?.h ?? 176,
-            zIndex: layout.pfp?.zIndex ?? 10,
-            borderRadius: cornerRounding,
-            ...getTargetBorderStyle('profile', 'white'),
-            boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)'
-          }}
-        >
-          {profile.photoUrl ? (
-            <img src={profile.photoUrl} className="w-full h-full object-cover" alt="pfp" />
-          ) : (
-            <UserCircle2 className="w-1/2 h-1/2 opacity-20" />
-          )}
-        </div>
-
-        {/* Identity & Actions */}
-        <div 
-          className="absolute flex items-center justify-between"
-          style={{ 
-            left: layout.name?.x ?? 240, top: layout.name?.y ?? 230,
-            width: `calc(100% - ${(layout.name?.x ?? 240) + 40}px)`,
-            zIndex: layout.name?.zIndex ?? 10
-          }}
-        >
-          <div className="space-y-1">
-            <h1 className="text-4xl font-bold lowercase leading-none" style={{ color: textPrimary }}>
-              {profile.displayName || profile.username}
-            </h1>
-            <p className="text-sm opacity-60 lowercase" style={{ color: textPrimary }}>via</p>
-          </div>
-          
+        {/* Content wrapper for centered elements if needed, or edge layout */}
+        <div className="max-w-[1200px] mx-auto w-full relative h-[500px]">
+          {/* PFP */}
           <div 
-            className="flex items-center gap-3"
+            className="absolute overflow-hidden flex items-center justify-center bg-muted" 
             style={{ 
-              position: 'absolute', 
-              right: 0, 
-              top: (layout.addBtn?.y ? layout.addBtn.y - (layout.name?.y ?? 230) : 0)
+              left: layout.pfp?.x ?? 40, top: layout.pfp?.y ?? 140,
+              width: layout.pfp?.w ?? 176, height: layout.pfp?.h ?? 176,
+              zIndex: layout.pfp?.zIndex ?? 10,
+              borderRadius: cornerRounding,
+              ...getTargetBorderStyle('profile', 'white'),
+              boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)'
             }}
           >
-            <button 
-              onClick={sendRequest}
-              className="px-10 py-3 text-sm font-bold lowercase transition-all shadow-md hover:brightness-95 active:scale-95"
-              style={{ 
-                background: btnStyle, 
-                color: 'white',
-                borderRadius: cornerRounding,
-                ...getTargetBorderStyle('add', btnStyle)
-              }}
-            >
-              add friend
-            </button>
-            <button 
-              className="p-3 bg-white border border-border rounded-sm hover:bg-muted transition-colors shadow-sm"
-              style={{ borderRadius: cornerRounding }}
-            >
-              <Bell size={20} className="text-black/60" />
-            </button>
+            {profile.photoUrl ? (
+              <img src={profile.photoUrl} className="w-full h-full object-cover" alt="pfp" />
+            ) : (
+              <UserCircle2 className="w-1/2 h-1/2 opacity-20" />
+            )}
           </div>
-        </div>
 
-        {/* Bio Section */}
-        <div 
-          className="absolute"
-          style={{ 
-            left: layout.bio?.x ?? 40, top: layout.bio?.y ?? 340,
-            width: layout.bio?.w ?? 600,
-            zIndex: layout.bio?.zIndex ?? 10,
-            color: textPrimary
-          }}
-        >
-          <div className="space-y-2">
-            <span className="text-[10px] font-bold uppercase tracking-widest opacity-40">about me:</span>
-            <p className="text-lg leading-relaxed lowercase italic">
-              {profile.bio || 'this student has not shared a bio yet.'}
-            </p>
+          {/* Identity & Actions */}
+          <div 
+            className="absolute flex items-center justify-between"
+            style={{ 
+              left: layout.name?.x ?? 240, top: layout.name?.y ?? 230,
+              width: `calc(100% - ${(layout.name?.x ?? 240) + 40}px)`,
+              zIndex: layout.name?.zIndex ?? 10
+            }}
+          >
+            <div className="space-y-1">
+              <h1 className="text-4xl font-bold lowercase leading-none" style={{ color: textPrimary }}>
+                {profile.displayName || profile.username}
+              </h1>
+              <p className="text-sm opacity-60 lowercase" style={{ color: textPrimary }}>@{profile.username}</p>
+            </div>
+            
+            <div 
+              className="flex items-center gap-3"
+            >
+              <button 
+                onClick={sendRequest}
+                className="px-10 py-3 text-sm font-bold lowercase transition-all shadow-md hover:brightness-95 active:scale-95"
+                style={{ 
+                  background: btnStyle, 
+                  color: 'white',
+                  borderRadius: cornerRounding,
+                  ...getTargetBorderStyle('add', btnStyle)
+                }}
+              >
+                add friend
+              </button>
+              <button 
+                className="p-3 bg-white border border-border rounded-sm hover:bg-muted transition-colors shadow-sm"
+                style={{ borderRadius: cornerRounding }}
+              >
+                <Bell size={20} className="text-black/60" />
+              </button>
+            </div>
           </div>
-        </div>
 
-        {/* Stickers */}
-        {(profile.stickers || []).map((sticker: any) => (
-          <div key={sticker.id} className="absolute pointer-events-none" style={{
-              left: sticker.x, top: sticker.y, width: sticker.w, height: sticker.h,
-              zIndex: sticker.zIndex, transform: `rotate(${sticker.rotation || 0}deg)`
-            }}>
-              <img src={sticker.url} className="w-full h-full object-fill" alt="sticker" />
+          {/* Bio Section */}
+          <div 
+            className="absolute"
+            style={{ 
+              left: layout.bio?.x ?? 40, top: layout.bio?.y ?? 340,
+              width: layout.bio?.w ?? 600,
+              zIndex: layout.bio?.zIndex ?? 10,
+              color: textPrimary
+            }}
+          >
+            <div className="space-y-2">
+              <span className="text-[10px] font-bold uppercase tracking-widest opacity-40">about me:</span>
+              <p className="text-lg leading-relaxed lowercase italic">
+                {profile.bio || 'this student has not shared a bio yet.'}
+              </p>
+            </div>
           </div>
-        ))}
+
+          {/* Stickers */}
+          {(profile.stickers || []).map((sticker: any) => (
+            <div key={sticker.id} className="absolute pointer-events-none" style={{
+                left: sticker.x, top: sticker.y, width: sticker.w, height: sticker.h,
+                zIndex: sticker.zIndex, transform: `rotate(${sticker.rotation || 0}deg)`
+              }}>
+                <img src={sticker.url} className="w-full h-full object-fill" alt="sticker" />
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* Tabs Bar */}
+      {/* Tabs Bar - Stretched full width */}
       <div 
         className="w-full sticky top-0 z-50 border-y border-black/5"
         style={{ background: btnStyle, opacity: 0.9, backdropBlur: '10px' }}
       >
-        <div className="max-w-[1200px] mx-auto flex">
+        <div className="w-full flex">
           <TabItem active={activeTab === 'all'} onClick={() => setActiveTab('all')} label="ALL POSTS" />
           <TabItem active={activeTab === 'notebooks'} onClick={() => setActiveTab('notebooks')} label="NOTEBOOKS" />
           <TabItem active={activeTab === 'flashcards'} onClick={() => setActiveTab('flashcards')} label="FLASHCARDS" />
