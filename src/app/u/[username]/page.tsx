@@ -22,18 +22,14 @@ import {
 import { 
   Loader2, 
   ArrowLeft, 
-  UserPlus, 
   Bell,
   Layers, 
   BookOpen, 
-  MessageCircle,
   Download,
-  Check
+  UserCircle2
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { useToast } from "@/hooks/use-toast"
 
@@ -50,6 +46,7 @@ export default function PublicProfilePage() {
   const [isLoading, setIsLoading] = React.useState(true)
   const [activeTab, setActiveTab] = React.useState<ProfileTab>('all')
 
+  // Resolve profile by username
   React.useEffect(() => {
     async function resolveProfile() {
       if (!db || !username) return
@@ -72,7 +69,6 @@ export default function PublicProfilePage() {
         setIsLoading(false)
       }
     }
-
     resolveProfile()
   }, [username, db])
 
@@ -119,7 +115,7 @@ export default function PublicProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
       </div>
     )
@@ -137,65 +133,166 @@ export default function PublicProfilePage() {
     )
   }
 
+  // --- Theme Rendering Logic ---
+  const theme = profile.theme || {}
+  const layout = profile.layout || {}
+  const customColors = theme.customColors || { primary: '#A7C4A0', background: '#FFFFFF', foreground: '#1a1c19' }
+
+  const getColorStyle = (val: any) => {
+    if (!val) return 'transparent';
+    if (typeof val === 'string') return val;
+    if (val.type === 'solid') return val.solid;
+    const stops = [...(val.gradient || [])].sort((a, b) => a.offset - b.offset);
+    const rotation = val.rotation ?? 90;
+    return `linear-gradient(${rotation}deg, ${stops.map((s: any) => `${s.color} ${s.offset}%`).join(', ')})`;
+  };
+
+  const bodyBg = getColorStyle(theme.body || customColors.background)
+  const textPrimary = getColorStyle(theme.text || customColors.foreground)
+  const btnStyle = getColorStyle(theme.buttons || customColors.primary)
+  const cornerRounding = `${profile.cornerRounding ?? 16}px`
+
+  const getTargetBorderStyle = (target: string, itemBg: string) => {
+    const isSelected = profile.borderTargets?.includes(target);
+    const width = profile.borderWidth || 0;
+    const color = profile.targetColors?.[target] || theme.border || { type: 'solid', solid: '#ffffff33' };
+
+    if (!isSelected || width <= 0) return { border: 'none' };
+    if (color.type === 'solid') return { border: `${width}px solid ${color.solid}` };
+    const gradient = getColorStyle(color);
+    const mask = itemBg.includes('gradient') ? itemBg : `linear-gradient(${itemBg}, ${itemBg})`;
+    return {
+      border: `${width}px solid transparent`,
+      backgroundImage: `${mask}, ${gradient}`,
+      backgroundOrigin: 'border-box',
+      backgroundClip: 'padding-box, border-box'
+    };
+  };
+
   return (
-    <div className="min-h-screen bg-white flex flex-col font-sans">
-      {/* Header Section (Banner & PFP) */}
-      <div className="relative w-full">
+    <div 
+      className="min-h-screen flex flex-col transition-colors duration-700"
+      style={{ 
+        background: bodyBg,
+        fontFamily: profile.font || 'Plus Jakarta Sans',
+      }}
+    >
+      {/* Dynamic Portal Header */}
+      <div className="relative w-full max-w-[1200px] mx-auto min-h-[500px]">
         {/* Banner */}
-        <div className="w-full h-[220px] bg-sky-100 overflow-hidden">
+        <div 
+          className="absolute overflow-hidden" 
+          style={{ 
+            left: layout.banner?.x ?? 0, top: layout.banner?.y ?? 0,
+            width: layout.banner?.w ?? '100%', height: layout.banner?.h ?? 220,
+            zIndex: layout.banner?.zIndex ?? 0
+          }}
+        >
           {profile.bannerUrl ? (
             <img src={profile.bannerUrl} className="w-full h-full object-cover" alt="banner" />
           ) : (
-            <div className="w-full h-full bg-gradient-to-r from-sky-400 via-white to-sky-400" />
+            <div className="w-full h-full opacity-20" style={{ background: btnStyle }} />
           )}
         </div>
 
-        {/* Profile Info Row */}
-        <div className="max-w-[1200px] mx-auto px-10 relative">
-          {/* Overlapping Square PFP */}
-          <div className="absolute top-[-80px] left-10 w-44 h-44 bg-white p-1.5 shadow-lg z-10 border border-black/5">
-            <div className="w-full h-full overflow-hidden bg-muted">
-              {profile.photoUrl ? (
-                <img src={profile.photoUrl} className="w-full h-full object-cover" alt="pfp" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-4xl font-bold opacity-10">?</div>
-              )}
-            </div>
-          </div>
+        {/* PFP */}
+        <div 
+          className="absolute overflow-hidden flex items-center justify-center bg-muted" 
+          style={{ 
+            left: layout.pfp?.x ?? 40, top: layout.pfp?.y ?? 140,
+            width: layout.pfp?.w ?? 176, height: layout.pfp?.h ?? 176,
+            zIndex: layout.pfp?.zIndex ?? 10,
+            borderRadius: cornerRounding,
+            ...getTargetBorderStyle('profile', 'white'),
+            boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)'
+          }}
+        >
+          {profile.photoUrl ? (
+            <img src={profile.photoUrl} className="w-full h-full object-cover" alt="pfp" />
+          ) : (
+            <UserCircle2 className="w-1/2 h-1/2 opacity-20" />
+          )}
+        </div>
 
-          {/* Identity & Actions */}
-          <div className="pt-4 pl-52 flex items-center justify-between min-h-[80px]">
-            <div className="space-y-0.5">
-              <h1 className="text-2xl font-bold lowercase leading-none">{profile.displayName || profile.username}</h1>
-              <p className="text-sm text-muted-foreground lowercase">via</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <button 
-                onClick={sendRequest}
-                className="px-8 py-2 bg-[#A8B9C8] border border-[#7A8A99] text-black text-sm font-medium hover:brightness-95 transition-all shadow-sm"
-              >
-                add friend
-              </button>
-              <button className="p-2 bg-white border border-border rounded-sm hover:bg-muted transition-colors shadow-sm">
-                <Bell size={18} className="text-black/60" />
-              </button>
-            </div>
+        {/* Identity & Actions */}
+        <div 
+          className="absolute flex items-center justify-between"
+          style={{ 
+            left: layout.name?.x ?? 240, top: layout.name?.y ?? 230,
+            width: `calc(100% - ${(layout.name?.x ?? 240) + 40}px)`,
+            zIndex: layout.name?.zIndex ?? 10
+          }}
+        >
+          <div className="space-y-1">
+            <h1 className="text-4xl font-bold lowercase leading-none" style={{ color: textPrimary }}>
+              {profile.displayName || profile.username}
+            </h1>
+            <p className="text-sm opacity-60 lowercase" style={{ color: textPrimary }}>via</p>
           </div>
-
-          {/* About Me Section */}
-          <div className="mt-8 mb-10 space-y-4">
-             <div className="space-y-1">
-               <span className="text-[10px] font-bold uppercase tracking-tight text-black opacity-80">about me:</span>
-               <p className="text-base leading-relaxed text-black max-w-2xl lowercase">
-                 {profile.bio || 'i sorta like made this app.. or whatever.. no its fine i dont care either'}
-               </p>
-             </div>
+          
+          <div 
+            className="flex items-center gap-3"
+            style={{ 
+              position: 'absolute', 
+              right: 0, 
+              top: (layout.addBtn?.y ? layout.addBtn.y - (layout.name?.y ?? 230) : 0)
+            }}
+          >
+            <button 
+              onClick={sendRequest}
+              className="px-10 py-3 text-sm font-bold lowercase transition-all shadow-md hover:brightness-95 active:scale-95"
+              style={{ 
+                background: btnStyle, 
+                color: 'white',
+                borderRadius: cornerRounding,
+                ...getTargetBorderStyle('add', btnStyle)
+              }}
+            >
+              add friend
+            </button>
+            <button 
+              className="p-3 bg-white border border-border rounded-sm hover:bg-muted transition-colors shadow-sm"
+              style={{ borderRadius: cornerRounding }}
+            >
+              <Bell size={20} className="text-black/60" />
+            </button>
           </div>
         </div>
+
+        {/* Bio Section */}
+        <div 
+          className="absolute"
+          style={{ 
+            left: layout.bio?.x ?? 40, top: layout.bio?.y ?? 340,
+            width: layout.bio?.w ?? 600,
+            zIndex: layout.bio?.zIndex ?? 10,
+            color: textPrimary
+          }}
+        >
+          <div className="space-y-2">
+            <span className="text-[10px] font-bold uppercase tracking-widest opacity-40">about me:</span>
+            <p className="text-lg leading-relaxed lowercase italic">
+              {profile.bio || 'this student has not shared a bio yet.'}
+            </p>
+          </div>
+        </div>
+
+        {/* Stickers */}
+        {(profile.stickers || []).map((sticker: any) => (
+          <div key={sticker.id} className="absolute pointer-events-none" style={{
+              left: sticker.x, top: sticker.y, width: sticker.w, height: sticker.h,
+              zIndex: sticker.zIndex, transform: `rotate(${sticker.rotation || 0}deg)`
+            }}>
+              <img src={sticker.url} className="w-full h-full object-fill" alt="sticker" />
+          </div>
+        ))}
       </div>
 
       {/* Tabs Bar */}
-      <div className="w-full bg-[#B0C4DE] border-y border-black/10">
+      <div 
+        className="w-full sticky top-0 z-50 border-y border-black/5"
+        style={{ background: btnStyle, opacity: 0.9, backdropBlur: '10px' }}
+      >
         <div className="max-w-[1200px] mx-auto flex">
           <TabItem active={activeTab === 'all'} onClick={() => setActiveTab('all')} label="ALL POSTS" />
           <TabItem active={activeTab === 'notebooks'} onClick={() => setActiveTab('notebooks')} label="NOTEBOOKS" />
@@ -205,15 +302,21 @@ export default function PublicProfilePage() {
       </div>
 
       {/* Main Feed Content Area */}
-      <div className="flex-1 w-full bg-gradient-to-b from-[#6B9AC4] via-[#A8C5DA] to-[#DCDCDC] pb-40">
+      <div className="flex-1 w-full pb-40">
         <div className="max-w-[1200px] mx-auto px-10 py-12">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
              {filteredPosts.map(post => (
-               <FeedCard key={post.id} post={post} profile={profile} onCopy={() => handleCopyToLibrary(post, currentUser, db, toast)} />
+               <FeedCard 
+                key={post.id} 
+                post={post} 
+                profile={profile} 
+                onCopy={() => handleCopyToLibrary(post, currentUser, db, toast)} 
+                textPrimary={textPrimary}
+               />
              ))}
              {filteredPosts.length === 0 && (
-               <div className="col-span-full py-40 text-center">
-                 <p className="text-white/60 font-bold text-xl lowercase">no posts found in this section.</p>
+               <div className="col-span-full py-40 text-center opacity-30">
+                 <p className="font-bold text-xl lowercase" style={{ color: textPrimary }}>no posts found in this section.</p>
                </div>
              )}
           </div>
@@ -228,8 +331,8 @@ function TabItem({ active, onClick, label }: { active: boolean, onClick: () => v
     <button 
       onClick={onClick}
       className={cn(
-        "flex-1 py-4 text-sm font-bold tracking-widest transition-all",
-        active ? "bg-black/5 text-black" : "text-black/60 hover:text-black hover:bg-black/5"
+        "flex-1 py-5 text-xs font-black tracking-[0.2em] transition-all",
+        active ? "bg-black/10 text-white" : "text-white/60 hover:text-white hover:bg-black/5"
       )}
     >
       {label}
@@ -237,21 +340,23 @@ function TabItem({ active, onClick, label }: { active: boolean, onClick: () => v
   )
 }
 
-function FeedCard({ post, profile, onCopy }: { post: any, profile: any, onCopy: () => void }) {
+function FeedCard({ post, profile, onCopy, textPrimary }: { post: any, profile: any, onCopy: () => void, textPrimary: string }) {
   const isThought = post.type === 'thought'
   const postVerb = isThought ? "posted a thought" : `shared a ${post.type === 'flashcardSet' ? 'flashcard deck' : post.type}`
 
   return (
-    <div className="bg-white rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="bg-white rounded-2xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 border border-black/5 group">
       <div className="p-8 space-y-6">
         <div className="flex flex-col items-center text-center space-y-1">
-          <span className="text-sm font-mono text-black/60 lowercase">{profile.displayName || profile.username} {postVerb}</span>
+          <span className="text-[10px] font-mono text-black/40 lowercase">
+            {profile.displayName || profile.username} {postVerb}
+          </span>
         </div>
 
         {isThought ? (
-          <div className="pt-4">
-             <p className="text-xl md:text-2xl text-black leading-relaxed lowercase font-medium">
-               {post.content}
+          <div className="pt-2">
+             <p className="text-xl md:text-2xl text-black leading-relaxed lowercase font-medium italic">
+               "{post.content}"
              </p>
           </div>
         ) : (
@@ -260,25 +365,23 @@ function FeedCard({ post, profile, onCopy }: { post: any, profile: any, onCopy: 
               {post.itemData?.name || post.itemData?.title}
             </h3>
             
-            {/* Visual Preview Placeholder */}
-            <div className="w-full aspect-video bg-[#D9D9D9] flex items-center justify-center p-6 relative overflow-hidden">
-               <span className="text-lg font-bold text-black/80 lowercase">
-                 {post.type === 'flashcardSet' ? 'flashcard preview' : 'notebook preview'}
+            <div className="w-full aspect-video bg-muted/30 rounded-xl flex items-center justify-center p-6 relative overflow-hidden border border-black/5">
+               <span className="text-xs font-bold text-black/20 uppercase tracking-widest">
+                 {post.type} preview
                </span>
                <div className="absolute bottom-0 left-0 w-full h-1 bg-black/5" />
             </div>
 
             <Button 
               onClick={onCopy}
-              variant="outline" 
-              className="w-full rounded-none border-2 border-black/10 font-bold lowercase hover:bg-black hover:text-white transition-all h-12"
+              className="w-full rounded-xl border-none font-bold lowercase transition-all h-12 shadow-lg shadow-black/5"
             >
-              <Download className="h-4 w-4 mr-2" /> save to library
+              save to library
             </Button>
           </div>
         )}
 
-        <div className="pt-4 flex justify-between items-center opacity-20 text-[10px] font-bold uppercase tracking-widest">
+        <div className="pt-4 flex justify-between items-center opacity-20 text-[9px] font-bold uppercase tracking-widest border-t border-black/5">
            <span>{new Date(post.createdAt).toLocaleDateString()}</span>
         </div>
       </div>
@@ -302,7 +405,7 @@ async function handleCopyToLibrary(post: any, user: any, db: any, toast: any) {
       toast({ title: "page added to workspace" })
     } else if (post.type === 'flashcardSet') {
       const coursesRef = collection(db, "users", user.uid, "courses")
-      const coursesSnap = await getDocs(query(coursesRef, orderBy("createdAt", "desc"), limit(1)))
+      const coursesSnap = await getDocs(query(coursesRef, orderBy("createdAt", "desc")))
       let courseId = coursesSnap.docs[0]?.id
       
       if (!courseId) {
