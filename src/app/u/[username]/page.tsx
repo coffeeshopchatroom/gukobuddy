@@ -25,7 +25,8 @@ import {
   Layers, 
   BookOpen, 
   UserCircle2,
-  AlertCircle
+  AlertCircle,
+  BadgeCheck
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -70,7 +71,7 @@ export default function PublicProfilePage() {
     resolveProfile()
   }, [username, db])
 
-  // Fetch user posts - using a simple query to avoid composite index requirements
+  // Fetch user posts - simple query for workstation compatibility
   const postsQuery = useMemoFirebase(() => {
     if (!profile?.uid || !db) return null
     return query(
@@ -84,7 +85,7 @@ export default function PublicProfilePage() {
   const filteredPosts = React.useMemo(() => {
     if (!userPosts) return []
     
-    // Sort in memory to ensure immediate functionality without complex indices
+    // Sort in memory to avoid index requirements
     const sorted = [...userPosts].sort((a, b) => 
       new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     )
@@ -146,6 +147,7 @@ export default function PublicProfilePage() {
   const theme = profile.theme || {}
   const layout = profile.layout || {}
   const customColors = theme.customColors || { primary: '#A7C4A0', background: '#FFFFFF', foreground: '#1a1c19' }
+  const isOfficial = profile.isGukoMode === true || profile.username === 'guko';
 
   const getColorStyle = (val: any) => {
     if (!val) return 'transparent';
@@ -186,7 +188,6 @@ export default function PublicProfilePage() {
         fontFamily: profile.font || 'Plus Jakarta Sans',
       }}
     >
-      {/* Dynamic Portal Header - FULL STRETCH */}
       <div className="relative w-full min-h-[500px]">
         {/* Banner */}
         <div 
@@ -204,9 +205,8 @@ export default function PublicProfilePage() {
           )}
         </div>
 
-        {/* Layout container - Full Width */}
         <div className="w-full px-10 relative h-[500px]">
-          {/* PFP */}
+          {/* Square Overlapping PFP */}
           <div 
             className="absolute overflow-hidden flex items-center justify-center bg-muted" 
             style={{ 
@@ -235,9 +235,12 @@ export default function PublicProfilePage() {
             }}
           >
             <div className="space-y-1">
-              <h1 className="text-4xl font-bold lowercase leading-none" style={{ color: textPrimary }}>
-                {profile.displayName || profile.username}
-              </h1>
+              <div className="flex items-center gap-2">
+                <h1 className={cn("text-4xl font-bold lowercase leading-none", isOfficial && "italic font-black")} style={{ color: textPrimary }}>
+                  {profile.displayName || profile.username}
+                </h1>
+                {isOfficial && <BadgeCheck className="h-8 w-8 text-primary fill-primary/10" />}
+              </div>
               <p className="text-sm opacity-60 lowercase" style={{ color: textPrimary }}>@{profile.username}</p>
             </div>
             
@@ -293,7 +296,6 @@ export default function PublicProfilePage() {
         </div>
       </div>
 
-      {/* Tabs Bar - FULL STRETCH */}
       <div 
         className="w-full sticky top-0 z-50 border-y border-black/5"
         style={{ background: btnStyle, opacity: 0.9, backdropBlur: '10px' }}
@@ -306,7 +308,6 @@ export default function PublicProfilePage() {
         </div>
       </div>
 
-      {/* Main Feed Content Area */}
       <div className="flex-1 w-full pb-40">
         <div className="max-w-[1200px] mx-auto px-10 py-12">
           {postsError ? (
@@ -357,14 +358,18 @@ function TabItem({ active, onClick, label }: { active: boolean, onClick: () => v
 function FeedCard({ post, profile, onCopy, textPrimary }: { post: any, profile: any, onCopy: () => void, textPrimary: string }) {
   const isThought = post.type === 'thought'
   const postVerb = isThought ? "posted a thought" : `shared a ${post.type === 'flashcardSet' ? 'flashcard deck' : post.type}`
+  const isOfficial = post.isOfficial === true || profile.username === 'guko';
 
   return (
     <div className="bg-white rounded-2xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 border border-black/5 group">
       <div className="p-8 space-y-6">
         <div className="flex flex-col items-center text-center space-y-1">
-          <span className="text-[10px] font-mono text-black/40 lowercase">
-            {profile.displayName || profile.username} {postVerb}
-          </span>
+          <div className="flex items-center gap-1.5">
+            <span className={cn("text-[10px] font-mono text-black/40 lowercase", isOfficial && "italic font-bold")}>
+              {profile.displayName || profile.username} {postVerb}
+            </span>
+            {isOfficial && <BadgeCheck className="h-3 w-3 text-primary" />}
+          </div>
         </div>
 
         {isThought ? (

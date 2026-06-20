@@ -24,7 +24,8 @@ import {
   CheckSquare,
   Smile,
   Paperclip,
-  Image as ImageIcon
+  Image as ImageIcon,
+  BadgeCheck
 } from "lucide-react"
 import { 
   useUser, 
@@ -245,30 +246,36 @@ export default function FriendsPage() {
               {isFriendsLoading ? (
                 <div className="flex justify-center py-10"><Loader2 className="animate-spin text-primary/30" /></div>
               ) : acceptedFriends && acceptedFriends.length > 0 ? (
-                acceptedFriends.map(friend => (
-                  <button
-                    key={friend.uid}
-                    onClick={() => { setActiveFriend(friend); setViewMode('chat'); setSelectedUser(null); }}
-                    className={cn(
-                      "w-full flex items-center justify-between p-4 rounded-3xl transition-all group",
-                      activeFriend?.uid === friend.uid ? "bg-primary text-primary-foreground shadow-lg" : "hover:bg-muted"
-                    )}
-                  >
-                    <div className="flex items-center gap-4 overflow-hidden">
-                      <Avatar className="h-10 w-10 border-2 border-white/20">
-                        <AvatarImage src={friend.photoUrl} className="object-cover" />
-                        <AvatarFallback className="bg-primary/20 text-[10px] font-bold">{friend.displayName?.[0]}</AvatarFallback>
-                      </Avatar>
-                      <div className="text-left min-w-0">
-                        <p className="font-bold text-sm truncate lowercase">{friend.displayName}</p>
-                        <p className={cn("text-[10px] lowercase truncate opacity-60", activeFriend?.uid === friend.uid ? "text-primary-foreground" : "text-muted-foreground")}>@{friend.username}</p>
+                acceptedFriends.map(friend => {
+                  const isGuko = friend.username === 'guko';
+                  return (
+                    <button
+                      key={friend.uid}
+                      onClick={() => { setActiveFriend(friend); setViewMode('chat'); setSelectedUser(null); }}
+                      className={cn(
+                        "w-full flex items-center justify-between p-4 rounded-3xl transition-all group",
+                        activeFriend?.uid === friend.uid ? "bg-primary text-primary-foreground shadow-lg" : "hover:bg-muted"
+                      )}
+                    >
+                      <div className="flex items-center gap-4 overflow-hidden">
+                        <Avatar className="h-10 w-10 border-2 border-white/20">
+                          <AvatarImage src={friend.photoUrl} className="object-cover" />
+                          <AvatarFallback className="bg-primary/20 text-[10px] font-bold">{friend.displayName?.[0]}</AvatarFallback>
+                        </Avatar>
+                        <div className="text-left min-w-0">
+                          <div className="flex items-center gap-1">
+                             <p className={cn("font-bold text-sm truncate lowercase", isGuko && "italic font-black")}>{friend.displayName}</p>
+                             {isGuko && <BadgeCheck className="h-3 w-3" />}
+                          </div>
+                          <p className={cn("text-[10px] lowercase truncate opacity-60", activeFriend?.uid === friend.uid ? "text-primary-foreground" : "text-muted-foreground")}>@{friend.username}</p>
+                        </div>
                       </div>
-                    </div>
-                    {activeFriend?.uid === friend.uid && <div className="h-2 w-2 rounded-full bg-white animate-pulse" />}
-                  </button>
-                ))
+                      {activeFriend?.uid === friend.uid && <div className="h-2 w-2 rounded-full bg-white animate-pulse" />}
+                    </button>
+                  )
+                })
               ) : (
-                <div className="px-4 py-10 text-center text-xs text-muted-foreground italic lowercase">no friends added yet.</div>
+                <div className="px-4 py-10 text-center text-xs text-muted-foreground italic lowercase.">no friends added yet.</div>
               )}
             </div>
           </ScrollArea>
@@ -281,7 +288,7 @@ export default function FriendsPage() {
                 <div className="space-y-6 animate-in fade-in">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {searchResults.map(res => (
-                      <UserPortalSearchCard key={res.uid} user={res} onClick={() => setSelectedUser(res)} />
+                      <UserSearchCard key={res.uid} user={res} onClick={() => setSelectedUser(res)} />
                     ))}
                   </div>
                   {hasSearched && searchResults.length === 0 && !isSearching && (
@@ -354,9 +361,10 @@ export default function FriendsPage() {
   )
 }
 
-function UserPortalSearchCard({ user, onClick }: { user: any, onClick: () => void }) {
+function UserSearchCard({ user, onClick }: { user: any, onClick: () => void }) {
   const primary = user.theme?.customColors?.primary || '#A7C4A0'
   const background = user.theme?.customColors?.background || '#FFFFFF'
+  const isGuko = user.username === 'guko' || user.isGukoMode === true;
   
   return (
     <div 
@@ -381,7 +389,10 @@ function UserPortalSearchCard({ user, onClick }: { user: any, onClick: () => voi
           )}
         </div>
         <div className="text-center px-4 w-full">
-          <h4 className="font-bold text-sm lowercase truncate text-foreground">{user.displayName}</h4>
+          <div className="flex items-center justify-center gap-1">
+             <h4 className={cn("font-bold text-sm lowercase truncate text-foreground", isGuko && "italic font-black")}>{user.displayName}</h4>
+             {isGuko && <BadgeCheck className="h-3.5 w-3.5 text-primary" />}
+          </div>
           <p className="text-[10px] lowercase truncate opacity-40 text-foreground">@{user.username}</p>
         </div>
       </div>
@@ -415,6 +426,7 @@ function ImmersiveProfilePreview({ profile, onAction, relationshipStatus }: { pr
   const theme = profile.theme || {}
   const layout = profile.layout || DEFAULT_PROFILE_LAYOUT;
   const customColors = theme.customColors || { primary: '#A7C4A0', background: '#FFFFFF', foreground: '#1a1c19' }
+  const isGuko = profile.username === 'guko' || profile.isGukoMode === true;
 
   const getColorStyle = (val: any) => {
     if (!val) return 'transparent';
@@ -495,7 +507,10 @@ function ImmersiveProfilePreview({ profile, onAction, relationshipStatus }: { pr
             zIndex: layout.name?.zIndex ?? 2,
             color: getColorStyle(theme.text || customColors.foreground)
           }}>
-            <h4 className="text-4xl font-bold leading-tight lowercase truncate">{profile.displayName || 'student'}</h4>
+            <div className="flex items-center gap-2">
+              <h4 className={cn("text-4xl font-bold leading-tight lowercase truncate", isGuko && "italic font-black")}>{profile.displayName || 'student'}</h4>
+              {isGuko && <BadgeCheck size={32} className="text-primary" />}
+            </div>
           </div>
 
           <div className="absolute" style={{ 
@@ -772,6 +787,8 @@ function ChatInterface({ friend, user, db, actualMyProfile }: any) {
     return []
   }
 
+  const isFriendGuko = friend.username === 'guko';
+
   return (
     <div className="flex flex-col h-full bg-background">
       <div className="p-6 border-b flex items-center gap-4 bg-muted/5">
@@ -781,7 +798,10 @@ function ChatInterface({ friend, user, db, actualMyProfile }: any) {
             <AvatarFallback className="bg-primary/20 font-bold">{friend.displayName?.[0]}</AvatarFallback>
           </Avatar>
           <div>
-            <h4 className="font-bold text-lg lowercase group-hover/author:text-primary transition-colors">{friend.displayName}</h4>
+            <div className="flex items-center gap-1.5">
+               <h4 className={cn("font-bold text-lg lowercase group-hover/author:text-primary transition-colors", isFriendGuko && "italic font-black")}>{friend.displayName}</h4>
+               {isFriendGuko && <BadgeCheck size={18} className="text-primary" />}
+            </div>
             <span className="text-[10px] text-primary font-bold uppercase tracking-widest">online</span>
           </div>
         </Link>

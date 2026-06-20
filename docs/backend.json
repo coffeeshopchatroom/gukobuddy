@@ -28,6 +28,14 @@
           "type": "string",
           "description": "The ID of the chosen avatar (e.g., mii-m2)."
         },
+        "isGukoMode": {
+          "type": "boolean",
+          "description": "Whether the user is currently masquerading as the official Guko account."
+        },
+        "personalBackup": {
+          "type": "object",
+          "description": "Stores personal profile data when in Guko mode."
+        },
         "theme": {
           "type": "object",
           "properties": {
@@ -67,7 +75,8 @@
         "type": { "type": "string", "enum": ["flashcardSet", "notebook", "thought"] },
         "content": { "type": "string", "description": "Text content for thoughts or description for items." },
         "itemData": { "type": "object", "description": "Snapshot of the shared resource (deck or page)." },
-        "createdAt": { "type": "string", "format": "date-time" }
+        "createdAt": { "type": "string", "format": "date-time" },
+        "isOfficial": { "type": "boolean", "description": "Whether the post is from an official verified account." }
       },
       "required": ["id", "authorUid", "type", "createdAt"]
     },

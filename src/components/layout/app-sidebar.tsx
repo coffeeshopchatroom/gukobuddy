@@ -28,7 +28,9 @@ import {
   Wind,
   Users,
   UserPlus,
-  Share2
+  Share2,
+  BadgeCheck,
+  RefreshCw
 } from "lucide-react"
 
 import {
@@ -49,8 +51,8 @@ import {
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { useFirebase, useUser, useDoc, useMemoFirebase } from "@/firebase"
-import { signOut } from "firebase/auth"
-import { doc, collection, query, orderBy, where } from 'firebase/firestore'
+import { signOut, updateProfile } from "firebase/auth"
+import { doc, collection, query, orderBy, where, setDoc } from 'firebase/firestore'
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ProfileCustomizer } from "@/components/profile/ProfileCustomizer"
 import {
@@ -86,6 +88,8 @@ export function AppSidebar() {
 
   const [isProfileOpen, setIsProfileOpen] = React.useState(false);
   const [isAdminPanelOpen, setIsAdminPanelOpen] = React.useState(false);
+  
+  const isGukoMode = profile?.isGukoMode === true;
   
   const isTaskRelated = pathname.startsWith('/tasks') || pathname === '/pomodoro' || pathname === '/study-session';
   const isNotebookRelated = pathname.startsWith('/notebooks');
@@ -125,9 +129,6 @@ export function AppSidebar() {
                 src="/devmade-icons/gukologo.png" 
                 alt="guko logo" 
                 className="w-full h-full object-contain"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = 'none';
-                }}
               />
             </div>
             <span className="font-headline text-xl font-bold tracking-tight text-foreground lowercase whitespace-nowrap group-data-[collapsible=icon]:hidden">guko buddy</span>
@@ -183,164 +184,169 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
-              {(focus === 'all' || focus === 'tasks') && (
-                <Collapsible 
-                  open={isTasksOpen} 
-                  onOpenChange={setIsTasksOpen}
-                  className="group/collapsible"
-                >
-                  <SidebarMenuItem>
-                    <CollapsibleTrigger asChild>
+              {/* Hide focus features if in Guko mode (commercial) */}
+              {!isGukoMode && (
+                <>
+                  {(focus === 'all' || focus === 'tasks') && (
+                    <Collapsible 
+                      open={isTasksOpen} 
+                      onOpenChange={setIsTasksOpen}
+                      className="group/collapsible"
+                    >
+                      <SidebarMenuItem>
+                        <CollapsibleTrigger asChild>
+                          <SidebarMenuButton
+                            isActive={pathname.startsWith('/tasks')}
+                            tooltip="tasks"
+                            className="flex items-center gap-3 px-4 py-6 rounded-xl transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground lowercase group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
+                          >
+                            <CheckSquare className="h-5 w-5" />
+                            <span className="font-medium group-data-[collapsible=icon]:hidden">tasks</span>
+                            <ChevronDown className={cn("ml-auto h-4 w-4 transition-transform duration-200 group-data-[collapsible=icon]:hidden", isTasksOpen && "rotate-180")} />
+                          </SidebarMenuButton>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up group-data-[collapsible=icon]:hidden">
+                          <SidebarMenuSub className="py-1">
+                            <SidebarMenuSubItem>
+                              <SidebarMenuSubButton asChild isActive={pathname === '/tasks'}>
+                                <Link href="/tasks">
+                                  <span className="lowercase">all tasks</span>
+                                </Link>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                            <SidebarMenuSubItem>
+                              <SidebarMenuSubButton asChild isActive={pathname === '/pomodoro'}>
+                                <Link href="/pomodoro">
+                                  <span className="flex items-center gap-2 lowercase">
+                                    <Clock className="h-3 w-3" /> pomodoro
+                                  </span>
+                                </Link>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                            <SidebarMenuSubItem>
+                              <SidebarMenuSubButton asChild isActive={pathname === '/study-session'}>
+                                <Link href="/study-session">
+                                  <span className="flex items-center gap-2 lowercase">
+                                    <Coffee className="h-3 w-3" /> study session
+                                  </span>
+                                </Link>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                          </SidebarMenuSub>
+                        </CollapsibleContent>
+                      </SidebarMenuItem>
+                    </Collapsible>
+                  )}
+
+                  {(focus === 'all' || focus === 'notebooks') && (
+                    <Collapsible 
+                      open={isNotebooksOpen} 
+                      onOpenChange={setIsNotebooksOpen}
+                      className="group/collapsible"
+                    >
+                      <SidebarMenuItem>
+                        <CollapsibleTrigger asChild>
+                          <SidebarMenuButton
+                            isActive={pathname === "/notebooks"}
+                            tooltip="notebooks"
+                            className="flex items-center gap-3 px-4 py-6 rounded-xl transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground lowercase group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
+                          >
+                            <StickyNote className="h-5 w-5" />
+                            <span className="font-medium group-data-[collapsible=icon]:hidden">notebooks</span>
+                            <ChevronDown className={cn("ml-auto h-4 w-4 transition-transform duration-200 group-data-[collapsible=icon]:hidden", isNotebooksOpen && "rotate-180")} />
+                          </SidebarMenuButton>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up group-data-[collapsible=icon]:hidden">
+                          <SidebarMenuSub className="py-1">
+                            <SidebarMenuSubItem>
+                              <SidebarMenuSubButton asChild isActive={pathname === '/notebooks'}>
+                                <Link href="/notebooks">
+                                  <span className="lowercase">all notes</span>
+                                </Link>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                            <SidebarMenuSubItem>
+                              <SidebarMenuSubButton asChild isActive={pathname === '/notebooks/mind-maps'}>
+                                <Link href="/notebooks/mind-maps">
+                                  <span className="flex items-center gap-2 lowercase">
+                                    <Brain className="h-3 w-3" /> mind maps
+                                  </span>
+                                </Link>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                            <SidebarMenuSubItem>
+                              <SidebarMenuSubButton asChild isActive={pathname === '/notebooks/whiteboard'}>
+                                <Link href="/notebooks/whiteboard">
+                                  <span className="flex items-center gap-2 lowercase">
+                                    <Palette className="h-3 w-3" /> whiteboard
+                                  </span>
+                                </Link>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                          </SidebarMenuSub>
+                        </CollapsibleContent>
+                      </SidebarMenuItem>
+                    </Collapsible>
+                  )}
+
+                  {(focus === 'all' || focus === 'flashcards') && (
+                    <Collapsible 
+                      open={isFlashcardsOpen} 
+                      onOpenChange={setIsFlashcardsOpen}
+                      className="group/collapsible"
+                    >
+                      <SidebarMenuItem>
+                        <CollapsibleTrigger asChild>
+                          <SidebarMenuButton
+                            isActive={pathname === "/flashcards"}
+                            tooltip="flashcards"
+                            className="flex items-center gap-3 px-4 py-6 rounded-xl transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground lowercase group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
+                          >
+                            <Layers className="h-5 w-5" />
+                            <span className="font-medium group-data-[collapsible=icon]:hidden">flashcards</span>
+                            <ChevronDown className={cn("ml-auto h-4 w-4 transition-transform duration-200 group-data-[collapsible=icon]:hidden", isFlashcardsOpen && "rotate-180")} />
+                          </SidebarMenuButton>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up group-data-[collapsible=icon]:hidden">
+                          <SidebarMenuSub className="py-1">
+                            <SidebarMenuSubItem>
+                              <SidebarMenuSubButton asChild isActive={pathname === '/flashcards'}>
+                                <Link href="/flashcards">
+                                  <span className="lowercase">all decks</span>
+                                </Link>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                            <SidebarMenuSubItem>
+                              <SidebarMenuSubButton asChild isActive={pathname === '/flashcards/quiz'}>
+                                <Link href="/flashcards/quiz">
+                                  <span className="flex items-center gap-2 lowercase">
+                                    <ClipboardCheck className="h-3 w-3" /> create quiz
+                                  </span>
+                                </Link>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                          </SidebarMenuSub>
+                        </CollapsibleContent>
+                      </SidebarMenuItem>
+                    </Collapsible>
+                  )}
+
+                  {profile?.studentType !== 'hobbyist' && (
+                    <SidebarMenuItem>
                       <SidebarMenuButton
-                        isActive={pathname.startsWith('/tasks')}
-                        tooltip="tasks"
+                        asChild
+                        isActive={pathname === "/tracker"}
+                        tooltip={trackerLabel}
                         className="flex items-center gap-3 px-4 py-6 rounded-xl transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground lowercase group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
                       >
-                        <CheckSquare className="h-5 w-5" />
-                        <span className="font-medium group-data-[collapsible=icon]:hidden">tasks</span>
-                        <ChevronDown className={cn("ml-auto h-4 w-4 transition-transform duration-200 group-data-[collapsible=icon]:hidden", isTasksOpen && "rotate-180")} />
+                        <Link href="/tracker">
+                          < GraduationCap className="h-5 w-5" />
+                          <span className="font-medium group-data-[collapsible=icon]:hidden">{trackerLabel}</span>
+                        </Link>
                       </SidebarMenuButton>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up group-data-[collapsible=icon]:hidden">
-                      <SidebarMenuSub className="py-1">
-                        <SidebarMenuSubItem>
-                          <SidebarMenuSubButton asChild isActive={pathname === '/tasks'}>
-                            <Link href="/tasks">
-                              <span className="lowercase">all tasks</span>
-                            </Link>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                        <SidebarMenuSubItem>
-                          <SidebarMenuSubButton asChild isActive={pathname === '/pomodoro'}>
-                            <Link href="/pomodoro">
-                              <span className="flex items-center gap-2 lowercase">
-                                <Clock className="h-3 w-3" /> pomodoro
-                              </span>
-                            </Link>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                        <SidebarMenuSubItem>
-                          <SidebarMenuSubButton asChild isActive={pathname === '/study-session'}>
-                            <Link href="/study-session">
-                              <span className="flex items-center gap-2 lowercase">
-                                <Coffee className="h-3 w-3" /> study session
-                              </span>
-                            </Link>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      </SidebarMenuSub>
-                    </CollapsibleContent>
-                  </SidebarMenuItem>
-                </Collapsible>
-              )}
-
-              {(focus === 'all' || focus === 'notebooks') && (
-                <Collapsible 
-                  open={isNotebooksOpen} 
-                  onOpenChange={setIsNotebooksOpen}
-                  className="group/collapsible"
-                >
-                  <SidebarMenuItem>
-                    <CollapsibleTrigger asChild>
-                      <SidebarMenuButton
-                        isActive={pathname === "/notebooks"}
-                        tooltip="notebooks"
-                        className="flex items-center gap-3 px-4 py-6 rounded-xl transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground lowercase group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
-                      >
-                        <StickyNote className="h-5 w-5" />
-                        <span className="font-medium group-data-[collapsible=icon]:hidden">notebooks</span>
-                        <ChevronDown className={cn("ml-auto h-4 w-4 transition-transform duration-200 group-data-[collapsible=icon]:hidden", isNotebooksOpen && "rotate-180")} />
-                      </SidebarMenuButton>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up group-data-[collapsible=icon]:hidden">
-                      <SidebarMenuSub className="py-1">
-                        <SidebarMenuSubItem>
-                          <SidebarMenuSubButton asChild isActive={pathname === '/notebooks'}>
-                            <Link href="/notebooks">
-                              <span className="lowercase">all notes</span>
-                            </Link>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                        <SidebarMenuSubItem>
-                          <SidebarMenuSubButton asChild isActive={pathname === '/notebooks/mind-maps'}>
-                            <Link href="/notebooks/mind-maps">
-                              <span className="flex items-center gap-2 lowercase">
-                                <Brain className="h-3 w-3" /> mind maps
-                              </span>
-                            </Link>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                        <SidebarMenuSubItem>
-                          <SidebarMenuSubButton asChild isActive={pathname === '/notebooks/whiteboard'}>
-                            <Link href="/notebooks/whiteboard">
-                              <span className="flex items-center gap-2 lowercase">
-                                <Palette className="h-3 w-3" /> whiteboard
-                              </span>
-                            </Link>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      </SidebarMenuSub>
-                    </CollapsibleContent>
-                  </SidebarMenuItem>
-                </Collapsible>
-              )}
-
-              {(focus === 'all' || focus === 'flashcards') && (
-                <Collapsible 
-                  open={isFlashcardsOpen} 
-                  onOpenChange={setIsFlashcardsOpen}
-                  className="group/collapsible"
-                >
-                  <SidebarMenuItem>
-                    <CollapsibleTrigger asChild>
-                      <SidebarMenuButton
-                        isActive={pathname === "/flashcards"}
-                        tooltip="flashcards"
-                        className="flex items-center gap-3 px-4 py-6 rounded-xl transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground lowercase group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
-                      >
-                        <Layers className="h-5 w-5" />
-                        <span className="font-medium group-data-[collapsible=icon]:hidden">flashcards</span>
-                        <ChevronDown className={cn("ml-auto h-4 w-4 transition-transform duration-200 group-data-[collapsible=icon]:hidden", isFlashcardsOpen && "rotate-180")} />
-                      </SidebarMenuButton>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up group-data-[collapsible=icon]:hidden">
-                      <SidebarMenuSub className="py-1">
-                        <SidebarMenuSubItem>
-                          <SidebarMenuSubButton asChild isActive={pathname === '/flashcards'}>
-                            <Link href="/flashcards">
-                              <span className="lowercase">all decks</span>
-                            </Link>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                        <SidebarMenuSubItem>
-                          <SidebarMenuSubButton asChild isActive={pathname === '/flashcards/quiz'}>
-                            <Link href="/flashcards/quiz">
-                              <span className="flex items-center gap-2 lowercase">
-                                <ClipboardCheck className="h-3 w-3" /> create quiz
-                              </span>
-                            </Link>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      </SidebarMenuSub>
-                    </CollapsibleContent>
-                  </SidebarMenuItem>
-                </Collapsible>
-              )}
-
-              {profile?.studentType !== 'hobbyist' && (
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={pathname === "/tracker"}
-                    tooltip={trackerLabel}
-                    className="flex items-center gap-3 px-4 py-6 rounded-xl transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground lowercase group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
-                  >
-                    <Link href="/tracker">
-                      < GraduationCap className="h-5 w-5" />
-                      <span className="font-medium group-data-[collapsible=icon]:hidden">{trackerLabel}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                    </SidebarMenuItem>
+                  )}
+                </>
               )}
             </SidebarMenu>
           </SidebarGroupContent>
@@ -413,8 +419,11 @@ export function AppSidebar() {
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col min-0 group-data-[collapsible=icon]:hidden">
-                      <span className="text-sm font-semibold truncate lowercase">{userName}</span>
-                      <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-tighter truncate lowercase">{userRole}</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className={cn("text-sm font-semibold truncate lowercase", isGukoMode && "italic font-bold")}>{userName}</span>
+                        {isGukoMode && <BadgeCheck className="h-3 w-3 text-primary" />}
+                      </div>
+                      <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-tighter truncate lowercase">{isGukoMode ? 'official' : userRole}</span>
                     </div>
                   </div>
                 </ProfileCustomizer>
@@ -436,7 +445,13 @@ export function AppSidebar() {
                 </Button>
 
                 {isAdmin && (
-                  <AdminPanelDialog open={isAdminPanelOpen} onOpenChange={setIsAdminPanelOpen}>
+                  <AdminPanelDialog 
+                    open={isAdminPanelOpen} 
+                    onOpenChange={setIsAdminPanelOpen}
+                    profile={profile}
+                    user={user}
+                    firestore={firestore}
+                  >
                     <Button 
                       variant="ghost" 
                       size="icon" 
@@ -460,8 +475,9 @@ export function AppSidebar() {
   )
 }
 
-function AdminPanelDialog({ children, open, onOpenChange }: { children: React.ReactNode, open: boolean, onOpenChange: (o: boolean) => void }) {
+function AdminPanelDialog({ children, open, onOpenChange, profile, user, firestore }: any) {
   const { toast } = useToast()
+  const isGukoMode = profile?.isGukoMode === true;
 
   const handleTestNotification = () => {
     if (!("Notification" in window)) {
@@ -491,6 +507,52 @@ function AdminPanelDialog({ children, open, onOpenChange }: { children: React.Re
     }
   }
 
+  const handleToggleGukoMode = async () => {
+    if (!user || !firestore) return;
+    const userRef = doc(firestore, 'users', user.uid, 'profile', 'settings');
+    
+    if (isGukoMode) {
+      // Restore from backup
+      const backup = profile.personalBackup || {};
+      await setDoc(userRef, {
+        isGukoMode: false,
+        displayName: backup.displayName || user.displayName || 'student',
+        username: backup.username || user.email?.split('@')[0] || 'student',
+        photoUrl: backup.photoUrl || user.photoURL || '',
+        personalBackup: null
+      }, { merge: true });
+      
+      await updateProfile(user, {
+        displayName: backup.displayName || 'student',
+        photoURL: backup.photoUrl || ''
+      });
+
+      toast({ title: "returned to personal account" });
+    } else {
+      // Backup current and switch
+      const backup = {
+        displayName: profile.displayName || user.displayName || '',
+        username: profile.username || '',
+        photoUrl: profile.photoUrl || user.photoURL || ''
+      };
+      
+      await setDoc(userRef, {
+        isGukoMode: true,
+        displayName: 'guko',
+        username: 'guko',
+        photoUrl: '/devmade-icons/gukologo.png',
+        personalBackup: backup
+      }, { merge: true });
+
+      await updateProfile(user, {
+        displayName: 'guko',
+        photoURL: '/devmade-icons/gukologo.png'
+      });
+
+      toast({ title: "switched to official guko account" });
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
@@ -507,6 +569,18 @@ function AdminPanelDialog({ children, open, onOpenChange }: { children: React.Re
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="space-y-4">
+            <h4 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">identity management</h4>
+            <Button 
+              onClick={handleToggleGukoMode}
+              className={cn(
+                "w-full h-14 rounded-2xl font-bold gap-2 shadow-lg lowercase transition-all",
+                isGukoMode ? "bg-accent text-accent-foreground" : "bg-primary text-primary-foreground"
+              )}
+            >
+              <RefreshCw className="h-5 w-5" /> 
+              {isGukoMode ? "switch to personal account" : "switch to guko account"}
+            </Button>
+
             <h4 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">system diagnostics</h4>
             <div className="grid grid-cols-1 gap-3">
               <Button 
