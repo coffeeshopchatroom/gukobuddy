@@ -27,7 +27,8 @@ import {
   UserCircle2,
   Wind,
   Users,
-  UserPlus
+  UserPlus,
+  Share2
 } from "lucide-react"
 
 import {
@@ -348,7 +349,21 @@ export function AppSidebar() {
         <SidebarGroup className="mt-4">
           <SidebarGroupLabel className="px-6 mb-2 text-[10px] uppercase tracking-widest font-bold opacity-30 group-data-[collapsible=icon]:hidden">online</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu className="px-4 group-data-[collapsible=icon]:px-2">
+            <SidebarMenu className="px-4 space-y-2 group-data-[collapsible=icon]:px-2">
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === "/share-hub"}
+                  tooltip="share hub"
+                  className="flex items-center gap-3 px-4 py-6 rounded-xl transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground lowercase group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
+                >
+                  <Link href="/share-hub">
+                    <Share2 className="h-5 w-5" />
+                    <span className="font-medium group-data-[collapsible=icon]:hidden">share hub</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild

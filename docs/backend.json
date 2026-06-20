@@ -48,9 +48,28 @@
             "fontFamily": { "type": "string" },
             "fontSize": { "type": "string", "enum": ["sm", "base", "lg", "xl"] }
           }
-        }
+        },
+        "bio": { "type": "string" },
+        "photoUrl": { "type": "string" },
+        "bannerUrl": { "type": "string" }
       },
       "required": ["id", "studentType", "username"]
+    },
+    "Post": {
+      "title": "Post",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "authorUid": { "type": "string" },
+        "authorUsername": { "type": "string" },
+        "authorDisplayName": { "type": "string" },
+        "authorPhotoUrl": { "type": "string" },
+        "type": { "type": "string", "enum": ["flashcardSet", "notebook", "thought"] },
+        "content": { "type": "string", "description": "Text content for thoughts or description for items." },
+        "itemData": { "type": "object", "description": "Snapshot of the shared resource (deck or page)." },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "authorUid", "type", "createdAt"]
     },
     "Friend": {
       "title": "Friend",
@@ -83,7 +102,7 @@
         "id": { "type": "string" },
         "senderId": { "type": "string" },
         "text": { "type": "string" },
-        "type": { "type": "string", "enum": ["text", "share-invite"] },
+        "type": { "type": "string", "enum": ["text", "share-invite", "gif"] },
         "shareData": {
           "type": "object",
           "properties": {
@@ -156,6 +175,14 @@
           "entityName": "SharedItem",
           "schema": { "$ref": "#/backend/entities/SharedItem" },
           "description": "Shared learning resources."
+        }
+      },
+      {
+        "path": "/posts/{postId}",
+        "definition": {
+          "entityName": "Post",
+          "schema": { "$ref": "#/backend/entities/Post" },
+          "description": "Publicly shared resources and thoughts."
         }
       }
     ]

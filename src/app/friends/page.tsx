@@ -69,6 +69,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import Link from "next/link"
 
 const PORTAL_BASE_W = 600;
 const PORTAL_BASE_H = 400;
@@ -456,152 +457,158 @@ function ImmersiveProfilePreview({ profile, onAction, relationshipStatus }: { pr
   const cornerRadius = `${profile.cornerRounding ?? 16}px`;
 
   return (
-    <div 
-      ref={containerRef}
-      className="w-full relative overflow-hidden bg-muted/10 shadow-2xl border border-border"
-      style={{ 
-        height: PORTAL_BASE_H * scale,
-        borderRadius: cornerRadius,
-      }}
-    >
+    <div className="w-full flex flex-col gap-6">
       <div 
-        className="absolute top-0 left-0 origin-top-left"
+        ref={containerRef}
+        className="w-full relative overflow-hidden bg-muted/10 shadow-2xl border border-border"
         style={{ 
-          width: PORTAL_BASE_W, 
-          height: PORTAL_BASE_H,
-          transform: `scale(${scale})`,
-          background: getColorStyle(theme.body || customColors.background),
-          fontFamily: profile.font || 'Plus Jakarta Sans',
+          height: PORTAL_BASE_H * scale,
+          borderRadius: cornerRadius,
         }}
       >
-        {/* Banner */}
         <div 
-          className="absolute"
+          className="absolute top-0 left-0 origin-top-left"
           style={{ 
-            left: layout.banner?.x ?? 0, 
-            top: layout.banner?.y ?? 0,
-            width: layout.banner?.w ?? '100%',
-            height: layout.banner?.h ?? 120,
-            zIndex: layout.banner?.zIndex ?? 0
+            width: PORTAL_BASE_W, 
+            height: PORTAL_BASE_H,
+            transform: `scale(${scale})`,
+            background: getColorStyle(theme.body || customColors.background),
+            fontFamily: profile.font || 'Plus Jakarta Sans',
           }}
         >
-          {profile.bannerUrl ? (
-            <img src={profile.bannerUrl} className="w-full h-full object-cover" alt="banner" />
-          ) : (
-            <div className="w-full h-full bg-black/10" />
-          )}
-        </div>
-        
-        {/* PFP */}
-        <div 
-          className="absolute overflow-hidden flex items-center justify-center"
-          style={{ 
-            left: layout.pfp?.x ?? 40, 
-            top: layout.pfp?.y ?? 80,
-            width: layout.pfp?.w ?? 140,
-            height: layout.pfp?.h ?? 140,
-            borderRadius: cornerRadius,
-            zIndex: layout.pfp?.zIndex ?? 2,
-            ...getTargetBorderStyle('profile', 'rgba(0,0,0,0.1)'),
-            backgroundColor: 'rgba(0,0,0,0.1)'
-          }}
-        >
-          {profile.photoUrl ? (
-            <img src={profile.photoUrl} className="w-full h-full object-cover" alt="pfp" />
-          ) : (
-            <UserCircle2 className="w-1/2 h-1/2 opacity-20" />
-          )}
-        </div>
-
-        {/* Name */}
-        <div 
-          className="absolute flex flex-col justify-center"
-          style={{ 
-            left: layout.name?.x ?? 200, 
-            top: layout.name?.y ?? 100,
-            width: layout.name?.w ?? 400,
-            height: layout.name?.h ?? 60,
-            zIndex: layout.name?.zIndex ?? 2,
-            color: getColorStyle(theme.text || customColors.foreground)
-          }}
-        >
-          <h4 className="text-3xl font-bold leading-tight lowercase truncate">{profile.displayName || 'student'}</h4>
-        </div>
-
-        {/* Username */}
-        <div 
-          className="absolute"
-          style={{ 
-            left: layout.username?.x ?? 200, 
-            top: layout.username?.y ?? 160,
-            width: layout.username?.w ?? 200,
-            height: layout.username?.h ?? 30,
-            zIndex: layout.username?.zIndex ?? 2,
-            color: getColorStyle(theme.text || customColors.foreground),
-            opacity: 0.6
-          }}
-        >
-          <p className="text-xl lowercase">@{profile.username}</p>
-        </div>
-
-        {/* Add Friend Button */}
-        <div 
-          className="absolute"
-          style={{ 
-            left: layout.addBtn?.x ?? 440, 
-            top: layout.addBtn?.y ?? 100,
-            width: layout.addBtn?.w ?? 140,
-            height: layout.addBtn?.h ?? 50,
-            zIndex: layout.addBtn?.zIndex ?? 2
-          }}
-        >
-          <Button 
-            onClick={(e) => { e.stopPropagation(); onAction(); }}
-            disabled={relationshipStatus !== undefined}
-            className="w-full h-full font-bold lowercase border-none shadow-xl transition-all"
-            style={{ 
-              background: getColorStyle(theme.buttons || customColors.primary),
-              color: 'white',
-              borderRadius: cornerRadius,
-              ...getTargetBorderStyle('add', getColorStyle(theme.buttons || customColors.primary))
-            }}
-          >
-            {relationshipStatus === 'accepted' ? 'friends' : (relationshipStatus === 'pending_out' || relationshipStatus === 'pending_in') ? 'requested!' : 'add friend'}
-          </Button>
-        </div>
-
-        {/* Bio */}
-        <div 
-          className="absolute"
-          style={{ 
-            left: layout.bio?.x ?? 40, 
-            top: layout.bio?.y ?? 250,
-            width: layout.bio?.w ?? 500,
-            height: layout.bio?.h ?? 100,
-            zIndex: layout.bio?.zIndex ?? 2,
-            color: getColorStyle(theme.text || customColors.foreground),
-          }}
-        >
-          <p className="text-lg leading-relaxed lowercase opacity-90 italic line-clamp-4">
-            {profile.bio || 'this student has not shared a bio yet.'}
-          </p>
-        </div>
-
-        {/* Stickers */}
-        {stickers.map((sticker: any) => (
+          {/* Banner */}
           <div 
-            key={sticker.id}
-            className="absolute pointer-events-none"
-            style={{
-              left: sticker.x, top: sticker.y, width: sticker.w, height: sticker.h,
-              zIndex: sticker.zIndex,
-              transform: `rotate(${sticker.rotation || 0}deg)`
+            className="absolute"
+            style={{ 
+              left: layout.banner?.x ?? 0, 
+              top: layout.banner?.y ?? 0,
+              width: layout.banner?.w ?? '100%',
+              height: layout.banner?.h ?? 120,
+              zIndex: layout.banner?.zIndex ?? 0
             }}
           >
-            <img src={sticker.url} className="w-full h-full object-fill" alt="sticker" />
+            {profile.bannerUrl ? (
+              <img src={profile.bannerUrl} className="w-full h-full object-cover" alt="banner" />
+            ) : (
+              <div className="w-full h-full bg-black/10" />
+            )}
           </div>
-        ))}
+          
+          {/* PFP */}
+          <div 
+            className="absolute overflow-hidden flex items-center justify-center"
+            style={{ 
+              left: layout.pfp?.x ?? 40, 
+              top: layout.pfp?.y ?? 80,
+              width: layout.pfp?.w ?? 140,
+              height: layout.pfp?.h ?? 140,
+              borderRadius: cornerRadius,
+              zIndex: layout.pfp?.zIndex ?? 2,
+              ...getTargetBorderStyle('profile', 'rgba(0,0,0,0.1)'),
+              backgroundColor: 'rgba(0,0,0,0.1)'
+            }}
+          >
+            {profile.photoUrl ? (
+              <img src={profile.photoUrl} className="w-full h-full object-cover" alt="pfp" />
+            ) : (
+              <UserCircle2 className="w-1/2 h-1/2 opacity-20" />
+            )}
+          </div>
+
+          {/* Name */}
+          <div 
+            className="absolute flex flex-col justify-center"
+            style={{ 
+              left: layout.name?.x ?? 200, 
+              top: layout.name?.y ?? 100,
+              width: layout.name?.w ?? 400,
+              height: layout.name?.h ?? 60,
+              zIndex: layout.name?.zIndex ?? 2,
+              color: getColorStyle(theme.text || customColors.foreground)
+            }}
+          >
+            <h4 className="text-3xl font-bold leading-tight lowercase truncate">{profile.displayName || 'student'}</h4>
+          </div>
+
+          {/* Username */}
+          <div 
+            className="absolute"
+            style={{ 
+              left: layout.username?.x ?? 200, 
+              top: layout.username?.y ?? 160,
+              width: layout.username?.w ?? 200,
+              height: layout.username?.h ?? 30,
+              zIndex: layout.username?.zIndex ?? 2,
+              color: getColorStyle(theme.text || customColors.foreground),
+              opacity: 0.6
+            }}
+          >
+            <p className="text-xl lowercase">@{profile.username}</p>
+          </div>
+
+          {/* Add Friend Button */}
+          <div 
+            className="absolute"
+            style={{ 
+              left: layout.addBtn?.x ?? 440, 
+              top: layout.addBtn?.y ?? 100,
+              width: layout.addBtn?.w ?? 140,
+              height: layout.addBtn?.h ?? 50,
+              zIndex: layout.addBtn?.zIndex ?? 2
+            }}
+          >
+            <Button 
+              onClick={(e) => { e.stopPropagation(); onAction(); }}
+              disabled={relationshipStatus !== undefined}
+              className="w-full h-full font-bold lowercase border-none shadow-xl transition-all"
+              style={{ 
+                background: getColorStyle(theme.buttons || customColors.primary),
+                color: 'white',
+                borderRadius: cornerRadius,
+                ...getTargetBorderStyle('add', getColorStyle(theme.buttons || customColors.primary))
+              }}
+            >
+              {relationshipStatus === 'accepted' ? 'friends' : (relationshipStatus === 'pending_out' || relationshipStatus === 'pending_in') ? 'requested!' : 'add friend'}
+            </Button>
+          </div>
+
+          {/* Bio */}
+          <div 
+            className="absolute"
+            style={{ 
+              left: layout.bio?.x ?? 40, 
+              top: layout.bio?.y ?? 250,
+              width: layout.bio?.w ?? 500,
+              height: layout.bio?.h ?? 100,
+              zIndex: layout.bio?.zIndex ?? 2,
+              color: getColorStyle(theme.text || customColors.foreground),
+            }}
+          >
+            <p className="text-lg leading-relaxed lowercase opacity-90 italic line-clamp-4">
+              {profile.bio || 'this student has not shared a bio yet.'}
+            </p>
+          </div>
+
+          {/* Stickers */}
+          {stickers.map((sticker: any) => (
+            <div 
+              key={sticker.id}
+              className="absolute pointer-events-none"
+              style={{
+                left: sticker.x, top: sticker.y, width: sticker.w, height: sticker.h,
+                zIndex: sticker.zIndex,
+                transform: `rotate(${sticker.rotation || 0}deg)`
+              }}
+            >
+              <img src={sticker.url} className="w-full h-full object-fill" alt="sticker" />
+            </div>
+          ))}
+        </div>
       </div>
+      
+      <Button asChild className="w-full h-16 rounded-[24px] font-bold lowercase gap-2 shadow-xl shadow-primary/20">
+        <Link href={`/u/${profile.username}`}>view full profile & posts</Link>
+      </Button>
     </div>
   );
 }
@@ -690,7 +697,7 @@ function ChatInterface({ friend, user, db, actualMyProfile }: any) {
       let itemDataWithChildren = { ...selectedItem };
 
       if (shareCategory === 'flashcardSet') {
-        const cardsRef = collection(db, "users", user.uid, "courses", selectedItem.courseId, "flashcardSets", selectedItem.id, "flashcards");
+        const cardsRef = collection(db, "users", user.uid, "courses", selectedItem.courseId, "flashcardSets", selectedItem.id, "flashcards")
         const cardsSnap = await getDocs(cardsRef);
         itemDataWithChildren.cards = cardsSnap.docs.map(d => ({ ...d.data(), id: d.id }));
       }
@@ -820,14 +827,16 @@ function ChatInterface({ friend, user, db, actualMyProfile }: any) {
   return (
     <div className="flex flex-col h-full bg-background">
       <div className="p-6 border-b flex items-center gap-4 bg-muted/5">
-        <Avatar className="h-10 w-10 border-2 border-primary/20">
-          <AvatarImage src={friend.photoUrl} className="object-cover" />
-          <AvatarFallback className="bg-primary/20 font-bold">{friend.displayName?.[0]}</AvatarFallback>
-        </Avatar>
-        <div>
-          <h4 className="font-bold text-lg lowercase">{friend.displayName}</h4>
-          <span className="text-[10px] text-primary font-bold uppercase tracking-widest">online</span>
-        </div>
+        <Link href={`/u/${friend.username}`} className="flex items-center gap-4 group/author">
+          <Avatar className="h-10 w-10 border-2 border-primary/20 group-hover/author:scale-110 transition-transform">
+            <AvatarImage src={friend.photoUrl} className="object-cover" />
+            <AvatarFallback className="bg-primary/20 font-bold">{friend.displayName?.[0]}</AvatarFallback>
+          </Avatar>
+          <div>
+            <h4 className="font-bold text-lg lowercase group-hover/author:text-primary transition-colors">{friend.displayName}</h4>
+            <span className="text-[10px] text-primary font-bold uppercase tracking-widest">online</span>
+          </div>
+        </Link>
       </div>
 
       <ScrollArea className="flex-1 p-6">
@@ -991,5 +1000,46 @@ function ShareRow({ icon, label, onClick }: any) {
       <span className="font-bold text-sm lowercase flex-1">{label}</span>
       <ChevronRight size={16} className="text-muted-foreground opacity-40" />
     </button>
+  )
+}
+
+function UserSearchCard({ user, onClick }: { user: any, onClick: () => void }) {
+  const primary = user.theme?.customColors?.primary || '#A7C4A0'
+  const background = user.theme?.customColors?.background || '#FFFFFF'
+  
+  return (
+    <div 
+      onClick={onClick}
+      className="group relative h-48 rounded-[32px] overflow-hidden border border-border/10 cursor-pointer shadow-sm hover:shadow-2xl transition-all duration-500 bg-card"
+    >
+      <div className="absolute inset-0 flex flex-col">
+        <div className="h-1/2 bg-cover bg-center" style={{ backgroundImage: `url(${user.bannerUrl})`, backgroundColor: primary }}>
+          <div className="absolute inset-0 bg-black/10" />
+        </div>
+        <div className="h-1/2" style={{ backgroundColor: background }} />
+      </div>
+
+      <div className="relative h-full flex flex-col items-center justify-center gap-2">
+        <div className="h-16 w-16 rounded-[20px] overflow-hidden border-4 border-white shadow-xl bg-white shrink-0 group-hover:scale-110 transition-transform mt-2">
+          {user.photoUrl ? (
+            <img src={user.photoUrl} className="w-full h-full object-cover" alt="avatar" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-primary/10 text-primary font-bold">
+              {user.displayName?.[0]}
+            </div>
+          )}
+        </div>
+        <div className="text-center px-4 w-full">
+          <h4 className="font-bold text-sm lowercase truncate text-foreground">{user.displayName}</h4>
+          <p className="text-[10px] lowercase truncate opacity-40 text-foreground">@{user.username}</p>
+        </div>
+      </div>
+      
+      <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all">
+        <div className="h-10 w-10 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-lg">
+          <ChevronRight size={20} className="text-primary" />
+        </div>
+      </div>
+    </div>
   )
 }

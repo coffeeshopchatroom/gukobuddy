@@ -13,47 +13,43 @@ service cloud.firestore {
       allow write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Friend requests logic: Allow users to 'knock' on others' collections
+    // Friend requests logic
     match /users/{userId}/friends/{friendId} {
-      // Users can manage their own friends list (read/write)
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-      
-      // Allow others to 'knock' (send a pending request)
-      // OR allow the recipient to mark themselves as accepted/declined in the sender's list
-      // They can create/update/delete the document if friendId matches their UID
-      allow create, update, delete: if request.auth != null && friendId == request.auth.uid;
-        
-      // Allow users to see their own status in someone else's list (e.g., to see if they already sent a request)
-      allow read: if request.auth != null && friendId == request.auth.uid;
+      allow read, write: if request.auth != null && (request.auth.uid == userId || request.auth.uid == friendId);
     }
 
-    // User-specific data (tasks, courses, notebooks)
+    // User-specific data
     match /users/{userId}/{allPaths=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Chats and messaging rules - Optimized using chatId string parsing for participant verification
+    // Chats and messaging
     match /chats/{chatId} {
-      // Helper to check if the authenticated user is one of the two UIDs in the chatId
       function isParticipant() {
         return request.auth != null && (request.auth.uid in chatId.split('_'));
       }
-
       allow read, write: if isParticipant();
-      
       match /messages/{messageId} {
         allow read, write: if isParticipant();
       }
     }
 
-    // Shared items rules
+    // Shared items
     match /sharedItems/{shareId} {
       allow read: if request.auth != null && (resource.data.fromUid == request.auth.uid || resource.data.toUid == request.auth.uid);
       allow create: if request.auth != null && request.resource.data.fromUid == request.auth.uid;
       allow update, delete: if false;
     }
+
+    // Share Hub Posts
+    match /posts/{postId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.resource.data.authorUid == request.auth.uid;
+      allow delete: if request.auth != null && resource.data.authorUid == request.auth.uid;
+      allow update: if false;
+    }
     
-    // Global fallback: deny everything else
+    // Global fallback
     match /{document=**} {
       allow read, write: if false;
     }
