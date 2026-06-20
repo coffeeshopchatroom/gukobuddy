@@ -8,8 +8,10 @@ interface PomodoroContextType {
   timeLeft: number;
   isActive: boolean;
   mode: TimerMode;
+  customTimes: Record<TimerMode, number>;
   setIsActive: (active: boolean) => void;
   setMode: (mode: TimerMode) => void;
+  updateCustomTime: (mode: TimerMode, minutes: number) => void;
   resetTimer: () => void;
   toggleTimer: () => void;
   formatTime: (seconds: number) => string;
@@ -17,16 +19,24 @@ interface PomodoroContextType {
 
 const PomodoroContext = React.createContext<PomodoroContextType | undefined>(undefined);
 
-const TIMES: Record<TimerMode, number> = {
+const DEFAULT_TIMES: Record<TimerMode, number> = {
   work: 25 * 60,
   shortBreak: 5 * 60,
   longBreak: 15 * 60,
 };
 
 export function PomodoroProvider({ children }: { children: React.ReactNode }) {
+  const [customTimes, setCustomTimes] = React.useState<Record<TimerMode, number>>(DEFAULT_TIMES);
   const [mode, setMode] = React.useState<TimerMode>('work');
-  const [timeLeft, setTimeLeft] = React.useState(TIMES.work);
+  const [timeLeft, setTimeLeft] = React.useState(DEFAULT_TIMES.work);
   const [isActive, setIsActive] = React.useState(false);
+
+  // Sync timeLeft when mode changes or customTimes are updated
+  React.useEffect(() => {
+    if (!isActive) {
+      setTimeLeft(customTimes[mode]);
+    }
+  }, [mode, customTimes]);
 
   React.useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -37,7 +47,7 @@ export function PomodoroProvider({ children }: { children: React.ReactNode }) {
       }, 1000);
     } else if (timeLeft === 0) {
       setIsActive(false);
-      // Play a subtle sound or notification here if desired
+      // Native notification logic could go here
     }
 
     return () => clearInterval(interval);
@@ -47,13 +57,18 @@ export function PomodoroProvider({ children }: { children: React.ReactNode }) {
 
   const resetTimer = () => {
     setIsActive(false);
-    setTimeLeft(TIMES[mode]);
+    setTimeLeft(customTimes[mode]);
   };
 
   const handleSetMode = (newMode: TimerMode) => {
     setMode(newMode);
     setIsActive(false);
-    setTimeLeft(TIMES[newMode]);
+    setTimeLeft(customTimes[newMode]);
+  };
+
+  const updateCustomTime = (mode: TimerMode, minutes: number) => {
+    const seconds = minutes * 60;
+    setCustomTimes(prev => ({ ...prev, [mode]: seconds }));
   };
 
   const formatTime = (seconds: number) => {
@@ -68,8 +83,10 @@ export function PomodoroProvider({ children }: { children: React.ReactNode }) {
         timeLeft,
         isActive,
         mode,
+        customTimes,
         setIsActive,
         setMode: handleSetMode,
+        updateCustomTime,
         resetTimer,
         toggleTimer,
         formatTime,
