@@ -35,7 +35,8 @@ import {
   Star, 
   Trash2,
   RotateCw,
-  Layers
+  Layers,
+  Gamepad2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { 
@@ -47,6 +48,7 @@ import {
 } from '@/components/ui/select';
 import { GradientPicker } from '@/components/ui/gradient-picker';
 import { Slider } from '@/components/ui/slider';
+import { useToast } from '@/hooks/use-toast';
 
 interface ProfileCustomizerProps {
   children?: React.ReactNode;
@@ -117,6 +119,7 @@ const DEFAULT_LAYOUT: ProfileLayout = {
 export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCustomizerProps) {
   const { user } = useUser();
   const db = useFirestore();
+  const { toast } = useToast();
   const profileRef = useMemoFirebase(() => user ? doc(db, 'users', user.uid, 'profile', 'settings') : null, [user, db]);
   const { data: profile } = useDoc(profileRef);
 
@@ -208,6 +211,27 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
     } finally {
       setUploading(null);
     }
+  };
+
+  const useChannelAvatar = () => {
+    if (!profile?.selectedAvatar || !profile?.avatarGender) {
+      toast({
+        variant: "destructive",
+        title: "no avatar found",
+        description: "pick an avatar in the guko channel first."
+      });
+      return;
+    }
+
+    const genderPath = profile.avatarGender === 'male' ? 'male' : 'female';
+    const headshotUrl = `/avatars/${genderPath}/headshots/${profile.selectedAvatar}.png`;
+    
+    setFormData(prev => ({ ...prev, photoUrl: headshotUrl }));
+    
+    toast({
+      title: "avatar applied",
+      description: "your channel headshot is now your profile picture."
+    });
   };
 
   const getColorStyle = (val: ColorValue) => {
@@ -313,6 +337,15 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
                 </label>
               </div>
               <Label className="text-[9px] font-bold uppercase tracking-widest opacity-40">profile photo</Label>
+              
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={useChannelAvatar}
+                className="h-7 rounded-lg text-[9px] font-bold lowercase gap-1.5 border-primary/20 hover:bg-primary/10 text-primary"
+              >
+                <Gamepad2 size={12} /> use my guko channel avatar
+              </Button>
             </div>
 
             <div className="space-y-3">

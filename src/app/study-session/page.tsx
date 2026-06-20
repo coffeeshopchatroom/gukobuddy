@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -20,11 +21,8 @@ import {
   Trees, 
   Volume2, 
   VolumeX,
-  Maximize2,
-  ChevronRight,
   Loader2,
-  X,
-  Layout
+  X
 } from "lucide-react"
 import { 
   useUser, 
@@ -399,14 +397,6 @@ function SessionNotebooks({ courseIds, user, db }: any) {
 }
 
 function SessionFlashcards({ courseIds, user, db }: any) {
-  // Simplification: In a real app we'd fetch sets linked to the selected course IDs
-  // For the MVP session, we'll fetch all sets to show availability
-  const queryRef = useMemoFirebase(() => {
-    if (!user || !db) return null
-    return query(collection(db, "temp")) // Placeholder for more complex set discovery
-  }, [user, db])
-  const { data: sets } = useCollection(queryRef)
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">

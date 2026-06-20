@@ -1,13 +1,23 @@
+
 "use client"
 
 import * as React from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Radio, ArrowLeft, Sparkles, Globe, Zap, SmartphoneNfc, Database } from "lucide-react"
+import { Radio, ArrowLeft, Sparkles, Globe, Database, UserCircle2, Settings2 } from "lucide-react"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
+import { useUser, useDoc, useFirestore, useMemoFirebase } from "@/firebase"
+import { doc } from "firebase/firestore"
 
 export default function GukoChannelPage() {
+  const { user } = useUser()
+  const db = useFirestore()
+  const profileRef = useMemoFirebase(() => user ? doc(db, 'users', user.uid, 'profile', 'settings') : null, [user, db])
+  const { data: profile } = useDoc(profileRef)
+
+  const hasAvatar = !!profile?.selectedAvatar
+
   return (
     <div className="min-h-[75vh] flex items-center justify-center p-4">
       <Card className="max-w-3xl w-full border-none shadow-2xl rounded-[64px] overflow-hidden bg-card text-center relative">
@@ -21,14 +31,16 @@ export default function GukoChannelPage() {
             <div className="absolute -top-6 -right-6 h-12 w-12 rounded-full bg-accent flex items-center justify-center shadow-lg animate-pulse">
               <Globe className="h-6 w-6 text-accent-foreground" />
             </div>
-            
           </div>
 
           <div className="space-y-4">
             <h1 className="font-headline text-5xl md:text-7xl font-bold tracking-tighter lowercase">guko channel</h1>
-            <Badge className="bg-primary/20 text-primary-foreground hover:bg-primary/20 border-none px-8 py-2 rounded-full text-sm font-bold uppercase tracking-[0.2em]">
-              connecting now...
-            </Badge>
+            <div className="flex flex-col items-center gap-2">
+              <Badge className="bg-primary/20 text-primary-foreground hover:bg-primary/20 border-none px-8 py-2 rounded-full text-sm font-bold uppercase tracking-[0.2em]">
+                connecting now...
+              </Badge>
+              <p className="text-[10px] font-black text-destructive uppercase tracking-[0.3em] animate-pulse">this is still in beta!</p>
+            </div>
           </div>
 
           <p className="text-muted-foreground text-xl md:text-2xl max-w-lg leading-relaxed lowercase font-medium">
@@ -50,21 +62,34 @@ export default function GukoChannelPage() {
             </div>
           </div>
 
-          <Button asChild variant="outline" className="mt-4 rounded-3xl py-8 px-12 text-lg font-bold border-2 hover:bg-muted transition-all hover:scale-105 active:scale-95 lowercase">
-            <Link href="/"><ArrowLeft className="h-5 w-5 mr-3" /> return to dashboard</Link>
-          </Button>
+          <div className="flex flex-col gap-4 w-full max-w-md mt-4">
+            {!hasAvatar ? (
+              <Button asChild className="rounded-[32px] py-10 text-2xl font-bold shadow-xl shadow-primary/20 hover:scale-105 transition-all lowercase">
+                <Link href="/channel/pick-avatar">
+                  <UserCircle2 className="h-6 w-6 mr-3" /> open my channel
+                </Link>
+              </Button>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Button asChild className="rounded-[32px] py-8 text-lg font-bold shadow-xl shadow-primary/20 hover:scale-105 transition-all lowercase">
+                  <Link href="/channel/my-channel">
+                    <UserCircle2 className="h-5 w-5 mr-2" /> view my channel
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" className="rounded-[32px] py-8 text-lg font-bold border-2 hover:bg-muted transition-all hover:scale-105 lowercase">
+                  <Link href="/channel/pick-avatar">
+                    <Settings2 className="h-5 w-5 mr-2" /> change avatar
+                  </Link>
+                </Button>
+              </div>
+            )}
+            
+            <Button asChild variant="ghost" className="rounded-3xl py-6 text-muted-foreground hover:text-foreground lowercase">
+              <Link href="/"><ArrowLeft className="h-4 w-4 mr-2" /> return to dashboard</Link>
+            </Button>
+          </div>
         </CardContent>
       </Card>
-      
-      <style jsx global>{`
-        @keyframes spin-slow {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        .animate-spin-slow {
-          animation: spin-slow 8s linear infinite;
-        }
-      `}</style>
     </div>
   )
 }
