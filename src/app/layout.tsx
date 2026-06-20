@@ -23,7 +23,8 @@ export default function RootLayout({
     pathname?.startsWith('/notebooks') || 
     pathname?.startsWith('/admin/wii-test') || 
     pathname?.startsWith('/admin/xbox-test') || 
-    pathname?.startsWith('/admin/avatar-picker');
+    pathname?.startsWith('/admin/avatar-picker') ||
+    pathname?.startsWith('/study-session');
 
   return (
     <html lang="en">
