@@ -24,7 +24,6 @@ import {
   Image as ImageIcon,
   Type,
   Maximize2,
-  Upload,
   Tornado
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -76,7 +75,6 @@ export default function SettingsPage() {
   const [fontFamily, setFontFamily] = React.useState('IBM Plex Sans Devanagari');
   const [fontSize, setFontSize] = React.useState('base');
 
-  // Handle protected route redirection
   React.useEffect(() => {
     if (!user && !isUserLoading) {
       router.push('/login');
@@ -200,7 +198,6 @@ export default function SettingsPage() {
       </div>
 
       <div className="grid gap-8">
-        {/* Membership Section */}
         <Card className="border-none shadow-sm rounded-[40px] bg-card/80 backdrop-blur-md overflow-hidden">
           <CardHeader className="p-8 pb-4">
             <div className="flex items-center gap-3">
@@ -263,7 +260,6 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Theme Engine Section */}
         <Card className="border-none shadow-sm rounded-[40px] bg-card/80 backdrop-blur-md overflow-hidden">
           <CardHeader className="p-8 pb-4">
             <div className="flex items-center gap-3">
@@ -277,7 +273,6 @@ export default function SettingsPage() {
             </div>
           </CardHeader>
           <CardContent className="p-8 pt-4 space-y-10">
-            {/* Presets */}
             <div className="space-y-4">
               <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">mood presets</Label>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
@@ -310,7 +305,6 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            {/* Custom Color Controls (only if custom is active) */}
             {activeTheme === 'custom' && (
               <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6 p-6 rounded-3xl bg-muted/30 border border-muted animate-in fade-in slide-in-from-top-2">
                  <div className="space-y-3">
@@ -351,7 +345,6 @@ export default function SettingsPage() {
               </div>
             )}
 
-            {/* Typography & Background */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-6">
                 <div className="space-y-3">
@@ -440,7 +433,6 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Interface Preferences */}
         <Card className="border-none shadow-sm rounded-[40px] bg-card/80 backdrop-blur-md">
           <CardHeader className="p-8 pb-4">
             <div className="flex items-center gap-3">
@@ -490,7 +482,6 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Danger Zone */}
         <Card className="border-none shadow-sm rounded-[40px] bg-destructive/5 border border-destructive/10">
           <CardHeader className="p-8 pb-4">
             <div className="flex items-center gap-3">

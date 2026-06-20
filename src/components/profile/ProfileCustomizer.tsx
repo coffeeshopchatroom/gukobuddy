@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -22,6 +21,7 @@ import {
   setDocumentNonBlocking 
 } from '@/firebase';
 import { doc } from 'firebase/firestore';
+import { updateProfile } from 'firebase/auth';
 import { 
   Loader2, 
   Camera, 
@@ -158,10 +158,10 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
       };
 
       setFormData({
-        displayName: profile.displayName || '',
+        displayName: profile.displayName || user?.displayName || '',
         username: profile.username || '',
         bio: profile.bio || '',
-        photoUrl: profile.photoUrl || '',
+        photoUrl: profile.photoUrl || user?.photoURL || '',
         bannerUrl: profile.bannerUrl || '',
         theme: {
           body: parseColor(profile.theme?.body, formData.theme.body),
@@ -178,7 +178,7 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
         stickers: (profile.stickers || []).map((s: any) => ({ ...s, rotation: s.rotation || 0, zIndex: s.zIndex || 1 }))
       });
     }
-  }, [profile]);
+  }, [profile, user]);
 
   const handleImageUpload = async (file: File, type: 'photo' | 'banner' | 'sticker') => {
     if (!user) return;
@@ -230,7 +230,7 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
     
     toast({
       title: "avatar applied",
-      description: "your channel headshot is now your profile picture."
+      description: "your channel headshot is now staged. hit save to apply globally."
     });
   };
 
@@ -241,13 +241,27 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
     return `linear-gradient(${rotation}deg, ${stops.map(s => `${s.color} ${s.offset}%`).join(', ')})`;
   };
 
-  const handleSave = () => {
-    if (!profileRef) return;
+  const handleSave = async () => {
+    if (!profileRef || !user) return;
+
+    // Sync with Firebase Auth for standard components
+    try {
+      await updateProfile(user, {
+        displayName: formData.displayName,
+        photoURL: formData.photoUrl
+      });
+    } catch (e) {
+      console.warn("Auth profile sync failed", e);
+    }
+
+    // Persist to Firestore
     setDocumentNonBlocking(profileRef, {
       ...formData,
       updatedAt: new Date().toISOString()
     }, { merge: true });
+
     onOpenChange?.(false);
+    toast({ title: "profile saved" });
   };
 
   const toggleTarget = (target: BorderTarget) => {
@@ -845,8 +859,7 @@ function AdvancedProfileEditor({
   const renderHandle = (id: string, dir: string, className: string) => (
     <div 
       className={cn("absolute w-4 h-4 bg-background border-2 border-primary z-[200] rounded-full shadow-md", className)}
-      onPointerDown={(e) => handlePointerDown(e, id, 'resize', dir)}
-      onClick={e => e.stopPropagation()}
+      onPointerDown={(e) => { e.stopPropagation(); handlePointerDown(e, id, 'resize', dir); }}
     />
   );
 
@@ -876,8 +889,7 @@ function AdvancedProfileEditor({
         {isSticker && (
           <div
             className="absolute w-5 h-5 flex items-center justify-center bg-background border-2 border-primary z-[200] rounded-full shadow-md top-[-25px] left-1/2 -translate-x-1/2 cursor-alias pointer-events-auto"
-            onPointerDown={(e) => handlePointerDown(e, id, 'rotate')}
-            onClick={e => e.stopPropagation()}
+            onPointerDown={(e) => { e.stopPropagation(); handlePointerDown(e, id, 'rotate'); }}
           >
             <RotateCw className="h-3 w-3 text-primary" />
           </div>

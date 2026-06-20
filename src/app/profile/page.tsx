@@ -1,15 +1,15 @@
 'use client';
 
 import * as React from 'react';
-import { useUser, useFirestore, useAuth, useDoc, useMemoFirebase } from '@/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { useUser, useFirestore, useAuth, useDoc, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
+import { doc } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Camera, Loader2, Check, ArrowLeft, Sparkles, School, GraduationCap, Layers, BookOpen, CheckSquare, ShieldCheck } from 'lucide-react';
+import { Camera, Loader2, Check, ArrowLeft, Sparkles, School, GraduationCap, Layers, BookOpen, CheckSquare, ShieldCheck, Gamepad2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
@@ -29,14 +29,13 @@ export default function ProfilePage() {
   const [displayName, setDisplayName] = React.useState('');
   const [username, setUsername] = React.useState('');
   const [photoUrl, setPhotoUrl] = React.useState('');
-  const [studentType, setStudentType] = React.useState<'high-school' | 'college'>('college');
+  const [studentType, setStudentType] = React.useState<'high-school' | 'college' | 'hobbyist'>('college');
   const [useAi, setUseAi] = React.useState(true);
   const [focus, setFocus] = React.useState<'flashcards' | 'notebooks' | 'tasks' | 'all'>('all');
   
   const [isUpdating, setIsUpdating] = React.useState(false);
   const [uploading, setUploading] = React.useState(false);
 
-  // Handle protected route redirection
   React.useEffect(() => {
     if (!user && !isUserLoading) {
       router.push('/login');
@@ -46,7 +45,7 @@ export default function ProfilePage() {
   React.useEffect(() => {
     if (user) {
       setDisplayName(user.displayName || '');
-      setPhotoUrl(user.photoURL || '');
+      setPhotoUrl(profile?.photoUrl || user.photoURL || '');
     }
     if (profile) {
       setStudentType(profile.studentType || 'college');
@@ -55,6 +54,26 @@ export default function ProfilePage() {
       setUsername(profile.username || '');
     }
   }, [user, profile]);
+
+  const useChannelAvatar = () => {
+    if (!profile?.selectedAvatar || !profile?.avatarGender) {
+      toast({
+        variant: "destructive",
+        title: "no avatar found",
+        description: "pick an avatar in the guko channel first."
+      });
+      return;
+    }
+
+    const genderPath = profile.avatarGender === 'male' ? 'male' : 'female';
+    const headshotUrl = `/avatars/${genderPath}/headshots/${profile.selectedAvatar}.png`;
+    setPhotoUrl(headshotUrl);
+    
+    toast({
+      title: "avatar selected",
+      description: "press 'save changes' to apply this permanently."
+    });
+  };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -73,15 +92,9 @@ export default function ProfilePage() {
       const newUrl = blob.url;
       setPhotoUrl(newUrl);
       
-      await updateProfile(user, { photoURL: newUrl });
-      
-      if (profileRef) {
-        await setDoc(profileRef, { photoUrl: newUrl }, { merge: true });
-      }
-
       toast({
-        title: "photo updated",
-        description: "your profile picture has been changed.",
+        title: "photo staged",
+        description: "hit 'save changes' to finalize your update.",
       });
     } catch (error) {
       console.error("upload failed", error);
@@ -100,9 +113,12 @@ export default function ProfilePage() {
     setIsUpdating(true);
 
     try {
-      await updateProfile(user, { displayName });
+      await updateProfile(user, { 
+        displayName, 
+        photoURL: photoUrl 
+      });
 
-      await setDoc(profileRef, {
+      setDocumentNonBlocking(profileRef, {
         displayName,
         username: username.toLowerCase().trim(),
         photoUrl,
@@ -136,8 +152,6 @@ export default function ProfilePage() {
     );
   }
 
-  const isAdmin = profile?.isAdmin === true;
-
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-smooth-slow pb-20">
       <div className="flex items-center gap-4">
@@ -165,24 +179,28 @@ export default function ProfilePage() {
                 <input id="avatar-upload" type="file" className="hidden" accept="image/*" onChange={handleImageUpload} disabled={uploading} />
               </label>
             </div>
-            <div className="space-y-1">
-              <div className="flex items-center justify-center gap-2">
-                <h3 className="text-xl font-bold font-headline lowercase">{displayName || 'student'}</h3>
-                {isAdmin && <ShieldCheck className="h-5 w-5 text-primary" />}
+            <div className="space-y-3 w-full">
+              <div className="space-y-1">
+                <div className="flex items-center justify-center gap-2">
+                  <h3 className="text-xl font-bold font-headline lowercase">{displayName || 'student'}</h3>
+                  {profile?.isAdmin && <ShieldCheck className="h-5 w-5 text-primary" />}
+                </div>
+                <p className="text-xs text-muted-foreground lowercase truncate max-w-full">{user.email}</p>
+                {username && <p className="text-[10px] font-bold text-primary uppercase tracking-widest">@{username}</p>}
               </div>
-              <p className="text-xs text-muted-foreground lowercase truncate max-w-full">{user.email}</p>
-              {username && <p className="text-[10px] font-bold text-primary uppercase tracking-widest">@{username}</p>}
+              
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={useChannelAvatar}
+                className="w-full rounded-xl text-[10px] font-bold lowercase gap-2 border-primary/20 hover:bg-primary/10 text-primary h-9"
+              >
+                <Gamepad2 size={14} /> use my channel avatar
+              </Button>
             </div>
-            <div className="flex flex-col gap-2">
-              <Badge variant="secondary" className="rounded-full px-4 py-1 lowercase">
-                {studentType === 'high-school' ? 'high school' : 'college'}
-              </Badge>
-              {isAdmin && (
-                <Badge variant="outline" className="rounded-full px-4 py-1 lowercase border-primary text-primary bg-primary/5">
-                  system admin
-                </Badge>
-              )}
-            </div>
+            <Badge variant="secondary" className="rounded-full px-4 py-1 lowercase">
+              {studentType.replace('-', ' ')}
+            </Badge>
           </CardContent>
         </Card>
 
@@ -215,29 +233,21 @@ export default function ProfilePage() {
 
               <div className="space-y-4">
                 <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">student level</Label>
-                <RadioGroup value={studentType} onValueChange={(v: any) => setStudentType(v)} className="grid grid-cols-2 gap-4">
-                  <Label
-                    htmlFor="college"
-                    className={cn(
-                      "flex flex-col items-center gap-3 p-4 rounded-3xl border-2 transition-all cursor-pointer hover:border-primary/50",
-                      studentType === 'college' ? "border-primary bg-primary/5" : "border-muted"
-                    )}
-                  >
-                    <GraduationCap className={cn("h-6 w-6", studentType === 'college' ? "text-primary" : "text-muted-foreground")} />
-                    <span className="font-bold lowercase">college</span>
-                    <RadioGroupItem value="college" id="college" className="sr-only" />
-                  </Label>
-                  <Label
-                    htmlFor="high-school"
-                    className={cn(
-                      "flex flex-col items-center gap-3 p-4 rounded-3xl border-2 transition-all cursor-pointer hover:border-primary/50",
-                      studentType === 'high-school' ? "border-primary bg-primary/5" : "border-muted"
-                    )}
-                  >
-                    <School className={cn("h-6 w-6", studentType === 'high-school' ? "text-primary" : "text-muted-foreground")} />
-                    <span className="font-bold lowercase">high school</span>
-                    <RadioGroupItem value="high-school" id="high-school" className="sr-only" />
-                  </Label>
+                <RadioGroup value={studentType} onValueChange={(v: any) => setStudentType(v)} className="grid grid-cols-3 gap-4">
+                  {['college', 'high-school', 'hobbyist'].map((type) => (
+                    <Label
+                      key={type}
+                      htmlFor={type}
+                      className={cn(
+                        "flex flex-col items-center gap-3 p-4 rounded-3xl border-2 transition-all cursor-pointer hover:border-primary/50",
+                        studentType === type ? "border-primary bg-primary/5" : "border-muted"
+                      )}
+                    >
+                      {type === 'college' ? <GraduationCap className="h-6 w-6" /> : type === 'high-school' ? <School className="h-6 w-6" /> : <Gamepad2 className="h-6 w-6" />}
+                      <span className="font-bold lowercase">{type.replace('-', ' ')}</span>
+                      <RadioGroupItem value={type} id={type} className="sr-only" />
+                    </Label>
+                  ))}
                 </RadioGroup>
               </div>
             </CardContent>
