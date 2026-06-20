@@ -15,7 +15,6 @@ import {
   query, 
   where, 
   getDocs, 
-  limit, 
   orderBy,
   doc,
   collectionGroup
@@ -23,17 +22,13 @@ import {
 import { 
   Loader2, 
   ArrowLeft, 
-  Share2, 
-  MessageSquare, 
   UserPlus, 
-  Clock, 
+  Bell,
   Layers, 
   BookOpen, 
   MessageCircle,
   Download,
-  ShieldCheck,
-  Star,
-  Sparkles
+  Check
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -41,20 +36,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { useToast } from "@/hooks/use-toast"
-import { ScrollArea } from "@/components/ui/scroll-area"
 
-const PORTAL_BASE_W = 600;
-const PORTAL_BASE_H = 400;
-
-const DEFAULT_PROFILE_LAYOUT = {
-  banner: { x: 0, y: 0, w: 600, h: 80, zIndex: 0 },
-  pfp: { x: 24, y: 40, w: 140, h: 140, zIndex: 2 },
-  name: { x: 180, y: 100, w: 280, h: 48, zIndex: 2 },
-  username: { x: 180, y: 140, w: 150, h: 24, zIndex: 2 },
-  bio: { x: 24, y: 240, w: 552, h: 140, zIndex: 2 },
-  addBtn: { x: 440, y: 100, w: 130, h: 44, zIndex: 2 },
-  aboutHeader: { x: 24, y: 210, w: 100, h: 20, zIndex: 2 }
-};
+type ProfileTab = 'all' | 'notebooks' | 'flashcards' | 'thoughts'
 
 export default function PublicProfilePage() {
   const { username } = useParams()
@@ -65,8 +48,7 @@ export default function PublicProfilePage() {
 
   const [profile, setProfile] = React.useState<any>(null)
   const [isLoading, setIsLoading] = React.useState(true)
-  const [scale, setScale] = React.useState(1)
-  const containerRef = React.useRef<HTMLDivElement>(null)
+  const [activeTab, setActiveTab] = React.useState<ProfileTab>('all')
 
   React.useEffect(() => {
     async function resolveProfile() {
@@ -100,18 +82,14 @@ export default function PublicProfilePage() {
   }, [profile?.uid, db])
   const { data: userPosts } = useCollection(postsQuery)
 
-  React.useLayoutEffect(() => {
-    const updateScale = () => {
-      if (containerRef.current) {
-        const { width } = containerRef.current.getBoundingClientRect();
-        setScale(width / PORTAL_BASE_W);
-      }
-    };
-    updateScale();
-    const observer = new ResizeObserver(updateScale);
-    if (containerRef.current) observer.observe(containerRef.current);
-    return () => observer.disconnect();
-  }, []);
+  const filteredPosts = React.useMemo(() => {
+    if (!userPosts) return []
+    if (activeTab === 'all') return userPosts
+    if (activeTab === 'notebooks') return userPosts.filter(p => p.type === 'notebook')
+    if (activeTab === 'flashcards') return userPosts.filter(p => p.type === 'flashcardSet')
+    if (activeTab === 'thoughts') return userPosts.filter(p => p.type === 'thought')
+    return userPosts
+  }, [userPosts, activeTab])
 
   const sendRequest = () => {
     if (!currentUser || !profile || !db) return
@@ -141,7 +119,7 @@ export default function PublicProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex items-center justify-center bg-white">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
       </div>
     )
@@ -159,228 +137,203 @@ export default function PublicProfilePage() {
     )
   }
 
-  const theme = profile.theme || {}
-  const layout = profile.layout || DEFAULT_PROFILE_LAYOUT;
-  const customColors = theme.customColors || { primary: '#A7C4A0', background: '#FFFFFF', foreground: '#1a1c19' }
-
-  const getColorStyle = (val: any) => {
-    if (!val) return 'transparent';
-    if (typeof val === 'string') return val;
-    if (val.type === 'solid') return val.solid;
-    const stops = [...(val.gradient || [])].sort((a, b) => a.offset - b.offset);
-    const rotation = val.rotation ?? 90;
-    return `linear-gradient(${rotation}deg, ${stops.map((s: any) => `${s.color} ${s.offset}%`).join(', ')})`;
-  };
-
-  const getTargetBorderStyle = (target: string, itemBg: string) => {
-    const isSelected = profile.borderTargets?.includes(target);
-    const width = profile.borderWidth || 0;
-    const color = profile.targetColors?.[target] || theme.border || { type: 'solid', solid: '#ffffff33' };
-    if (!isSelected || width <= 0) return { border: 'none' };
-    if (color.type === 'solid') return { border: `${width}px solid ${color.solid}` };
-    const gradient = getColorStyle(color);
-    return {
-      border: `${width}px solid transparent`,
-      backgroundImage: `linear-gradient(${itemBg}, ${itemBg}), ${gradient}`,
-      backgroundOrigin: 'border-box',
-      backgroundClip: 'padding-box, border-box'
-    };
-  };
-
-  const cornerRadius = `${profile.cornerRounding ?? 16}px`;
-
   return (
-    <div className="min-h-screen space-y-12 animate-smooth-slow pb-40">
-      <div className="max-w-4xl mx-auto px-6 pt-12">
-        <Button variant="ghost" onClick={() => router.push('/share-hub')} className="rounded-xl h-10 px-4 mb-8 lowercase gap-2 text-muted-foreground hover:text-foreground">
-          <ArrowLeft size={18} /> share hub
-        </Button>
+    <div className="min-h-screen bg-white flex flex-col font-sans">
+      {/* Header Section (Banner & PFP) */}
+      <div className="relative w-full">
+        {/* Banner */}
+        <div className="w-full h-[220px] bg-sky-100 overflow-hidden">
+          {profile.bannerUrl ? (
+            <img src={profile.bannerUrl} className="w-full h-full object-cover" alt="banner" />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-r from-sky-400 via-white to-sky-400" />
+          )}
+        </div>
 
-        <div 
-          ref={containerRef}
-          className="w-full relative overflow-hidden bg-muted/10 shadow-2xl border border-border"
-          style={{ 
-            height: PORTAL_BASE_H * scale,
-            borderRadius: cornerRadius,
-          }}
-        >
-          <div 
-            className="absolute top-0 left-0 origin-top-left"
-            style={{ 
-              width: PORTAL_BASE_W, 
-              height: PORTAL_BASE_H,
-              transform: `scale(${scale})`,
-              background: getColorStyle(theme.body || customColors.background),
-              fontFamily: profile.font || 'Plus Jakarta Sans',
-            }}
-          >
-            {/* Banner */}
-            <div className="absolute" style={{ 
-              left: layout.banner?.x ?? 0, top: layout.banner?.y ?? 0, 
-              width: layout.banner?.w ?? '100%', height: layout.banner?.h ?? 80, 
-              zIndex: layout.banner?.zIndex ?? 0 
-            }}>
-              {profile.bannerUrl ? (
-                <img src={profile.bannerUrl} className="w-full h-full object-cover" alt="banner" />
-              ) : (
-                <div className="w-full h-full bg-black/10" />
-              )}
-            </div>
-            
-            {/* PFP */}
-            <div className="absolute overflow-hidden flex items-center justify-center" style={{ 
-              left: layout.pfp?.x ?? 24, top: layout.pfp?.y ?? 40,
-              width: layout.pfp?.w ?? 140, height: layout.pfp?.h ?? 140,
-              borderRadius: cornerRadius, zIndex: layout.pfp?.zIndex ?? 2,
-              ...getTargetBorderStyle('profile', 'rgba(0,0,0,0.1)'),
-              backgroundColor: 'rgba(0,0,0,0.1)'
-            }}>
+        {/* Profile Info Row */}
+        <div className="max-w-[1200px] mx-auto px-10 relative">
+          {/* Overlapping Square PFP */}
+          <div className="absolute top-[-80px] left-10 w-44 h-44 bg-white p-1.5 shadow-lg z-10 border border-black/5">
+            <div className="w-full h-full overflow-hidden bg-muted">
               {profile.photoUrl ? (
                 <img src={profile.photoUrl} className="w-full h-full object-cover" alt="pfp" />
               ) : (
-                <div className="w-1/2 h-1/2 opacity-20 bg-muted rounded-full" />
+                <div className="w-full h-full flex items-center justify-center text-4xl font-bold opacity-10">?</div>
               )}
             </div>
+          </div>
 
-            {/* Name */}
-            <div className="absolute flex flex-col justify-center" style={{ 
-              left: layout.name?.x ?? 180, top: layout.name?.y ?? 100,
-              width: layout.name?.w ?? 400, height: layout.name?.h ?? 48,
-              zIndex: layout.name?.zIndex ?? 2,
-              color: getColorStyle(theme.text || customColors.foreground)
-            }}>
-              <h4 className="text-4xl font-bold leading-tight lowercase truncate">{profile.displayName || 'student'}</h4>
+          {/* Identity & Actions */}
+          <div className="pt-4 pl-52 flex items-center justify-between min-h-[80px]">
+            <div className="space-y-0.5">
+              <h1 className="text-2xl font-bold lowercase leading-none">{profile.displayName || profile.username}</h1>
+              <p className="text-sm text-muted-foreground lowercase">via</p>
             </div>
-
-            {/* Username */}
-            <div className="absolute" style={{ 
-              left: layout.username?.x ?? 180, top: layout.username?.y ?? 145,
-              width: layout.username?.w ?? 200, height: layout.username?.h ?? 24,
-              zIndex: layout.username?.zIndex ?? 2,
-              color: getColorStyle(theme.text || customColors.foreground), opacity: 0.6
-            }}>
-              <p className="text-xl lowercase">@{profile.username}</p>
-            </div>
-
-            {/* Actions */}
-            <div className="absolute flex gap-3" style={{ 
-              left: layout.addBtn?.x ?? 440, top: layout.addBtn?.y ?? 100,
-              width: layout.addBtn?.w ?? 140, height: layout.addBtn?.h ?? 44,
-              zIndex: layout.addBtn?.zIndex ?? 2
-            }}>
-              <Button 
+            <div className="flex items-center gap-3">
+              <button 
                 onClick={sendRequest}
-                className="flex-1 h-full font-bold lowercase border-none shadow-xl transition-all"
-                style={{ 
-                  background: getColorStyle(theme.buttons || customColors.primary),
-                  color: 'white', borderRadius: cornerRadius,
-                  ...getTargetBorderStyle('add', getColorStyle(theme.buttons || customColors.primary))
-                }}
+                className="px-8 py-2 bg-[#A8B9C8] border border-[#7A8A99] text-black text-sm font-medium hover:brightness-95 transition-all shadow-sm"
               >
                 add friend
-              </Button>
+              </button>
+              <button className="p-2 bg-white border border-border rounded-sm hover:bg-muted transition-colors shadow-sm">
+                <Bell size={18} className="text-black/60" />
+              </button>
             </div>
+          </div>
 
-            {/* About Label */}
-            <div className="absolute" style={{ 
-              left: layout.aboutHeader?.x ?? 24, top: layout.aboutHeader?.y ?? 210,
-              width: layout.aboutHeader?.w ?? 100, height: layout.aboutHeader?.h ?? 20,
-              zIndex: layout.aboutHeader?.zIndex ?? 2,
-              color: getColorStyle(theme.text || customColors.foreground), opacity: 0.8
-            }}>
-               <span className="text-lg font-bold lowercase">about me:</span>
-            </div>
-
-            {/* Bio */}
-            <div className="absolute" style={{ 
-              left: layout.bio?.x ?? 24, top: layout.bio?.y ?? 240,
-              width: layout.bio?.w ?? 552, height: layout.bio?.h ?? 140,
-              zIndex: layout.bio?.zIndex ?? 2,
-              color: getColorStyle(theme.text || customColors.foreground),
-            }}>
-              <p className="text-2xl leading-relaxed lowercase opacity-90 italic line-clamp-4">
-                {profile.bio || 'this student has not shared a bio yet.'}
-              </p>
-            </div>
-
-            {/* Stickers */}
-            {(profile.stickers || []).map((sticker: any) => (
-              <div key={sticker.id} className="absolute pointer-events-none" style={{
-                left: sticker.x, top: sticker.y, width: sticker.w, height: sticker.h,
-                zIndex: sticker.zIndex, transform: `rotate(${sticker.rotation || 0}deg)`
-              }}>
-                <img src={sticker.url} className="w-full h-full object-fill" alt="sticker" />
-              </div>
-            ))}
+          {/* About Me Section */}
+          <div className="mt-8 mb-10 space-y-4">
+             <div className="space-y-1">
+               <span className="text-[10px] font-bold uppercase tracking-tight text-black opacity-80">about me:</span>
+               <p className="text-base leading-relaxed text-black max-w-2xl lowercase">
+                 {profile.bio || 'i sorta like made this app.. or whatever.. no its fine i dont care either'}
+               </p>
+             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-6 space-y-12">
-        <div className="flex items-center justify-between border-b pb-4">
-          <h2 className="text-3xl font-headline font-bold lowercase flex items-center gap-2">
-            <Sparkles className="h-6 w-6 text-primary" /> activity feed
-          </h2>
-          <Badge variant="secondary" className="rounded-full px-4 font-bold lowercase">
-            {userPosts?.length || 0} posts
-          </Badge>
+      {/* Tabs Bar */}
+      <div className="w-full bg-[#B0C4DE] border-y border-black/10">
+        <div className="max-w-[1200px] mx-auto flex">
+          <TabItem active={activeTab === 'all'} onClick={() => setActiveTab('all')} label="ALL POSTS" />
+          <TabItem active={activeTab === 'notebooks'} onClick={() => setActiveTab('notebooks')} label="NOTEBOOKS" />
+          <TabItem active={activeTab === 'flashcards'} onClick={() => setActiveTab('flashcards')} label="FLASHCARDS" />
+          <TabItem active={activeTab === 'thoughts'} onClick={() => setActiveTab('thoughts')} label="THOUGHTS" />
         </div>
+      </div>
 
-        <div className="grid gap-8">
-           {userPosts?.map(post => (
-             <ProfilePostItem key={post.id} post={post} />
-           ))}
-           {userPosts?.length === 0 && (
-             <div className="py-20 text-center text-muted-foreground italic lowercase border-2 border-dashed rounded-[32px]">
-               no posts published to the hub yet.
-             </div>
-           )}
+      {/* Main Feed Content Area */}
+      <div className="flex-1 w-full bg-gradient-to-b from-[#6B9AC4] via-[#A8C5DA] to-[#DCDCDC] pb-40">
+        <div className="max-w-[1200px] mx-auto px-10 py-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+             {filteredPosts.map(post => (
+               <FeedCard key={post.id} post={post} profile={profile} onCopy={() => handleCopyToLibrary(post, currentUser, db, toast)} />
+             ))}
+             {filteredPosts.length === 0 && (
+               <div className="col-span-full py-40 text-center">
+                 <p className="text-white/60 font-bold text-xl lowercase">no posts found in this section.</p>
+               </div>
+             )}
+          </div>
         </div>
       </div>
     </div>
   )
 }
 
-function ProfilePostItem({ post }: { post: any }) {
+function TabItem({ active, onClick, label }: { active: boolean, onClick: () => void, label: string }) {
+  return (
+    <button 
+      onClick={onClick}
+      className={cn(
+        "flex-1 py-4 text-sm font-bold tracking-widest transition-all",
+        active ? "bg-black/5 text-black" : "text-black/60 hover:text-black hover:bg-black/5"
+      )}
+    >
+      {label}
+    </button>
+  )
+}
+
+function FeedCard({ post, profile, onCopy }: { post: any, profile: any, onCopy: () => void }) {
   const isThought = post.type === 'thought'
-  const date = new Date(post.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
+  const postVerb = isThought ? "posted a thought" : `shared a ${post.type === 'flashcardSet' ? 'flashcard deck' : post.type}`
 
   return (
-    <Card className="border-none shadow-sm rounded-[32px] overflow-hidden bg-card transition-all hover:shadow-xl group">
-      <CardContent className="p-8">
-        <div className="flex items-start justify-between mb-6">
-           <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-2xl bg-primary/10 text-primary">
-                 {isThought ? <MessageCircle size={20} /> : post.type === 'flashcardSet' ? <Layers size={20} /> : <BookOpen size={20} />}
-              </div>
-              <div>
-                <span className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-30">{post.type === 'flashcardSet' ? 'flashcard deck' : post.type}</span>
-                <p className="text-xs text-muted-foreground lowercase flex items-center gap-1.5 mt-0.5">
-                   <Clock size={12} /> {date}
-                </p>
-              </div>
-           </div>
-           
-           {!isThought && (
-             <Button variant="outline" size="sm" className="rounded-xl lowercase gap-2 border-primary/10 hover:bg-primary hover:text-white transition-all">
-                <Download size={14} /> save to library
-             </Button>
-           )}
+    <div className="bg-white rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="p-8 space-y-6">
+        <div className="flex flex-col items-center text-center space-y-1">
+          <span className="text-sm font-mono text-black/60 lowercase">{profile.displayName || profile.username} {postVerb}</span>
         </div>
 
         {isThought ? (
-          <p className="text-2xl md:text-3xl leading-relaxed lowercase text-foreground/80 italic">"{post.content}"</p>
+          <div className="pt-4">
+             <p className="text-xl md:text-2xl text-black leading-relaxed lowercase font-medium">
+               {post.content}
+             </p>
+          </div>
         ) : (
-          <div className="p-6 rounded-2xl bg-muted/30 border border-border/50 space-y-4">
-             <h3 className="font-bold text-2xl lowercase">{post.itemData?.name || post.itemData?.title}</h3>
-             <div className="flex gap-4">
-                <Badge variant="outline" className="rounded-full px-3 text-[10px] font-bold lowercase bg-background border-none shadow-sm">
-                   {post.itemData?.cards?.length || 0} items
-                </Badge>
-             </div>
+          <div className="space-y-4">
+            <h3 className="text-2xl font-bold text-black lowercase leading-tight">
+              {post.itemData?.name || post.itemData?.title}
+            </h3>
+            
+            {/* Visual Preview Placeholder */}
+            <div className="w-full aspect-video bg-[#D9D9D9] flex items-center justify-center p-6 relative overflow-hidden">
+               <span className="text-lg font-bold text-black/80 lowercase">
+                 {post.type === 'flashcardSet' ? 'flashcard preview' : 'notebook preview'}
+               </span>
+               <div className="absolute bottom-0 left-0 w-full h-1 bg-black/5" />
+            </div>
+
+            <Button 
+              onClick={onCopy}
+              variant="outline" 
+              className="w-full rounded-none border-2 border-black/10 font-bold lowercase hover:bg-black hover:text-white transition-all h-12"
+            >
+              <Download className="h-4 w-4 mr-2" /> save to library
+            </Button>
           </div>
         )}
-      </CardContent>
-    </Card>
+
+        <div className="pt-4 flex justify-between items-center opacity-20 text-[10px] font-bold uppercase tracking-widest">
+           <span>{new Date(post.createdAt).toLocaleDateString()}</span>
+        </div>
+      </div>
+    </div>
   )
+}
+
+async function handleCopyToLibrary(post: any, user: any, db: any, toast: any) {
+  if (!user || !db) return
+  
+  try {
+    if (post.type === 'notebook') {
+      const noteId = doc(collection(db, "temp")).id
+      const noteRef = doc(db, "users", user.uid, "notes", noteId)
+      setDocumentNonBlocking(noteRef, {
+        ...post.itemData,
+        id: noteId,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }, { merge: true })
+      toast({ title: "page added to workspace" })
+    } else if (post.type === 'flashcardSet') {
+      const coursesRef = collection(db, "users", user.uid, "courses")
+      const coursesSnap = await getDocs(query(coursesRef, orderBy("createdAt", "desc"), limit(1)))
+      let courseId = coursesSnap.docs[0]?.id
+      
+      if (!courseId) {
+        courseId = doc(collection(db, "temp")).id
+        setDocumentNonBlocking(doc(db, "users", user.uid, "courses", courseId), {
+          id: courseId,
+          name: "shared studies",
+          createdAt: new Date().toISOString()
+        }, { merge: true })
+      }
+
+      const newDeckId = doc(collection(db, "temp")).id
+      const deckRef = doc(db, "users", user.uid, "courses", courseId, "flashcardSets", newDeckId)
+      setDocumentNonBlocking(deckRef, {
+        ...post.itemData,
+        id: newDeckId,
+        courseId,
+        createdAt: new Date().toISOString()
+      }, { merge: true })
+
+      if (post.itemData.cards) {
+        post.itemData.cards.forEach((card: any) => {
+          const newCardId = doc(collection(db, "temp")).id
+          const cardRef = doc(db, "users", user.uid, "courses", courseId, "flashcardSets", newDeckId, "flashcards", newCardId)
+          setDocumentNonBlocking(cardRef, { ...card, id: newCardId, flashcardSetId: newDeckId }, { merge: true })
+        })
+      }
+      toast({ title: "deck added to library" })
+    }
+  } catch (e) {
+    console.error("Copy failed", e)
+    toast({ variant: "destructive", title: "failed to save" })
+  }
 }

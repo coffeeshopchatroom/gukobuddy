@@ -18,25 +18,15 @@ import {
   limit, 
   doc, 
   getDocs,
-  where
 } from "firebase/firestore"
 import { 
   Share2, 
   Plus, 
-  Layers, 
-  BookOpen, 
-  MessageCircle, 
-  Clock, 
-  ExternalLink,
-  ChevronRight,
-  MoreVertical,
-  Trash2,
-  Download,
   Loader2,
-  Sparkles,
-  ArrowRight
+  Download,
+  Trash2
 } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -127,57 +117,6 @@ export default function ShareHubPage() {
     }
   }
 
-  const handleCopyToLibrary = async (post: any) => {
-    if (!user || !db) return
-    
-    try {
-      if (post.type === 'notebook') {
-        const noteId = doc(collection(db, "temp")).id
-        const noteRef = doc(db, "users", user.uid, "notes", noteId)
-        setDocumentNonBlocking(noteRef, {
-          ...post.itemData,
-          id: noteId,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        }, { merge: true })
-        toast({ title: "page added to workspace" })
-      } else if (post.type === 'flashcardSet') {
-        const coursesRef = collection(db, "users", user.uid, "courses")
-        const coursesSnap = await getDocs(query(coursesRef, limit(1)))
-        let courseId = coursesSnap.docs[0]?.id
-        
-        if (!courseId) {
-          courseId = doc(collection(db, "temp")).id
-          setDocumentNonBlocking(doc(db, "users", user.uid, "courses", courseId), {
-            id: courseId,
-            name: "shared studies",
-            createdAt: new Date().toISOString()
-          }, { merge: true })
-        }
-
-        const newDeckId = doc(collection(db, "temp")).id
-        const deckRef = doc(db, "users", user.uid, "courses", courseId, "flashcardSets", newDeckId)
-        setDocumentNonBlocking(deckRef, {
-          ...post.itemData,
-          id: newDeckId,
-          courseId,
-          createdAt: new Date().toISOString()
-        }, { merge: true })
-
-        if (post.itemData.cards) {
-          post.itemData.cards.forEach((card: any) => {
-            const newCardId = doc(collection(db, "temp")).id
-            const cardRef = doc(db, "users", user.uid, "courses", courseId, "flashcardSets", newDeckId, "flashcards", newCardId)
-            setDocumentNonBlocking(cardRef, { ...card, id: newCardId, flashcardSetId: newDeckId }, { merge: true })
-          })
-        }
-        toast({ title: "deck added to library" })
-      }
-    } catch (e) {
-      console.error("Copy failed", e)
-    }
-  }
-
   const handleDeletePost = (postId: string) => {
     if (!db) return
     deleteDocumentNonBlocking(doc(db, "posts", postId))
@@ -185,7 +124,7 @@ export default function ShareHubPage() {
   }
 
   return (
-    <div className="space-y-8 animate-smooth-slow pb-20 max-w-5xl mx-auto">
+    <div className="space-y-8 animate-smooth-slow pb-20 max-w-6xl mx-auto">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="font-headline text-4xl font-bold tracking-tight text-foreground lowercase">share hub</h1>
@@ -194,7 +133,7 @@ export default function ShareHubPage() {
         
         <Dialog open={isPostDialogOpen} onOpenChange={setIsPostOpen}>
           <DialogTrigger asChild>
-            <Button className="rounded-[24px] h-14 px-8 font-bold gap-2 shadow-xl shadow-primary/20 hover:scale-105 transition-all lowercase">
+            <Button className="rounded-2xl h-14 px-8 font-bold gap-2 shadow-xl shadow-primary/20 hover:scale-105 transition-all lowercase">
               <Plus className="h-5 w-5" /> share something
             </Button>
           </DialogTrigger>
@@ -265,7 +204,7 @@ export default function ShareHubPage() {
         </Dialog>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {isPostsLoading ? (
           Array.from({ length: 6 }).map((_, i) => (
             <Card key={i} className="h-64 rounded-[32px] animate-pulse bg-muted/20 border-none" />
@@ -276,7 +215,6 @@ export default function ShareHubPage() {
             post={post} 
             isOwner={user?.uid === post.authorUid}
             onDelete={() => handleDeletePost(post.id)}
-            onCopy={() => handleCopyToLibrary(post)}
           />
         ))}
       </div>
@@ -296,15 +234,16 @@ export default function ShareHubPage() {
   )
 }
 
-function PostCard({ post, isOwner, onDelete, onCopy }: { post: any, isOwner: boolean, onDelete: () => void, onCopy: () => void }) {
+function PostCard({ post, isOwner, onDelete }: { post: any, isOwner: boolean, onDelete: () => void }) {
   const isThought = post.type === 'thought'
-  
+  const postVerb = isThought ? "posted a thought" : `shared a ${post.type === 'flashcardSet' ? 'flashcard deck' : post.type}`
+
   return (
-    <Card className="group border-none shadow-sm hover:shadow-xl transition-all duration-500 rounded-[32px] overflow-hidden bg-card flex flex-col h-full relative">
-      <CardHeader className="p-6 pb-2">
-        <div className="flex items-center justify-between">
+    <div className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col group border border-black/5">
+      <div className="p-6 flex flex-col flex-1 gap-6">
+        <div className="flex items-start justify-between">
           <Link href={`/u/${post.authorUsername}`} className="flex items-center gap-3 group/author">
-            <Avatar className="h-10 w-10 border-2 border-primary/20 shadow-sm transition-transform group-hover/author:scale-110">
+            <Avatar className="h-10 w-10 border border-black/5 shadow-sm rounded-none">
               <AvatarImage src={post.authorPhotoUrl} className="object-cover" />
               <AvatarFallback className="bg-primary/10 text-primary font-bold">{post.authorDisplayName[0]}</AvatarFallback>
             </Avatar>
@@ -313,50 +252,33 @@ function PostCard({ post, isOwner, onDelete, onCopy }: { post: any, isOwner: boo
                <p className="text-[10px] text-muted-foreground lowercase">@{post.authorUsername}</p>
             </div>
           </Link>
-          
-          <div className="flex items-center gap-1">
-             <Badge variant="secondary" className="rounded-full bg-muted/50 border-none text-[8px] font-bold uppercase tracking-widest px-2.5 py-0.5">
-               {isThought ? <MessageCircle className="h-2 w-2 mr-1" /> : post.type === 'flashcardSet' ? <Layers className="h-2 w-2 mr-1" /> : <BookOpen className="h-2 w-2 mr-1" />}
-               {post.type === 'flashcardSet' ? 'deck' : post.type}
-             </Badge>
-             {isOwner && (
-               <Button variant="ghost" size="icon" onClick={onDelete} className="h-8 w-8 rounded-full text-destructive/40 hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-opacity">
-                 <Trash2 className="h-4 w-4" />
-               </Button>
-             )}
-          </div>
+          {isOwner && (
+            <Button variant="ghost" size="icon" onClick={onDelete} className="h-8 w-8 rounded-full text-destructive/40 hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-opacity">
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
         </div>
-      </CardHeader>
 
-      <CardContent className="p-6 pt-2 flex-1 flex flex-col justify-between space-y-6">
-        <div className="space-y-4">
+        <div className="space-y-4 flex-1">
+          <div className="text-[11px] font-mono text-black/40 lowercase">
+            {postVerb}
+          </div>
           {isThought ? (
-            <p className="text-xl leading-relaxed lowercase text-foreground/80 italic line-clamp-6">"{post.content}"</p>
+            <p className="text-xl leading-relaxed lowercase text-black/80 font-medium italic line-clamp-6">"{post.content}"</p>
           ) : (
-            <div className="space-y-3 p-5 rounded-2xl bg-muted/30 border border-border/50">
+            <div className="space-y-3">
                <h3 className="font-bold text-xl lowercase leading-tight">{post.itemData?.name || post.itemData?.title}</h3>
-               <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">
-                  <span className="flex items-center gap-1"><Layers className="h-3 w-3" /> {post.itemData?.cards?.length || 0} items</span>
-                  <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> shared {new Date(post.createdAt).toLocaleDateString()}</span>
+               <div className="w-full aspect-video bg-[#F0F0F0] rounded-sm flex items-center justify-center p-4 border border-black/5">
+                  <span className="text-xs font-bold text-black/30 lowercase">preview available on profile</span>
                </div>
             </div>
           )}
         </div>
 
-        {!isThought && (
-          <Button 
-            onClick={onCopy}
-            className="w-full rounded-2xl py-6 font-bold gap-2 bg-primary/10 text-primary hover:bg-primary shadow-none hover:text-white transition-all lowercase"
-          >
-            <Download className="h-4 w-4" /> save to my library
-          </Button>
-        )}
-
-        <div className="pt-2 flex justify-between items-center opacity-30 text-[9px] font-bold uppercase tracking-widest">
+        <div className="pt-2 flex justify-between items-center opacity-30 text-[9px] font-bold uppercase tracking-widest border-t border-black/5">
            <span>{new Date(post.createdAt).toLocaleDateString()}</span>
-           <Sparkles className="h-3 w-3 text-primary animate-pulse" />
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }
