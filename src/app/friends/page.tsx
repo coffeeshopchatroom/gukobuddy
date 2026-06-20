@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -75,12 +76,12 @@ const PORTAL_BASE_H = 400;
 
 const DEFAULT_PROFILE_LAYOUT = {
   banner: { x: 0, y: 0, w: 600, h: 80, zIndex: 0 },
-  pfp: { x: 24, y: 40, w: 96, h: 96, zIndex: 2 },
-  name: { x: 136, y: 50, w: 280, h: 48, zIndex: 2 },
-  username: { x: 136, y: 98, w: 150, h: 24, zIndex: 2 },
-  bio: { x: 24, y: 200, w: 300, h: 60, zIndex: 2 },
-  addBtn: { x: 440, y: 50, w: 130, h: 44, zIndex: 2 },
-  aboutHeader: { x: 24, y: 175, w: 100, h: 20, zIndex: 2 }
+  pfp: { x: 24, y: 40, w: 140, h: 140, zIndex: 2 },
+  name: { x: 180, y: 100, w: 280, h: 48, zIndex: 2 },
+  username: { x: 180, y: 140, w: 150, h: 24, zIndex: 2 },
+  bio: { x: 24, y: 240, w: 552, h: 140, zIndex: 2 },
+  addBtn: { x: 440, y: 100, w: 130, h: 44, zIndex: 2 },
+  aboutHeader: { x: 24, y: 210, w: 100, h: 20, zIndex: 2 }
 };
 
 export default function FriendsPage() {
@@ -97,26 +98,22 @@ export default function FriendsPage() {
   const [activeFriend, setActiveFriend] = React.useState<any | null>(null)
   const [viewMode, setViewMode] = React.useState<'discovery' | 'chat'>('discovery')
 
-  // Current User's Profile
   const myProfileQuery = useMemoFirebase(() => user ? query(collection(db, 'users', user.uid, 'profile')) : null, [user, db])
   const { data: myProfile } = useCollection(myProfileQuery)
   const actualMyProfile = myProfile?.find(p => p.id === 'settings')
 
-  // Friends query (Accepted)
   const acceptedFriendsQuery = useMemoFirebase(() => {
     if (!user || !db) return null
     return query(collection(db, "users", user.uid, "friends"), where("status", "==", "accepted"))
   }, [user, db])
   const { data: acceptedFriends, isLoading: isFriendsLoading } = useCollection(acceptedFriendsQuery)
 
-  // Pending Requests query
   const incomingRequestsQuery = useMemoFirebase(() => {
     if (!user || !db) return null
     return query(collection(db, "users", user.uid, "friends"), where("status", "==", "pending_in"))
   }, [user, db])
   const { data: incomingRequests } = useCollection(incomingRequestsQuery)
 
-  // My Requests query
   const myRequestsQuery = useMemoFirebase(() => {
     if (!user || !db) return null
     return query(collection(db, "users", user.uid, "friends"))
@@ -220,7 +217,6 @@ export default function FriendsPage() {
       </div>
 
       <div className="flex-1 grid grid-cols-12 gap-8 overflow-hidden pb-4">
-        {/* Sidebar: Friends & Search */}
         <Card className="col-span-12 lg:col-span-4 border-none shadow-sm rounded-[40px] bg-card flex flex-col overflow-hidden">
           <div className="p-6 border-b space-y-6">
             <div className="relative group">
@@ -278,7 +274,6 @@ export default function FriendsPage() {
           </ScrollArea>
         </Card>
 
-        {/* Main Content: Discovery or Chat */}
         <Card className="col-span-12 lg:col-span-8 border-none shadow-sm rounded-[40px] bg-card overflow-hidden flex flex-col">
           {viewMode === 'discovery' ? (
             <div className="flex-1 flex flex-col p-8 overflow-y-auto custom-scrollbar bg-muted/10">
@@ -286,19 +281,13 @@ export default function FriendsPage() {
                 <div className="space-y-6 animate-in fade-in">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {searchResults.map(res => (
-                      <UserSearchCard key={res.uid} user={res} onClick={() => setSelectedUser(res)} />
+                      <UserPortalSearchCard key={res.uid} user={res} onClick={() => setSelectedUser(res)} />
                     ))}
                   </div>
                   {hasSearched && searchResults.length === 0 && !isSearching && (
                     <div className="flex flex-col items-center justify-center py-40 gap-4 text-muted-foreground">
                       <UserPlus className="h-12 w-12 opacity-10" />
                       <p className="lowercase">no students found matching "{searchQuery}"</p>
-                    </div>
-                  )}
-                  {!hasSearched && (
-                    <div className="flex flex-col items-center justify-center py-40 gap-4 text-muted-foreground">
-                      <Users className="h-12 w-12 opacity-10" />
-                      <p className="lowercase">search for usernames to build your network.</p>
                     </div>
                   )}
                 </div>
@@ -365,7 +354,7 @@ export default function FriendsPage() {
   )
 }
 
-function UserSearchCard({ user, onClick }: { user: any, onClick: () => void }) {
+function UserPortalSearchCard({ user, onClick }: { user: any, onClick: () => void }) {
   const primary = user.theme?.customColors?.primary || '#A7C4A0'
   const background = user.theme?.customColors?.background || '#FFFFFF'
   
@@ -425,7 +414,6 @@ function ImmersiveProfilePreview({ profile, onAction, relationshipStatus }: { pr
 
   const theme = profile.theme || {}
   const layout = profile.layout || DEFAULT_PROFILE_LAYOUT;
-  const stickers = profile.stickers || []
   const customColors = theme.customColors || { primary: '#A7C4A0', background: '#FFFFFF', foreground: '#1a1c19' }
 
   const getColorStyle = (val: any) => {
@@ -475,17 +463,11 @@ function ImmersiveProfilePreview({ profile, onAction, relationshipStatus }: { pr
             fontFamily: profile.font || 'Plus Jakarta Sans',
           }}
         >
-          {/* Banner */}
-          <div 
-            className="absolute"
-            style={{ 
-              left: layout.banner?.x ?? 0, 
-              top: layout.banner?.y ?? 0,
-              width: layout.banner?.w ?? '100%',
-              height: layout.banner?.h ?? 120,
-              zIndex: layout.banner?.zIndex ?? 0
-            }}
-          >
+          <div className="absolute" style={{ 
+            left: layout.banner?.x ?? 0, top: layout.banner?.y ?? 0,
+            width: layout.banner?.w ?? '100%', height: layout.banner?.h ?? 80,
+            zIndex: layout.banner?.zIndex ?? 0
+          }}>
             {profile.bannerUrl ? (
               <img src={profile.bannerUrl} className="w-full h-full object-cover" alt="banner" />
             ) : (
@@ -493,20 +475,13 @@ function ImmersiveProfilePreview({ profile, onAction, relationshipStatus }: { pr
             )}
           </div>
           
-          {/* PFP */}
-          <div 
-            className="absolute overflow-hidden flex items-center justify-center"
-            style={{ 
-              left: layout.pfp?.x ?? 40, 
-              top: layout.pfp?.y ?? 80,
-              width: layout.pfp?.w ?? 140,
-              height: layout.pfp?.h ?? 140,
-              borderRadius: cornerRadius,
-              zIndex: layout.pfp?.zIndex ?? 2,
-              ...getTargetBorderStyle('profile', 'rgba(0,0,0,0.1)'),
-              backgroundColor: 'rgba(0,0,0,0.1)'
-            }}
-          >
+          <div className="absolute overflow-hidden flex items-center justify-center" style={{ 
+            left: layout.pfp?.x ?? 24, top: layout.pfp?.y ?? 40,
+            width: layout.pfp?.w ?? 140, height: layout.pfp?.h ?? 140,
+            borderRadius: cornerRadius, zIndex: layout.pfp?.zIndex ?? 2,
+            ...getTargetBorderStyle('profile', 'rgba(0,0,0,0.1)'),
+            backgroundColor: 'rgba(0,0,0,0.1)'
+          }}>
             {profile.photoUrl ? (
               <img src={profile.photoUrl} className="w-full h-full object-cover" alt="pfp" />
             ) : (
@@ -514,56 +489,36 @@ function ImmersiveProfilePreview({ profile, onAction, relationshipStatus }: { pr
             )}
           </div>
 
-          {/* Name */}
-          <div 
-            className="absolute flex flex-col justify-center"
-            style={{ 
-              left: layout.name?.x ?? 200, 
-              top: layout.name?.y ?? 100,
-              width: layout.name?.w ?? 400,
-              height: layout.name?.h ?? 60,
-              zIndex: layout.name?.zIndex ?? 2,
-              color: getColorStyle(theme.text || customColors.foreground)
-            }}
-          >
-            <h4 className="text-3xl font-bold leading-tight lowercase truncate">{profile.displayName || 'student'}</h4>
+          <div className="absolute flex flex-col justify-center" style={{ 
+            left: layout.name?.x ?? 180, top: layout.name?.y ?? 100,
+            width: layout.name?.w ?? 400, height: layout.name?.h ?? 48,
+            zIndex: layout.name?.zIndex ?? 2,
+            color: getColorStyle(theme.text || customColors.foreground)
+          }}>
+            <h4 className="text-4xl font-bold leading-tight lowercase truncate">{profile.displayName || 'student'}</h4>
           </div>
 
-          {/* Username */}
-          <div 
-            className="absolute"
-            style={{ 
-              left: layout.username?.x ?? 200, 
-              top: layout.username?.y ?? 160,
-              width: layout.username?.w ?? 200,
-              height: layout.username?.h ?? 30,
-              zIndex: layout.username?.zIndex ?? 2,
-              color: getColorStyle(theme.text || customColors.foreground),
-              opacity: 0.6
-            }}
-          >
+          <div className="absolute" style={{ 
+            left: layout.username?.x ?? 180, top: layout.username?.y ?? 145,
+            width: layout.username?.w ?? 200, height: layout.username?.h ?? 24,
+            zIndex: layout.username?.zIndex ?? 2,
+            color: getColorStyle(theme.text || customColors.foreground), opacity: 0.6
+          }}>
             <p className="text-xl lowercase">@{profile.username}</p>
           </div>
 
-          {/* Add Friend Button */}
-          <div 
-            className="absolute"
-            style={{ 
-              left: layout.addBtn?.x ?? 440, 
-              top: layout.addBtn?.y ?? 100,
-              width: layout.addBtn?.w ?? 140,
-              height: layout.addBtn?.h ?? 50,
-              zIndex: layout.addBtn?.zIndex ?? 2
-            }}
-          >
+          <div className="absolute" style={{ 
+            left: layout.addBtn?.x ?? 440, top: layout.addBtn?.y ?? 100,
+            width: layout.addBtn?.w ?? 140, height: layout.addBtn?.h ?? 44,
+            zIndex: layout.addBtn?.zIndex ?? 2
+          }}>
             <Button 
               onClick={(e) => { e.stopPropagation(); onAction(); }}
               disabled={relationshipStatus !== undefined}
               className="w-full h-full font-bold lowercase border-none shadow-xl transition-all"
               style={{ 
                 background: getColorStyle(theme.buttons || customColors.primary),
-                color: 'white',
-                borderRadius: cornerRadius,
+                color: 'white', borderRadius: cornerRadius,
                 ...getTargetBorderStyle('add', getColorStyle(theme.buttons || customColors.primary))
               }}
             >
@@ -571,42 +526,39 @@ function ImmersiveProfilePreview({ profile, onAction, relationshipStatus }: { pr
             </Button>
           </div>
 
-          {/* Bio */}
-          <div 
-            className="absolute"
-            style={{ 
-              left: layout.bio?.x ?? 40, 
-              top: layout.bio?.y ?? 250,
-              width: layout.bio?.w ?? 500,
-              height: layout.bio?.h ?? 100,
-              zIndex: layout.bio?.zIndex ?? 2,
-              color: getColorStyle(theme.text || customColors.foreground),
-            }}
-          >
-            <p className="text-lg leading-relaxed lowercase opacity-90 italic line-clamp-4">
+          <div className="absolute" style={{ 
+            left: layout.aboutHeader?.x ?? 24, top: layout.aboutHeader?.y ?? 210,
+            width: layout.aboutHeader?.w ?? 100, height: layout.aboutHeader?.h ?? 20,
+            zIndex: layout.aboutHeader?.zIndex ?? 2,
+            color: getColorStyle(theme.text || customColors.foreground), opacity: 0.8
+          }}>
+             <span className="text-lg font-bold lowercase">about me:</span>
+          </div>
+
+          <div className="absolute" style={{ 
+            left: layout.bio?.x ?? 24, top: layout.bio?.y ?? 240,
+            width: layout.bio?.w ?? 552, height: layout.bio?.h ?? 140,
+            zIndex: layout.bio?.zIndex ?? 2,
+            color: getColorStyle(theme.text || customColors.foreground),
+          }}>
+            <p className="text-2xl leading-relaxed lowercase opacity-90 italic line-clamp-4">
               {profile.bio || 'this student has not shared a bio yet.'}
             </p>
           </div>
 
-          {/* Stickers */}
-          {stickers.map((sticker: any) => (
-            <div 
-              key={sticker.id}
-              className="absolute pointer-events-none"
-              style={{
+          {(profile.stickers || []).map((sticker: any) => (
+            <div key={sticker.id} className="absolute pointer-events-none" style={{
                 left: sticker.x, top: sticker.y, width: sticker.w, height: sticker.h,
-                zIndex: sticker.zIndex,
-                transform: `rotate(${sticker.rotation || 0}deg)`
-              }}
-            >
-              <img src={sticker.url} className="w-full h-full object-fill" alt="sticker" />
+                zIndex: sticker.zIndex, transform: `rotate(${sticker.rotation || 0}deg)`
+              }}>
+                <img src={sticker.url} className="w-full h-full object-fill" alt="sticker" />
             </div>
           ))}
         </div>
       </div>
       
       <Button asChild className="w-full h-16 rounded-[24px] font-bold lowercase gap-2 shadow-xl shadow-primary/20">
-        <Link href={`/u/${profile.username}`}>view full profile & posts</Link>
+        <Link href={`/u/${profile.username}`}>view full profile & logs</Link>
       </Button>
     </div>
   );
@@ -628,7 +580,6 @@ function ChatInterface({ friend, user, db, actualMyProfile }: any) {
   const messagesQuery = useMemoFirebase(() => query(collection(db, "chats", chatId, "messages"), orderBy("createdAt", "asc")), [chatId, db])
   const { data: messages } = useCollection(messagesQuery)
 
-  // Data for sharing
   const coursesQuery = useMemoFirebase(() => query(collection(db, "users", user.uid, "courses")), [user, db])
   const { data: courses } = useCollection(coursesQuery)
   const notesQuery = useMemoFirebase(() => query(collection(db, "users", user.uid, "notes"), orderBy("updatedAt", "desc")), [user, db])
@@ -669,14 +620,13 @@ function ChatInterface({ friend, user, db, actualMyProfile }: any) {
     if (type === 'text') {
       messageData.text = inputText;
     } else if (type === 'gif') {
-      messageData.text = content; // content is the GIF URL
+      messageData.text = content;
     } else if (type === 'share-invite') {
       messageData.shareData = content;
       messageData.text = "";
     }
 
     setDocumentNonBlocking(msgRef, messageData, { merge: true });
-
     if (type === 'text') setInputText("");
   };
 
@@ -757,7 +707,7 @@ function ChatInterface({ friend, user, db, actualMyProfile }: any) {
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
           }, { merge: true });
-          toast({ title: "Page added!", description: "Check your workspace." });
+          toast({ title: "Page added!" });
         } else if (msg.shareData.itemType === 'task') {
           const newTaskId = doc(collection(db, "temp")).id;
           const newTaskRef = doc(db, "users", user.uid, "tasks", newTaskId);
@@ -766,7 +716,7 @@ function ChatInterface({ friend, user, db, actualMyProfile }: any) {
             id: newTaskId,
             createdAt: new Date().toISOString()
           }, { merge: true });
-          toast({ title: "Task added!", description: "Check your manager." });
+          toast({ title: "Task added!" });
         } else if (msg.shareData.itemType === 'flashcardSet') {
           const coursesRef = collection(db, "users", user.uid, "courses");
           const coursesSnap = await getDocs(query(coursesRef, limit(1)));
@@ -802,15 +752,14 @@ function ChatInterface({ friend, user, db, actualMyProfile }: any) {
                }, { merge: true });
             });
           }
-
-          toast({ title: "Deck copied!", description: "Added to your flashcards." });
+          toast({ title: "Deck copied!" });
         }
       } else {
-        toast({ title: "Joined collaboration!", description: `You now have access to ${msg.shareData.itemName}.` });
+        toast({ title: "Joined collaboration!" });
       }
     } catch (error) {
       console.error("Failed to accept invite", error);
-      toast({ variant: "destructive", title: "Action failed", description: "Could not process the invite." });
+      toast({ variant: "destructive", title: "Action failed" });
     } finally {
       setIsAccepting(null);
     }
@@ -847,9 +796,7 @@ function ChatInterface({ friend, user, db, actualMyProfile }: any) {
                 msg.type === 'gif' ? '' : (msg.senderId === user.uid ? "bg-primary text-primary-foreground" : "bg-muted text-foreground")
               )}>
                 {msg.type === 'text' ? (
-                  <div className="p-4 px-6 text-sm leading-relaxed lowercase">
-                    {msg.text}
-                  </div>
+                  <div className="p-4 px-6 text-sm leading-relaxed lowercase">{msg.text}</div>
                 ) : msg.type === 'gif' ? (
                   <img src={msg.text} alt="gif" className="rounded-[24px] max-w-[200px] h-auto" />
                 ) : (
@@ -865,14 +812,11 @@ function ChatInterface({ friend, user, db, actualMyProfile }: any) {
                           <h5 className="font-bold text-sm truncate lowercase">{msg.shareData.itemName}</h5>
                        </div>
                     </div>
-                    <p className="text-xs text-muted-foreground lowercase leading-relaxed">
-                      {msg.senderId === user.uid ? 'you sent an invite.' : `${friend.displayName} wants to ${msg.shareData.mode === 'collaborate' ? 'collaborate' : 'share this'} with you.`}
-                    </p>
                     {msg.senderId !== user.uid && (
                       <Button 
                         disabled={isAccepting === msg.id}
                         onClick={() => handleAcceptInvite(msg)}
-                        className="w-full rounded-xl h-10 font-bold lowercase bg-primary text-primary-foreground shadow-lg shadow-primary/10"
+                        className="w-full rounded-xl h-10 font-bold lowercase bg-primary text-primary-foreground shadow-lg"
                       >
                         {isAccepting === msg.id ? <Loader2 className="h-4 w-4 animate-spin" /> : 'accept invite'}
                       </Button>
@@ -888,21 +832,12 @@ function ChatInterface({ friend, user, db, actualMyProfile }: any) {
 
       <div className="p-6 bg-muted/5 border-t">
         <div className="flex items-center gap-3 max-w-4xl mx-auto">
-          <Button 
-            variant="outline" 
-            size="icon" 
-            className="h-12 w-12 rounded-2xl border-none bg-muted/50 hover:bg-primary/20 hover:text-primary transition-all shrink-0"
-            onClick={() => setShowSharePicker(true)}
-          >
+          <Button variant="outline" size="icon" className="h-12 w-12 rounded-2xl border-none bg-muted/50 hover:bg-primary/20 transition-all shrink-0" onClick={() => setShowSharePicker(true)}>
             <Plus className="h-6 w-6" />
           </Button>
           <Popover open={showGiphyPicker} onOpenChange={setShowGiphyPicker}>
             <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-12 w-12 rounded-2xl border-none bg-muted/50 hover:bg-primary/20 hover:text-primary transition-all shrink-0"
-              >
+              <Button variant="outline" size="icon" className="h-12 w-12 rounded-2xl border-none bg-muted/50 hover:bg-primary/20 transition-all shrink-0">
                 <ImageIcon className="h-6 w-6" />
               </Button>
             </PopoverTrigger>
@@ -919,10 +854,7 @@ function ChatInterface({ friend, user, db, actualMyProfile }: any) {
               className="h-12 rounded-2xl bg-muted/50 border-none px-6 lowercase no-focus-ring"
             />
           </div>
-          <Button 
-            onClick={() => handleSendMessage('text', inputText)}
-            className="h-12 w-12 rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95 shrink-0"
-          >
+          <Button onClick={() => handleSendMessage('text', inputText)} className="h-12 w-12 rounded-2xl bg-primary text-primary-foreground shadow-lg shrink-0">
             <Send className="h-5 w-5" />
           </Button>
         </div>
@@ -932,7 +864,6 @@ function ChatInterface({ friend, user, db, actualMyProfile }: any) {
         <DialogContent className="rounded-[32px] border-none shadow-2xl bg-card p-8 sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="font-headline text-2xl lowercase">share to chat</DialogTitle>
-            <DialogDescription className="lowercase">{!shareCategory ? "what would you like to share?" : `select a ${shareCategory}`}</DialogDescription>
           </DialogHeader>
           {!shareCategory ? (
             <div className="grid gap-3 py-6">
@@ -945,13 +876,11 @@ function ChatInterface({ friend, user, db, actualMyProfile }: any) {
               <Button variant="ghost" size="sm" onClick={() => setShareCategory(null)} className="mb-2 lowercase text-[10px] hover:bg-muted"><ChevronLeft className="h-3 w-3" /> back</Button>
               <ScrollArea className="h-64 pr-4">
                 <div className="space-y-2">
-                  {getItems().length > 0 ? getItems().map(item => (
+                  {getItems().map(item => (
                     <button key={item.id} onClick={() => { setSelectedItem(item); setShowConfirmModal(true); setShowSharePicker(false); }} className="w-full text-left p-4 rounded-2xl hover:bg-primary/5 border border-transparent hover:border-primary/20 transition-all lowercase text-sm font-bold truncate">
                       {item.title || item.name}
                     </button>
-                  )) : (
-                    <p className="text-center py-10 text-xs text-muted-foreground italic lowercase">no items found in this category.</p>
-                  )}
+                  ))}
                 </div>
               </ScrollArea>
             </div>
@@ -966,24 +895,13 @@ function ChatInterface({ friend, user, db, actualMyProfile }: any) {
               {isSharing ? <Loader2 className="h-8 w-8 animate-spin text-primary" /> : <Share2 className="h-8 w-8 text-primary" />}
             </div>
             <DialogTitle className="font-headline text-3xl lowercase">sharing mode</DialogTitle>
-            <DialogDescription className="lowercase">how should {friend.displayName} receive this?</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-8">
-            <Button 
-              disabled={isSharing}
-              onClick={() => handleConfirmShare('copy')} 
-              className="h-24 rounded-3xl flex flex-col gap-1 border-2 border-muted hover:border-primary transition-all bg-card text-foreground group"
-            >
+            <Button disabled={isSharing} onClick={() => handleConfirmShare('copy')} className="h-24 rounded-3xl flex flex-col gap-1 border-2 border-muted hover:border-primary transition-all bg-card text-foreground group">
               <span className="font-bold text-lg lowercase group-hover:text-primary">send a copy</span>
-              <span className="text-[10px] opacity-40 lowercase">they get their own version to edit</span>
             </Button>
-            <Button 
-              disabled={isSharing}
-              onClick={() => handleConfirmShare('collaborate')} 
-              className="h-24 rounded-3xl flex flex-col gap-1 border-2 border-muted hover:border-accent transition-all bg-card text-foreground group"
-            >
+            <Button disabled={isSharing} onClick={() => handleConfirmShare('collaborate')} className="h-24 rounded-3xl flex flex-col gap-1 border-2 border-muted hover:border-accent transition-all bg-card text-foreground group">
               <span className="font-bold text-lg lowercase group-hover:text-accent-foreground">collaborate</span>
-              <span className="text-[10px] opacity-40 lowercase">invite them to the same file</span>
             </Button>
           </div>
         </DialogContent>

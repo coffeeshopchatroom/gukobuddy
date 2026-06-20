@@ -48,12 +48,12 @@ const PORTAL_BASE_H = 400;
 
 const DEFAULT_PROFILE_LAYOUT = {
   banner: { x: 0, y: 0, w: 600, h: 80, zIndex: 0 },
-  pfp: { x: 24, y: 40, w: 96, h: 96, zIndex: 2 },
-  name: { x: 136, y: 50, w: 280, h: 48, zIndex: 2 },
-  username: { x: 136, y: 98, w: 150, h: 24, zIndex: 2 },
-  bio: { x: 24, y: 200, w: 300, h: 60, zIndex: 2 },
-  addBtn: { x: 440, y: 50, w: 130, h: 44, zIndex: 2 },
-  aboutHeader: { x: 24, y: 175, w: 100, h: 20, zIndex: 2 }
+  pfp: { x: 24, y: 40, w: 140, h: 140, zIndex: 2 },
+  name: { x: 180, y: 100, w: 280, h: 48, zIndex: 2 },
+  username: { x: 180, y: 140, w: 150, h: 24, zIndex: 2 },
+  bio: { x: 24, y: 240, w: 552, h: 140, zIndex: 2 },
+  addBtn: { x: 440, y: 100, w: 130, h: 44, zIndex: 2 },
+  aboutHeader: { x: 24, y: 210, w: 100, h: 20, zIndex: 2 }
 };
 
 export default function PublicProfilePage() {
@@ -73,7 +73,6 @@ export default function PublicProfilePage() {
       if (!db || !username) return
       setIsLoading(true)
       try {
-        // Correct lookup: Search the profile collection group for the username
         const q = query(
           collectionGroup(db, "profile"),
           where("username", "==", (username as string).toLowerCase())
@@ -82,7 +81,6 @@ export default function PublicProfilePage() {
         const result = await getDocs(q)
         if (!result.empty) {
           const profileDoc = result.docs[0]
-          // Parent of 'profile' is the userId document
           const uid = profileDoc.ref.parent.parent?.id
           setProfile({ ...profileDoc.data(), uid })
         }
@@ -131,7 +129,7 @@ export default function PublicProfilePage() {
 
     setDocumentNonBlocking(theirFriendRef, {
       uid: currentUser.uid,
-      username: currentUser.displayName || 'student', // fallback
+      username: currentUser.displayName || 'student',
       displayName: currentUser.displayName || 'student',
       photoUrl: currentUser.photoURL || '',
       status: 'pending_in',
@@ -194,8 +192,8 @@ export default function PublicProfilePage() {
   return (
     <div className="min-h-screen space-y-12 animate-smooth-slow pb-40">
       <div className="max-w-4xl mx-auto px-6 pt-12">
-        <Button variant="ghost" onClick={() => router.back()} className="rounded-xl h-10 px-4 mb-8 lowercase gap-2 text-muted-foreground hover:text-foreground">
-          <ArrowLeft size={18} /> back
+        <Button variant="ghost" onClick={() => router.push('/share-hub')} className="rounded-xl h-10 px-4 mb-8 lowercase gap-2 text-muted-foreground hover:text-foreground">
+          <ArrowLeft size={18} /> share hub
         </Button>
 
         <div 
@@ -219,7 +217,7 @@ export default function PublicProfilePage() {
             {/* Banner */}
             <div className="absolute" style={{ 
               left: layout.banner?.x ?? 0, top: layout.banner?.y ?? 0, 
-              width: layout.banner?.w ?? '100%', height: layout.banner?.h ?? 120, 
+              width: layout.banner?.w ?? '100%', height: layout.banner?.h ?? 80, 
               zIndex: layout.banner?.zIndex ?? 0 
             }}>
               {profile.bannerUrl ? (
@@ -231,7 +229,7 @@ export default function PublicProfilePage() {
             
             {/* PFP */}
             <div className="absolute overflow-hidden flex items-center justify-center" style={{ 
-              left: layout.pfp?.x ?? 40, top: layout.pfp?.y ?? 80,
+              left: layout.pfp?.x ?? 24, top: layout.pfp?.y ?? 40,
               width: layout.pfp?.w ?? 140, height: layout.pfp?.h ?? 140,
               borderRadius: cornerRadius, zIndex: layout.pfp?.zIndex ?? 2,
               ...getTargetBorderStyle('profile', 'rgba(0,0,0,0.1)'),
@@ -246,18 +244,18 @@ export default function PublicProfilePage() {
 
             {/* Name */}
             <div className="absolute flex flex-col justify-center" style={{ 
-              left: layout.name?.x ?? 200, top: layout.name?.y ?? 100,
-              width: layout.name?.w ?? 400, height: layout.name?.h ?? 60,
+              left: layout.name?.x ?? 180, top: layout.name?.y ?? 100,
+              width: layout.name?.w ?? 400, height: layout.name?.h ?? 48,
               zIndex: layout.name?.zIndex ?? 2,
               color: getColorStyle(theme.text || customColors.foreground)
             }}>
-              <h4 className="text-3xl font-bold leading-tight lowercase truncate">{profile.displayName || 'student'}</h4>
+              <h4 className="text-4xl font-bold leading-tight lowercase truncate">{profile.displayName || 'student'}</h4>
             </div>
 
             {/* Username */}
             <div className="absolute" style={{ 
-              left: layout.username?.x ?? 200, top: layout.username?.y ?? 160,
-              width: layout.username?.w ?? 200, height: layout.username?.h ?? 30,
+              left: layout.username?.x ?? 180, top: layout.username?.y ?? 145,
+              width: layout.username?.w ?? 200, height: layout.username?.h ?? 24,
               zIndex: layout.username?.zIndex ?? 2,
               color: getColorStyle(theme.text || customColors.foreground), opacity: 0.6
             }}>
@@ -267,7 +265,7 @@ export default function PublicProfilePage() {
             {/* Actions */}
             <div className="absolute flex gap-3" style={{ 
               left: layout.addBtn?.x ?? 440, top: layout.addBtn?.y ?? 100,
-              width: layout.addBtn?.w ?? 200, height: layout.addBtn?.h ?? 50,
+              width: layout.addBtn?.w ?? 140, height: layout.addBtn?.h ?? 44,
               zIndex: layout.addBtn?.zIndex ?? 2
             }}>
               <Button 
@@ -283,14 +281,24 @@ export default function PublicProfilePage() {
               </Button>
             </div>
 
+            {/* About Label */}
+            <div className="absolute" style={{ 
+              left: layout.aboutHeader?.x ?? 24, top: layout.aboutHeader?.y ?? 210,
+              width: layout.aboutHeader?.w ?? 100, height: layout.aboutHeader?.h ?? 20,
+              zIndex: layout.aboutHeader?.zIndex ?? 2,
+              color: getColorStyle(theme.text || customColors.foreground), opacity: 0.8
+            }}>
+               <span className="text-lg font-bold lowercase">about me:</span>
+            </div>
+
             {/* Bio */}
             <div className="absolute" style={{ 
-              left: layout.bio?.x ?? 40, top: layout.bio?.y ?? 250,
-              width: layout.bio?.w ?? 500, height: layout.bio?.h ?? 100,
+              left: layout.bio?.x ?? 24, top: layout.bio?.y ?? 240,
+              width: layout.bio?.w ?? 552, height: layout.bio?.h ?? 140,
               zIndex: layout.bio?.zIndex ?? 2,
               color: getColorStyle(theme.text || customColors.foreground),
             }}>
-              <p className="text-lg leading-relaxed lowercase opacity-90 italic line-clamp-4">
+              <p className="text-2xl leading-relaxed lowercase opacity-90 italic line-clamp-4">
                 {profile.bio || 'this student has not shared a bio yet.'}
               </p>
             </div>
@@ -311,7 +319,7 @@ export default function PublicProfilePage() {
       <div className="max-w-4xl mx-auto px-6 space-y-12">
         <div className="flex items-center justify-between border-b pb-4">
           <h2 className="text-3xl font-headline font-bold lowercase flex items-center gap-2">
-            <Sparkles className="h-6 w-6 text-primary" /> student logs
+            <Sparkles className="h-6 w-6 text-primary" /> activity feed
           </h2>
           <Badge variant="secondary" className="rounded-full px-4 font-bold lowercase">
             {userPosts?.length || 0} posts
@@ -361,16 +369,13 @@ function ProfilePostItem({ post }: { post: any }) {
         </div>
 
         {isThought ? (
-          <p className="text-xl md:text-2xl leading-relaxed lowercase text-foreground/80 italic">"{post.content}"</p>
+          <p className="text-2xl md:text-3xl leading-relaxed lowercase text-foreground/80 italic">"{post.content}"</p>
         ) : (
           <div className="p-6 rounded-2xl bg-muted/30 border border-border/50 space-y-4">
              <h3 className="font-bold text-2xl lowercase">{post.itemData?.name || post.itemData?.title}</h3>
              <div className="flex gap-4">
                 <Badge variant="outline" className="rounded-full px-3 text-[10px] font-bold lowercase bg-background border-none shadow-sm">
                    {post.itemData?.cards?.length || 0} items
-                </Badge>
-                <Badge variant="outline" className="rounded-full px-3 text-[10px] font-bold lowercase bg-background border-none shadow-sm">
-                   public
                 </Badge>
              </div>
           </div>

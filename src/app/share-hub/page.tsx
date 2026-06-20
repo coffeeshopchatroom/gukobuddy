@@ -53,6 +53,7 @@ import { cn } from "@/lib/utils"
 import Link from "next/link"
 import { useToast } from "@/hooks/use-toast"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { Label } from "@/components/ui/label"
 
 export default function ShareHubPage() {
   const { user } = useUser()
@@ -65,15 +66,12 @@ export default function ShareHubPage() {
   const [selectedItem, setSelectedItem] = React.useState<any>(null)
   const [isPosting, setIsPosting] = React.useState(false)
 
-  // Profile data
   const profileRef = useMemoFirebase(() => user ? doc(db, 'users', user.uid, 'profile', 'settings') : null, [user, db])
   const { data: profile } = useDoc(profileRef)
 
-  // Posts Feed
   const postsQuery = useMemoFirebase(() => query(collection(db, "posts"), orderBy("createdAt", "desc"), limit(20)), [db])
   const { data: posts, isLoading: isPostsLoading } = useCollection(postsQuery)
 
-  // Personal data for sharing
   const coursesQuery = useMemoFirebase(() => user ? query(collection(db, "users", user.uid, "courses")) : null, [user, db])
   const { data: courses } = useCollection(coursesQuery)
   
@@ -333,12 +331,12 @@ function PostCard({ post, isOwner, onDelete, onCopy }: { post: any, isOwner: boo
       <CardContent className="p-6 pt-2 flex-1 flex flex-col justify-between space-y-6">
         <div className="space-y-4">
           {isThought ? (
-            <p className="text-lg leading-relaxed lowercase text-foreground/80 italic line-clamp-6">"{post.content}"</p>
+            <p className="text-xl leading-relaxed lowercase text-foreground/80 italic line-clamp-6">"{post.content}"</p>
           ) : (
             <div className="space-y-3 p-5 rounded-2xl bg-muted/30 border border-border/50">
                <h3 className="font-bold text-xl lowercase leading-tight">{post.itemData?.name || post.itemData?.title}</h3>
                <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">
-                  <span className="flex items-center gap-1"><Layers className="h-3 w-3" /> {post.itemData?.cards?.length || 0} cards</span>
+                  <span className="flex items-center gap-1"><Layers className="h-3 w-3" /> {post.itemData?.cards?.length || 0} items</span>
                   <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> shared {new Date(post.createdAt).toLocaleDateString()}</span>
                </div>
             </div>
