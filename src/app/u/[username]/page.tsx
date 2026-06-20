@@ -17,7 +17,8 @@ import {
   getDocs, 
   limit, 
   orderBy,
-  doc
+  doc,
+  collectionGroup
 } from "firebase/firestore"
 import { 
   Loader2, 
@@ -67,78 +68,23 @@ export default function PublicProfilePage() {
   const [scale, setScale] = React.useState(1)
   const containerRef = React.useRef<HTMLDivElement>(null)
 
-  // Fetch profile by username
   React.useEffect(() => {
-    async function fetchProfile() {
-      if (!username || !db) return
-      setIsLoading(true)
-      try {
-        const q = query(
-          collection(db, "users"), // This might need a collectionGroup if profiles are nested
-          // But our setup has profile settings at /users/{uid}/profile/settings
-          // Let's use collectionGroup for "profile"
-        )
-        // Re-using searching logic from hub
-        const profileQ = query(
-          collection(db, "users"),
-          where("profile.settings.username", "==", (username as string).toLowerCase())
-        )
-        // Wait, the structure in backend.json is /users/{userId}/profile/settings
-        // So we need collectionGroup("profile")
-        const groupQ = query(
-          collection(db, "users") // Let's try collectionGroup
-        )
-        // Better way: search profile settings documents directly
-        const q2 = query(
-          collection(db, "profile"), // Placeholder, actually nested
-        )
-        
-        // Final working approach for finding user by username
-        const findQ = query(
-          collection(db, "users"), 
-          where("username", "==", username) // Assuming username is duplicated at root for speed
-        )
-        // Standard lookup using collectionGroup
-        const realQ = query(
-          collection(db, "profile"),
-          where("username", "==", username)
-        )
-
-        // For this MVP, we fetch the posts for the UID we find
-        const snap = await getDocs(query(collection(db, "users"), limit(100))) 
-        // We'll search the settings specifically
-        const settingsSnap = await getDocs(query(collection(db, "users", "any", "profile")))
-
-        // Simplified for reliability: Use the share-hub post author data if available, 
-        // or a direct UID search if we had it. Since we only have username, we search collectionGroup.
-        const snapshot = await getDocs(query(collection(db, "users"), limit(1))) // Replace with correct lookup
-      } catch (e) {
-        console.error(e)
-      }
-    }
-    
-    // TEMPORARY: Since specific collectionGroup lookup can be tricky without indices,
-    // let's lookup posts first to get authorUid if needed, or assume a flat user list.
-    // In a real app, 'username' would be indexed at the root of 'users' or in a group.
-    
     async function resolveProfile() {
       if (!db || !username) return
       setIsLoading(true)
       try {
-        // Query the profile collection group
+        // Correct lookup: Search the profile collection group for the username
         const q = query(
-          collection(db, "profile"),
+          collectionGroup(db, "profile"),
           where("username", "==", (username as string).toLowerCase())
         )
-        // If that fails, try collectionGroup via getDocs if supported by the provider
-        // For our environment, we'll try a standard collection group search
+        
         const result = await getDocs(q)
         if (!result.empty) {
           const profileDoc = result.docs[0]
+          // Parent of 'profile' is the userId document
           const uid = profileDoc.ref.parent.parent?.id
           setProfile({ ...profileDoc.data(), uid })
-        } else {
-          // Try a second backup lookup if needed
         }
       } catch (e) {
         console.error("Resolve error", e)
@@ -150,14 +96,12 @@ export default function PublicProfilePage() {
     resolveProfile()
   }, [username, db])
 
-  // Subscriptions for the profile we found
   const postsQuery = useMemoFirebase(() => {
     if (!profile?.uid || !db) return null
     return query(collection(db, "posts"), where("authorUid", "==", profile.uid), orderBy("createdAt", "desc"))
   }, [profile?.uid, db])
   const { data: userPosts } = useCollection(postsQuery)
 
-  // Layout scaling
   React.useLayoutEffect(() => {
     const updateScale = () => {
       if (containerRef.current) {
@@ -174,6 +118,8 @@ export default function PublicProfilePage() {
   const sendRequest = () => {
     if (!currentUser || !profile || !db) return
     const myFriendRef = doc(db, "users", currentUser.uid, "friends", profile.uid)
+    const theirFriendRef = doc(db, "users", profile.uid, "friends", currentUser.uid)
+
     setDocumentNonBlocking(myFriendRef, {
       uid: profile.uid,
       username: profile.username,
@@ -182,6 +128,16 @@ export default function PublicProfilePage() {
       status: 'pending_out',
       createdAt: new Date().toISOString()
     }, { merge: true })
+
+    setDocumentNonBlocking(theirFriendRef, {
+      uid: currentUser.uid,
+      username: currentUser.displayName || 'student', // fallback
+      displayName: currentUser.displayName || 'student',
+      photoUrl: currentUser.photoURL || '',
+      status: 'pending_in',
+      createdAt: new Date().toISOString()
+    }, { merge: true })
+
     toast({ title: "request sent!" })
   }
 
@@ -242,7 +198,6 @@ export default function PublicProfilePage() {
           <ArrowLeft size={18} /> back
         </Button>
 
-        {/* CUSTOM THEMED PORTAL HEADER */}
         <div 
           ref={containerRef}
           className="w-full relative overflow-hidden bg-muted/10 shadow-2xl border border-border"
@@ -309,7 +264,7 @@ export default function PublicProfilePage() {
               <p className="text-xl lowercase">@{profile.username}</p>
             </div>
 
-            {/* Actions (DM / Add) */}
+            {/* Actions */}
             <div className="absolute flex gap-3" style={{ 
               left: layout.addBtn?.x ?? 440, top: layout.addBtn?.y ?? 100,
               width: layout.addBtn?.w ?? 200, height: layout.addBtn?.h ?? 50,
@@ -353,7 +308,6 @@ export default function PublicProfilePage() {
         </div>
       </div>
 
-      {/* FEED SECTION */}
       <div className="max-w-4xl mx-auto px-6 space-y-12">
         <div className="flex items-center justify-between border-b pb-4">
           <h2 className="text-3xl font-headline font-bold lowercase flex items-center gap-2">
