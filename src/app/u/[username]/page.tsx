@@ -84,7 +84,6 @@ export default function PublicProfilePage() {
   const filteredPosts = React.useMemo(() => {
     if (!userPosts) return []
     
-    // Sort in memory to avoid missing index errors during workstation previews
     const sorted = [...userPosts].sort((a, b) => 
       new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     )
@@ -192,8 +191,8 @@ export default function PublicProfilePage() {
         <div 
           className="absolute overflow-hidden" 
           style={{ 
-            left: 0, top: 0,
-            width: '100%', height: layout.banner?.h ?? 220,
+            left: layout.banner?.x ?? 0, top: layout.banner?.y ?? 0,
+            width: layout.banner?.w ?? '100%', height: layout.banner?.h ?? 220,
             zIndex: layout.banner?.zIndex ?? 0
           }}
         >
@@ -205,7 +204,7 @@ export default function PublicProfilePage() {
         </div>
 
         <div className="w-full px-10 relative h-[500px]">
-          {/* Square Overlapping PFP */}
+          {/* Profile Picture */}
           <div 
             className="absolute overflow-hidden flex items-center justify-center bg-muted" 
             style={{ 
@@ -264,7 +263,7 @@ export default function PublicProfilePage() {
               </p>
             </div>
             
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3" style={{ zIndex: layout.addBtn?.zIndex ?? 10 }}>
               <button 
                 onClick={sendRequest}
                 className="px-10 py-3 text-sm lowercase transition-all shadow-md hover:brightness-95 active:scale-95"

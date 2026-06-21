@@ -36,8 +36,8 @@ import {
   Trash2,
   RotateCw,
   Layers,
-  Gamepad2,
   Bold,
+  Gamepad2,
   Type,
   Eye,
   Layout
@@ -113,13 +113,13 @@ type ProfileLayout = {
 };
 
 const DEFAULT_LAYOUT: ProfileLayout = {
-  banner: { x: 0, y: 0, w: 600, h: 80, zIndex: 0 },
-  pfp: { x: 24, y: 40, w: 96, h: 96, zIndex: 2 },
-  name: { x: 136, y: 50, w: 280, h: 48, zIndex: 2, fontSize: 32, fontWeight: 'bold' },
-  username: { x: 136, y: 98, w: 150, h: 24, zIndex: 2, fontSize: 14, fontWeight: 'normal' },
-  bio: { x: 24, y: 200, w: 300, h: 60, zIndex: 2, fontSize: 12, fontWeight: 'normal' },
-  addBtn: { x: 440, y: 50, w: 130, h: 44, zIndex: 2, fontSize: 11, fontWeight: 'bold' },
-  aboutHeader: { x: 24, y: 175, w: 100, h: 20, zIndex: 2, fontSize: 10, fontWeight: 'bold' }
+  banner: { x: 0, y: 0, w: 600, h: 220, zIndex: 0 },
+  pfp: { x: 40, y: 140, w: 176, h: 176, zIndex: 10 },
+  name: { x: 240, y: 230, w: 300, h: 48, zIndex: 10, fontSize: 36, fontWeight: 'bold' },
+  username: { x: 240, y: 275, w: 200, h: 24, zIndex: 10, fontSize: 14, fontWeight: 'normal' },
+  bio: { x: 40, y: 340, w: 600, h: 100, zIndex: 10, fontSize: 18, fontWeight: 'normal' },
+  addBtn: { x: 440, y: 230, w: 140, h: 44, zIndex: 10, fontSize: 14, fontWeight: 'bold' },
+  aboutHeader: { x: 40, y: 320, w: 100, h: 20, zIndex: 10, fontSize: 10, fontWeight: 'bold' }
 };
 
 export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCustomizerProps) {
@@ -157,9 +157,7 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
     if (profile) {
       const parseColor = (val: any, fallback: ColorValue): ColorValue => {
         if (!val) return fallback;
-        if (typeof val === 'object' && val.type) {
-          return { ...fallback, ...val };
-        }
+        if (typeof val === 'object' && val.type) return { ...fallback, ...val };
         return { ...fallback, type: 'solid', solid: typeof val === 'string' ? val : fallback.solid };
       };
 
@@ -206,7 +204,7 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
           w: 80,
           h: 80,
           rotation: 0,
-          zIndex: formData.stickers.length + 5
+          zIndex: formData.stickers.length + 15
         };
         setFormData(prev => ({ ...prev, stickers: [...prev.stickers, newSticker] }));
       } else {
@@ -221,23 +219,13 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
 
   const useChannelAvatar = () => {
     if (!profile?.selectedAvatar || !profile?.avatarGender) {
-      toast({
-        variant: "destructive",
-        title: "no avatar found",
-        description: "pick an avatar in the guko channel first."
-      });
+      toast({ variant: "destructive", title: "no avatar found", description: "pick an avatar in the guko channel first." });
       return;
     }
-
     const genderPath = profile.avatarGender === 'male' ? 'male' : 'female';
     const headshotUrl = `/avatars/${genderPath}/headshots/${profile.selectedAvatar}.png`;
-    
     setFormData(prev => ({ ...prev, photoUrl: headshotUrl }));
-    
-    toast({
-      title: "avatar applied",
-      description: "your channel headshot is now staged. hit save to apply globally."
-    });
+    toast({ title: "avatar applied", description: "your channel headshot is now staged. hit save to apply globally." });
   };
 
   const getColorStyle = (val: ColorValue) => {
@@ -249,21 +237,10 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
 
   const handleSave = async () => {
     if (!profileRef || !user) return;
-
     try {
-      await updateProfile(user, {
-        displayName: formData.displayName,
-        photoURL: formData.photoUrl
-      });
-    } catch (e) {
-      console.warn("Auth profile sync failed", e);
-    }
-
-    setDocumentNonBlocking(profileRef, {
-      ...formData,
-      updatedAt: new Date().toISOString()
-    }, { merge: true });
-
+      await updateProfile(user, { displayName: formData.displayName, photoURL: formData.photoUrl });
+    } catch (e) { console.warn("Auth profile sync failed", e); }
+    setDocumentNonBlocking(profileRef, { ...formData, updatedAt: new Date().toISOString() }, { merge: true });
     onOpenChange?.(false);
     toast({ title: "profile saved" });
   };
@@ -271,21 +248,12 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
   const toggleTarget = (target: BorderTarget) => {
     setFormData(prev => {
       const isSelected = prev.borderTargets.includes(target);
-      return {
-        ...prev,
-        borderTargets: isSelected 
-          ? prev.borderTargets.filter(t => t !== target)
-          : [...prev.borderTargets, target]
-      };
+      return { ...prev, borderTargets: isSelected ? prev.borderTargets.filter(t => t !== target) : [...prev.borderTargets, target] };
     });
   };
 
   const handleGlobalBorderColorChange = (newVal: ColorValue) => {
-    setFormData(prev => ({
-      ...prev,
-      theme: { ...prev.theme, border: newVal },
-      targetColors: {} as Record<BorderTarget, ColorValue>
-    }));
+    setFormData(prev => ({ ...prev, theme: { ...prev.theme, border: newVal }, targetColors: {} as Record<BorderTarget, ColorValue> }));
   };
 
   const previewRounding = `${formData.cornerRounding}px`;
@@ -293,17 +261,11 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
 
   const getTargetBorderStyle = (target: BorderTarget, currentItemBg: string): React.CSSProperties => {
     if (!formData.borderTargets.includes(target)) return { border: 'none' };
-    
     const color = formData.targetColors[target] || formData.theme.border;
     const width = formData.borderWidth;
-
     if (width <= 0) return { border: 'none' };
-
     if (color.type === 'solid') {
-      return { 
-        border: `${width}px solid ${color.solid}`,
-        backgroundImage: 'none'
-      };
+      return { border: `${width}px solid ${color.solid}`, backgroundImage: 'none' };
     } else {
       const gradient = getColorStyle(color);
       const mask = currentItemBg.includes('gradient') ? currentItemBg : `linear-gradient(${currentItemBg}, ${currentItemBg})`;
@@ -318,20 +280,15 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogTrigger asChild>
-        {children}
-      </DialogTrigger>
+      <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="max-w-[950px] p-0 border-none bg-card shadow-2xl gap-0 overflow-hidden sm:rounded-[40px]">
         <DialogTitle className="sr-only">customize profile</DialogTitle>
         <DialogDescription className="sr-only">adjust your profile aesthetics and personal information.</DialogDescription>
         
         <div className="relative flex flex-col md:flex-row h-full max-h-[90vh] overflow-hidden">
           <div className="absolute top-4 right-4 z-50">
-            <Button variant="ghost" size="icon" onClick={() => onOpenChange?.(false)} className="text-foreground hover:bg-muted rounded-full h-8 w-8">
-              <X className="h-5 w-5" />
-            </Button>
+            <Button variant="ghost" size="icon" onClick={() => onOpenChange?.(false)} className="text-foreground hover:bg-muted rounded-full h-8 w-8"><X className="h-5 w-5" /></Button>
           </div>
-
           <div className="absolute top-6 left-8">
             <h2 className="text-lg font-bold font-headline lowercase tracking-tight opacity-90 text-foreground">customize account</h2>
           </div>
@@ -355,50 +312,24 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
                 </label>
               </div>
               <Label className="text-[9px] font-bold uppercase tracking-widest opacity-40">profile photo</Label>
-              
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={useChannelAvatar}
-                className="h-7 rounded-lg text-[9px] font-bold lowercase gap-1.5 border-primary/20 hover:bg-primary/10 text-primary"
-              >
-                <Gamepad2 size={12} /> use my guko channel avatar
-              </Button>
+              <Button variant="outline" size="sm" onClick={useChannelAvatar} className="h-7 rounded-lg text-[9px] font-bold lowercase gap-1.5 border-primary/20 hover:bg-primary/10 text-primary"><Gamepad2 size={12} /> use my channel headshot</Button>
             </div>
 
             <div className="space-y-3">
               <div className="space-y-1">
                 <Label className="text-[10px] font-bold uppercase tracking-widest opacity-50 ml-1">display name</Label>
-                <Input 
-                  value={formData.displayName} 
-                  onChange={(e) => setFormData(prev => ({ ...prev, displayName: e.target.value }))}
-                  className="bg-background border-border text-foreground !placeholder-muted-foreground/40 rounded-xl h-10 no-focus-ring text-sm"
-                  placeholder="your name"
-                />
+                <Input value={formData.displayName} onChange={(e) => setFormData(prev => ({ ...prev, displayName: e.target.value }))} className="bg-background border-border text-foreground rounded-xl h-10 no-focus-ring text-sm" placeholder="your name" />
               </div>
               <div className="space-y-1">
                 <Label className="text-[10px] font-bold uppercase tracking-widest opacity-50 ml-1">username</Label>
-                <Input 
-                  value={formData.username} 
-                  onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
-                  className="bg-background border-border text-foreground !placeholder-muted-foreground/40 rounded-xl h-10 no-focus-ring text-sm"
-                  placeholder="username123"
-                />
+                <Input value={formData.username} onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))} className="bg-background border-border text-foreground rounded-xl h-10 no-focus-ring text-sm" placeholder="username123" />
               </div>
               <div className="space-y-1">
                 <Label className="text-[10px] font-bold uppercase tracking-widest opacity-50 ml-1">bio</Label>
-                <Textarea 
-                  value={formData.bio} 
-                  onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
-                  className="bg-background border-border text-foreground !placeholder-muted-foreground/40 rounded-xl min-h-[70px] no-focus-ring resize-none p-3 text-sm"
-                  placeholder="tell us something..."
-                />
+                <Textarea value={formData.bio} onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))} className="bg-background border-border text-foreground rounded-xl min-h-[70px] no-focus-ring resize-none p-3 text-sm" placeholder="tell us something..." />
               </div>
             </div>
-
-            <Button onClick={handleSave} className="w-full h-11 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-bold lowercase transition-all">
-              save profile
-            </Button>
+            <Button onClick={handleSave} className="w-full h-11 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-bold lowercase transition-all">save profile</Button>
           </div>
 
           <div className="flex-[1.4] p-6 pt-16 space-y-6 overflow-y-auto custom-scrollbar text-foreground">
@@ -417,7 +348,6 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
                   </label>
                 </div>
               </div>
-
               <div className="space-y-2">
                 <Label className="text-[10px] font-bold uppercase tracking-widest opacity-50">colors</Label>
                 <div className="flex items-center justify-around bg-muted/10 p-2 rounded-xl border border-border h-14">
@@ -433,52 +363,20 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
                 <Label className="text-[10px] font-bold uppercase tracking-widest opacity-50">font & radius</Label>
                 <div className="space-y-2">
                   <Select value={formData.font} onValueChange={(v) => setFormData(p => ({ ...p, font: v }))}>
-                    <SelectTrigger className="bg-background border-border text-foreground rounded-lg h-8 text-[11px] lowercase">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-card border-border">
-                      {FONT_OPTIONS.map(f => (
-                        <SelectItem key={f} value={f} style={{ fontFamily: f }}>{f}</SelectItem>
-                      ))}
-                    </SelectContent>
+                    <SelectTrigger className="bg-background border-border text-foreground rounded-lg h-8 text-[11px] lowercase"><SelectValue /></SelectTrigger>
+                    <SelectContent className="bg-card border-border">{FONT_OPTIONS.map(f => (<SelectItem key={f} value={f} style={{ fontFamily: f }}>{f}</SelectItem>))}</SelectContent>
                   </Select>
-                  
-                  <div className="flex items-center gap-2 bg-background p-1 px-2 rounded-lg border border-border">
-                    <span className="text-[9px] opacity-40 uppercase">rad</span>
-                    <Slider value={[formData.cornerRounding]} max={48} onValueChange={(v) => setFormData(p => ({ ...p, cornerRounding: v[0] }))} className="flex-1" />
-                  </div>
+                  <div className="flex items-center gap-2 bg-background p-1 px-2 rounded-lg border border-border"><span className="text-[9px] opacity-40 uppercase">rad</span><Slider value={[formData.cornerRounding]} max={48} onValueChange={(v) => setFormData(p => ({ ...p, cornerRounding: v[0] }))} className="flex-1" /></div>
                 </div>
               </div>
-
               <div className="space-y-3">
                 <Label className="text-[10px] font-bold uppercase tracking-widest opacity-50">borders</Label>
                 <div className="space-y-2">
                   <div className="flex items-center gap-3 bg-background p-2 rounded-lg border border-border h-auto min-h-[68px]">
                     <AestheticColorPickerMini label="color" value={formData.theme.border} onChange={handleGlobalBorderColorChange} />
-                    <div className="flex-1 flex flex-col gap-1">
-                      <div className="flex justify-between">
-                        <span className="text-[9px] opacity-40 uppercase">width</span>
-                        <span className="text-[9px] opacity-40">{formData.borderWidth}px</span>
-                      </div>
-                      <Slider value={[formData.borderWidth]} max={10} onValueChange={(v) => setFormData(p => ({ ...p, borderWidth: v[0] }))} className="w-full" />
-                    </div>
+                    <div className="flex-1 flex flex-col gap-1"><div className="flex justify-between"><span className="text-[9px] opacity-40 uppercase">width</span><span className="text-[9px] opacity-40">{formData.borderWidth}px</span></div><Slider value={[formData.borderWidth]} max={10} onValueChange={(v) => setFormData(p => ({ ...p, borderWidth: v[0] }))} className="w-full" /></div>
                   </div>
-
-                  <div className="flex gap-2">
-                    {(['profile', 'add', 'icon'] as BorderTarget[]).map((t) => (
-                      <Button
-                        key={t}
-                        variant="ghost"
-                        className={cn(
-                          "flex-1 h-7 rounded-md text-[9px] font-bold lowercase border transition-all",
-                          formData.borderTargets.includes(t) ? "bg-primary text-primary-foreground border-primary" : "bg-background text-muted-foreground border-border"
-                        )}
-                        onClick={() => toggleTarget(t)}
-                      >
-                        {t}
-                      </Button>
-                    ))}
-                  </div>
+                  <div className="flex gap-2">{(['profile', 'add', 'icon'] as BorderTarget[]).map((t) => (<Button key={t} variant="ghost" className={cn("flex-1 h-7 rounded-md text-[9px] font-bold lowercase border transition-all", formData.borderTargets.includes(t) ? "bg-primary text-primary-foreground border-primary" : "bg-background text-muted-foreground border-border")} onClick={() => toggleTarget(t)}>{t}</Button>))}</div>
                 </div>
               </div>
             </div>
@@ -486,186 +384,25 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
             <div className="space-y-2 relative">
               <div className="flex items-center justify-between">
                 <Label className="text-[10px] font-bold uppercase tracking-widest opacity-50">live preview</Label>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  onClick={() => setIsAdvancedOpen(true)}
-                  className="h-8 w-8 rounded-full bg-muted hover:bg-muted/80 text-foreground"
-                >
-                  <Wand2 className="h-4 w-4" />
-                </Button>
+                <Button variant="ghost" size="icon" onClick={() => setIsAdvancedOpen(true)} className="h-8 w-8 rounded-full bg-muted hover:bg-muted/80 text-foreground"><Wand2 className="h-4 w-4" /></Button>
               </div>
-              
               <div 
                 className="w-full aspect-[3/2] overflow-hidden relative transition-all duration-300 shadow-2xl border border-border"
-                style={{ 
-                  borderRadius: previewRounding,
-                  fontFamily: formData.font,
-                  background: bodyBgStyle,
-                }}
+                style={{ borderRadius: previewRounding, fontFamily: formData.font, background: bodyBgStyle }}
               >
-                <div 
-                  className="absolute transition-all"
-                  style={{ 
-                    left: formData.layout.banner?.x ?? 0, 
-                    top: formData.layout.banner?.y ?? 0,
-                    width: formData.layout.banner?.w ?? 0,
-                    height: formData.layout.banner?.h ?? 0,
-                    zIndex: formData.layout.banner?.zIndex ?? 0
-                  }}
-                >
-                  {formData.bannerUrl ? (
-                    <img src={formData.bannerUrl} className="w-full h-full object-cover" alt="banner" />
-                  ) : (
-                    <div className="w-full h-full bg-muted/20" />
-                  )}
-                </div>
-                
-                <div 
-                  className="absolute transition-all"
-                  style={{ 
-                    left: formData.layout.pfp?.x ?? 0, 
-                    top: formData.layout.pfp?.y ?? 0,
-                    width: formData.layout.pfp?.w ?? 0,
-                    height: formData.layout.pfp?.h ?? 0,
-                    borderRadius: previewRounding,
-                    zIndex: formData.layout.pfp?.zIndex ?? 2,
-                    ...getTargetBorderStyle('profile', bodyBgStyle),
-                    overflow: 'hidden'
-                  }}
-                >
-                  {formData.photoUrl ? (
-                    <img src={formData.photoUrl} className="w-full h-full object-cover" alt="pfp" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-muted/20">
-                      <UserCircle2 className="h-8 w-8 opacity-20" />
-                    </div>
-                  )}
-                </div>
-
-                <div 
-                  className="absolute transition-all flex flex-col justify-center"
-                  style={{ 
-                    left: formData.layout.name?.x ?? 0, 
-                    top: formData.layout.name?.y ?? 0,
-                    width: formData.layout.name?.w ?? 0,
-                    height: formData.layout.name?.h ?? 0,
-                    zIndex: formData.layout.name?.zIndex ?? 2,
-                    color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor',
-                    fontSize: formData.layout.name?.fontSize ? `${formData.layout.name.fontSize}px` : '32px',
-                    fontWeight: formData.layout.name?.fontWeight || 'bold'
-                  }}
-                >
-                  <h4 className="leading-tight lowercase truncate">{formData.displayName || 'name'}</h4>
-                </div>
-
-                <div 
-                  className="absolute transition-all"
-                  style={{ 
-                    left: formData.layout.username?.x ?? 0, 
-                    top: formData.layout.username?.y ?? 0,
-                    width: formData.layout.username?.w ?? 0,
-                    height: formData.layout.username?.h ?? 0,
-                    zIndex: formData.layout.username?.zIndex ?? 2,
-                    color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor',
-                    opacity: 0.6,
-                    fontSize: formData.layout.username?.fontSize ? `${formData.layout.username.fontSize}px` : '14px',
-                    fontWeight: formData.layout.username?.fontWeight || 'normal'
-                  }}
-                >
-                  <p className="lowercase truncate">{formData.username ? `@${formData.username}` : '@username'}</p>
-                </div>
-
-                <div 
-                  className="absolute transition-all"
-                  style={{ 
-                    left: formData.layout.addBtn?.x ?? 0, 
-                    top: formData.layout.addBtn?.y ?? 0,
-                    width: formData.layout.addBtn?.w ?? 0,
-                    height: formData.layout.addBtn?.h ?? 0,
-                    zIndex: formData.layout.addBtn?.zIndex ?? 2
-                  }}
-                >
-                  <Button 
-                    className="w-full h-full p-0 lowercase border-none transition-all shadow-none"
-                    style={{ 
-                      background: getColorStyle(formData.theme.buttons),
-                      color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'white',
-                      borderRadius: previewRounding,
-                      fontSize: formData.layout.addBtn?.fontSize ? `${formData.layout.addBtn.fontSize}px` : '11px',
-                      fontWeight: formData.layout.addBtn?.fontWeight || 'bold',
-                      ...getTargetBorderStyle('add', getColorStyle(formData.theme.buttons))
-                    }}
-                  >
-                    add friend
-                  </Button>
-                </div>
-
-                <div 
-                  className="absolute transition-all"
-                  style={{ 
-                    left: formData.layout.aboutHeader?.x ?? 0, 
-                    top: formData.layout.aboutHeader?.y ?? 0,
-                    width: formData.layout.aboutHeader?.w ?? 0,
-                    height: formData.layout.aboutHeader?.h ?? 0,
-                    zIndex: formData.layout.aboutHeader?.zIndex ?? 2,
-                    color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor',
-                    opacity: 0.4,
-                    fontSize: formData.layout.aboutHeader?.fontSize ? `${formData.layout.aboutHeader.fontSize}px` : '10px',
-                    fontWeight: formData.layout.aboutHeader?.fontWeight || 'bold'
-                  }}
-                >
-                  <h5 className="uppercase tracking-widest">about me</h5>
-                </div>
-
-                <div 
-                  className="absolute transition-all"
-                  style={{ 
-                    left: formData.layout.bio?.x ?? 0, 
-                    top: formData.layout.bio?.y ?? 0,
-                    width: formData.layout.bio?.w ?? 0,
-                    height: formData.layout.bio?.h ?? 0,
-                    zIndex: formData.layout.bio?.zIndex ?? 2,
-                    color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor',
-                    fontSize: formData.layout.bio?.fontSize ? `${formData.layout.bio.fontSize}px` : '12px',
-                    fontWeight: formData.layout.bio?.fontWeight || 'normal'
-                  }}
-                >
-                  <p className="leading-relaxed lowercase opacity-90 italic line-clamp-3">
-                    {formData.bio || 'your bio will appear here...'}
-                  </p>
-                </div>
-
-                {formData.stickers.map((sticker) => (
-                  <div 
-                    key={sticker.id}
-                    className="absolute transition-all pointer-events-none"
-                    style={{
-                      left: sticker.x, top: sticker.y, width: sticker.w, height: sticker.h,
-                      zIndex: sticker.zIndex,
-                      transform: `rotate(${sticker.rotation || 0}deg)`
-                    }}
-                  >
-                    <img src={sticker.url} className="w-full h-full object-fill" alt="sticker" />
-                  </div>
-                ))}
+                <div className="absolute transition-all" style={{ left: formData.layout.banner?.x ?? 0, top: formData.layout.banner?.y ?? 0, width: formData.layout.banner?.w ?? 0, height: formData.layout.banner?.h ?? 0, zIndex: formData.layout.banner?.zIndex ?? 0 }}>{formData.bannerUrl ? (<img src={formData.bannerUrl} className="w-full h-full object-cover" alt="banner" />) : (<div className="w-full h-full bg-muted/20" />)}</div>
+                <div className="absolute transition-all" style={{ left: formData.layout.pfp?.x ?? 0, top: formData.layout.pfp?.y ?? 0, width: formData.layout.pfp?.w ?? 0, height: formData.layout.pfp?.h ?? 0, borderRadius: previewRounding, zIndex: formData.layout.pfp?.zIndex ?? 2, ...getTargetBorderStyle('profile', bodyBgStyle), overflow: 'hidden' }}>{formData.photoUrl ? (<img src={formData.photoUrl} className="w-full h-full object-cover" alt="pfp" />) : (<div className="w-full h-full flex items-center justify-center bg-muted/20"><UserCircle2 className="h-8 w-8 opacity-20" /></div>)}</div>
+                <div className="absolute transition-all flex flex-col justify-center" style={{ left: formData.layout.name?.x ?? 0, top: formData.layout.name?.y ?? 0, width: formData.layout.name?.w ?? 0, height: formData.layout.name?.h ?? 0, zIndex: formData.layout.name?.zIndex ?? 2, color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor', fontSize: formData.layout.name?.fontSize ? `${formData.layout.name.fontSize}px` : '32px', fontWeight: formData.layout.name?.fontWeight || 'bold' }}><h4 className="leading-tight lowercase truncate">{formData.displayName || 'name'}</h4></div>
+                <div className="absolute transition-all" style={{ left: formData.layout.username?.x ?? 0, top: formData.layout.username?.y ?? 0, width: formData.layout.username?.w ?? 0, height: formData.layout.username?.h ?? 0, zIndex: formData.layout.username?.zIndex ?? 2, color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor', opacity: 0.6, fontSize: formData.layout.username?.fontSize ? `${formData.layout.username.fontSize}px` : '14px', fontWeight: formData.layout.username?.fontWeight || 'normal' }}><p className="lowercase truncate">{formData.username ? `@${formData.username}` : '@username'}</p></div>
+                <div className="absolute transition-all" style={{ left: formData.layout.addBtn?.x ?? 0, top: formData.layout.addBtn?.y ?? 0, width: formData.layout.addBtn?.w ?? 0, height: formData.layout.addBtn?.h ?? 0, zIndex: formData.layout.addBtn?.zIndex ?? 2 }}><Button className="w-full h-full p-0 lowercase border-none shadow-none pointer-events-none" style={{ background: getColorStyle(formData.theme.buttons), color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'white', borderRadius: previewRounding, fontSize: formData.layout.addBtn?.fontSize ? `${formData.layout.addBtn.fontSize}px` : '11px', fontWeight: formData.layout.addBtn?.fontWeight || 'bold', ...getTargetBorderStyle('add', getColorStyle(formData.theme.buttons)) }}>add friend</Button></div>
+                <div className="absolute transition-all" style={{ left: formData.layout.aboutHeader?.x ?? 0, top: formData.layout.aboutHeader?.y ?? 0, width: formData.layout.aboutHeader?.w ?? 0, height: formData.layout.aboutHeader?.h ?? 0, zIndex: formData.layout.aboutHeader?.zIndex ?? 2, color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor', opacity: 0.4, fontSize: formData.layout.aboutHeader?.fontSize ? `${formData.layout.aboutHeader.fontSize}px` : '10px', fontWeight: formData.layout.aboutHeader?.fontWeight || 'bold' }}><h5 className="uppercase tracking-widest">about me</h5></div>
+                <div className="absolute transition-all" style={{ left: formData.layout.bio?.x ?? 0, top: formData.layout.bio?.y ?? 0, width: formData.layout.bio?.w ?? 0, height: formData.layout.bio?.h ?? 0, zIndex: formData.layout.bio?.zIndex ?? 2, color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor', fontSize: formData.layout.bio?.fontSize ? `${formData.layout.bio.fontSize}px` : '12px', fontWeight: formData.layout.bio?.fontWeight || 'normal' }}><p className="leading-relaxed lowercase opacity-90 italic line-clamp-3">{formData.bio || 'your bio will appear here...'}</p></div>
+                {formData.stickers.map((sticker) => (<div key={sticker.id} className="absolute transition-all pointer-events-none" style={{ left: sticker.x, top: sticker.y, width: sticker.w, height: sticker.h, zIndex: sticker.zIndex, transform: `rotate(${sticker.rotation || 0}deg)` }}><img src={sticker.url} className="w-full h-full object-fill" alt="sticker" /></div>))}
               </div>
             </div>
           </div>
         </div>
-
-        <AdvancedProfileEditor 
-          open={isAdvancedOpen} 
-          onOpenChange={setIsAdvancedOpen}
-          formData={formData}
-          setFormData={setFormData}
-          onStickerUpload={(file: File) => handleImageUpload(file, 'sticker')}
-          uploadingSticker={uploading === 'sticker'}
-          previewRounding={previewRounding}
-          bodyBgStyle={bodyBgStyle}
-          getTargetBorderStyle={getTargetBorderStyle}
-          getColorStyle={getColorStyle}
-        />
+        <AdvancedProfileEditor open={isAdvancedOpen} onOpenChange={setIsAdvancedOpen} formData={formData} setFormData={setFormData} onStickerUpload={(file: File) => handleImageUpload(file, 'sticker')} uploadingSticker={uploading === 'sticker'} previewRounding={previewRounding} bodyBgStyle={bodyBgStyle} getTargetBorderStyle={getTargetBorderStyle} getColorStyle={getColorStyle} />
       </DialogContent>
     </Dialog>
   );
@@ -712,134 +449,60 @@ function AdvancedProfileEditor({
     setHistoryIndex(prev => prev + 1);
   }, [historyIndex]);
 
-  React.useEffect(() => {
-    if (open) {
-      saveToHistory(formData);
-    }
-  }, [open]);
+  React.useEffect(() => { if (open) saveToHistory(formData); }, [open]);
 
-  const undo = () => {
-    if (historyIndex > 0) {
-      const prev = history[historyIndex - 1];
-      setFormData(prev);
-      setHistoryIndex(historyIndex - 1);
-    }
-  };
-
-  const redo = () => {
-    if (historyIndex < history.length - 1) {
-      const next = history[historyIndex + 1];
-      setFormData(next);
-      setHistoryIndex(historyIndex + 1);
-    }
-  };
+  const undo = () => { if (historyIndex > 0) { const prev = history[historyIndex - 1]; setFormData(prev); setHistoryIndex(historyIndex - 1); } };
+  const redo = () => { if (historyIndex < history.length - 1) { const next = history[historyIndex + 1]; setFormData(next); setHistoryIndex(historyIndex + 1); } };
 
   const handlePointerDown = (e: React.PointerEvent, id: string, type: 'move' | 'resize' | 'rotate', dir?: string) => {
     e.stopPropagation();
     setSelectedId(id);
-    
     if (id === 'banner' && type === 'move') return;
-
-    const element = id.startsWith('sticker-')
-      ? formData.stickers.find((s: any) => s.id === id.replace('sticker-', ''))
-      : formData.layout[id];
-  
+    const element = id.startsWith('sticker-') ? formData.stickers.find((s: any) => s.id === id.replace('sticker-', '')) : formData.layout[id];
     if (!element) return;
-  
-    setDragging({
-      id,
-      type,
-      dir,
-      startX: e.clientX,
-      startY: e.clientY,
-      initialX: element.x,
-      initialY: element.y,
-      initialW: element.w,
-      initialH: element.h,
-      initialRotation: 'rotation' in element ? element.rotation : 0
-    });
-  
+    setDragging({ id, type, dir, startX: e.clientX, startY: e.clientY, initialX: element.x, initialY: element.y, initialW: element.w, initialH: element.h, initialRotation: 'rotation' in element ? element.rotation : 0 });
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
     if (!dragState) return;
-
     const dx = e.clientX - dragState.startX;
     const dy = e.clientY - dragState.startY;
-
     const updateElement = (prev: any, id: string, changes: any) => {
       if (id.startsWith('sticker-')) {
         const stickerId = id.replace('sticker-', '');
-        return {
-          ...prev,
-          stickers: prev.stickers.map((s: any) => s.id === stickerId ? { ...s, ...changes } : s)
-        };
+        return { ...prev, stickers: prev.stickers.map((s: any) => s.id === stickerId ? { ...s, ...changes } : s) };
       } else {
-        return {
-          ...prev,
-          layout: {
-            ...prev.layout,
-            [id]: { ...prev.layout[id], ...changes }
-          }
-        };
+        return { ...prev, layout: { ...prev.layout, [id]: { ...prev.layout[id], ...changes } } };
       }
     };
-
-    if (dragState.type === 'move') {
-      setFormData((prev: any) => updateElement(prev, dragState.id, {
-        x: dragState.initialX + dx,
-        y: dragState.initialY + dy
-      }));
-    } else if (dragState.type === 'resize') {
+    if (dragState.type === 'move') { setFormData((prev: any) => updateElement(prev, dragState.id, { x: dragState.initialX + dx, y: dragState.initialY + dy })); }
+    else if (dragState.type === 'resize') {
       const changes: any = {};
       const dir = dragState.dir!;
-
       if (dir.includes('e')) changes.w = Math.max(10, dragState.initialW + dx);
       if (dir.includes('s')) changes.h = Math.max(10, dragState.initialH + dy);
-      
       if (dragState.id !== 'banner') {
-        if (dir.includes('w')) {
-          const newW = Math.max(10, dragState.initialW - dx);
-          changes.w = newW;
-          changes.x = dragState.initialX + (dragState.initialW - newW);
-        }
-        if (dir.includes('n')) {
-          const newH = Math.max(10, dragState.initialH - dy);
-          changes.h = newH;
-          changes.y = dragState.initialY + (dragState.initialH - newH);
-        }
+        if (dir.includes('w')) { const newW = Math.max(10, dragState.initialW - dx); changes.w = newW; changes.x = dragState.initialX + (dragState.initialW - newW); }
+        if (dir.includes('n')) { const newH = Math.max(10, dragState.initialH - dy); changes.h = newH; changes.y = dragState.initialY + (dragState.initialH - newH); }
       }
-
       setFormData((prev: any) => updateElement(prev, dragState.id, changes));
-    } else if (dragState.type === 'rotate') {
+    }
+    else if (dragState.type === 'rotate') {
       if (dragState.initialRotation === undefined) return;
-
       const centerX = dragState.initialX + dragState.initialW / 2;
       const centerY = dragState.initialY + dragState.initialH / 2;
-
       const startAngle = Math.atan2(dragState.startY - centerY, dragState.startX - centerX) * 180 / Math.PI;
       const currentAngle = Math.atan2(e.clientY - centerY, e.clientX - centerX) * 180 / Math.PI;
-
       const newRotation = dragState.initialRotation + (currentAngle - startAngle);
-
-      setFormData((prev: any) => updateElement(prev, dragState.id, {
-        rotation: newRotation
-      }));
+      setFormData((prev: any) => updateElement(prev, dragState.id, { rotation: newRotation }));
     }
   };
 
-  const handlePointerUp = (e: React.PointerEvent) => {
-    if (dragState) {
-      saveToHistory(formData);
-      setDragging(null);
-      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
-    }
-  };
+  const handlePointerUp = (e: React.PointerEvent) => { if (dragState) { saveToHistory(formData); setDragging(null); (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId); } };
 
   const changeLayer = (delta: number) => {
     if (!selectedId) return;
-    
     setFormData((prev: any) => {
       const newFormData = JSON.parse(JSON.stringify(prev));
       if (selectedId.startsWith('sticker-')) {
@@ -847,7 +510,7 @@ function AdvancedProfileEditor({
         const sticker = newFormData.stickers.find((s:any) => s.id === sid);
         if(sticker) sticker.zIndex = Math.max(0, (sticker.zIndex || 0) + delta);
       } else {
-        const element = newFormData.layout[selectedId as keyof ProfileLayout];
+        const element = newFormData.layout[selectedId];
         if(element) element.zIndex = Math.max(0, (element.zIndex || 0) + delta);
       }
       saveToHistory(newFormData);
@@ -856,14 +519,11 @@ function AdvancedProfileEditor({
   };
 
   const toggleBold = () => {
-    if (!selectedId || selectedId === 'pfp' || selectedId === 'banner' || selectedId === 'aboutHeader' || selectedId.startsWith('sticker-')) return;
-    
+    if (!selectedId || selectedId === 'pfp' || selectedId === 'banner' || selectedId.startsWith('sticker-')) return;
     setFormData((prev: any) => {
       const newFormData = JSON.parse(JSON.stringify(prev));
       const el = newFormData.layout[selectedId];
-      if (el) {
-        el.fontWeight = el.fontWeight === 'bold' ? 'normal' : 'bold';
-      }
+      if (el) el.fontWeight = el.fontWeight === 'bold' ? 'normal' : 'bold';
       saveToHistory(newFormData);
       return newFormData;
     });
@@ -871,68 +531,43 @@ function AdvancedProfileEditor({
 
   const updateFontSize = (v: number) => {
     if (!selectedId || selectedId === 'pfp' || selectedId === 'banner' || selectedId.startsWith('sticker-')) return;
-    
     setFormData((prev: any) => {
       const newFormData = JSON.parse(JSON.stringify(prev));
       const el = newFormData.layout[selectedId];
-      if (el) {
-        el.fontSize = v;
-      }
+      if (el) el.fontSize = v;
       return newFormData;
     });
   };
 
   const deleteSelected = () => {
-    if (!selectedId) return;
-    if (selectedId.startsWith('sticker-')) {
-      const stickerId = selectedId.replace('sticker-', '');
-      setFormData((prev: any) => {
-        const newFormData = {
-          ...prev,
-          stickers: prev.stickers.filter((s: any) => s.id !== stickerId)
-        };
-        saveToHistory(newFormData);
-        return newFormData;
-      });
-      setSelectedId(null);
-    }
+    if (!selectedId || !selectedId.startsWith('sticker-')) return;
+    const stickerId = selectedId.replace('sticker-', '');
+    setFormData((prev: any) => {
+      const newFormData = { ...prev, stickers: prev.stickers.filter((s: any) => s.id !== stickerId) };
+      saveToHistory(newFormData);
+      return newFormData;
+    });
+    setSelectedId(null);
   };
 
   const renderHandle = (id: string, dir: string, className: string) => (
-    <div 
-      className={cn("absolute w-4 h-4 bg-background border-2 border-primary z-[200] rounded-full shadow-md", className)}
-      onPointerDown={(e) => { e.stopPropagation(); handlePointerDown(e, id, 'resize', dir); }}
-    />
+    <div className={cn("absolute w-4 h-4 bg-background border-2 border-primary z-[200] rounded-full shadow-md", className)} onPointerDown={(e) => { e.stopPropagation(); handlePointerDown(e, id, 'resize', dir); }} />
   );
 
   const renderSelectionBox = (id: string, element: any) => {
     if (selectedId !== id) return null;
     const isSticker = id.startsWith('sticker-');
     const isBanner = id === 'banner';
-
     return (
-      <div 
-        className="absolute border-2 border-primary pointer-events-none z-[199]"
-        style={{
-          left: (element.x ?? 0) - 4, 
-          top: (element.y ?? 0) - 4, 
-          width: (element.w || 0) + 8, 
-          height: (element.h || 0) + 8,
-          transform: `rotate(${element.rotation || 0}deg)`
-        }}
-      >
+      <div className="absolute border-2 border-primary pointer-events-none z-[199]" style={{ left: (element.x ?? 0) - 4, top: (element.y ?? 0) - 4, width: (element.w || 0) + 8, height: (element.h || 0) + 8, transform: `rotate(${element.rotation || 0}deg)` }}>
         {!isBanner && renderHandle(id, 'nw', "top-[-8px] left-[-8px] cursor-nw-resize pointer-events-auto")}
         {!isBanner && renderHandle(id, 'ne', "top-[-8px] right-[-8px] cursor-ne-resize pointer-events-auto")}
         {!isBanner && renderHandle(id, 'sw', "bottom-[-8px] left-[-8px] cursor-sw-resize pointer-events-auto")}
         {renderHandle(id, 'se', "bottom-[-8px] right-[-8px] cursor-se-resize pointer-events-auto")}
         {isBanner && renderHandle(id, 's', "bottom-[-8px] left-1/2 -translate-x-1/2 cursor-s-resize pointer-events-auto")}
         {isBanner && renderHandle(id, 'e', "right-[-8px] top-1/2 -translate-y-1/2 cursor-e-resize pointer-events-auto")}
-
         {isSticker && (
-          <div
-            className="absolute w-5 h-5 flex items-center justify-center bg-background border-2 border-primary z-[200] rounded-full shadow-md top-[-25px] left-1/2 -translate-x-1/2 cursor-alias pointer-events-auto"
-            onPointerDown={(e) => { e.stopPropagation(); handlePointerDown(e, id, 'rotate'); }}
-          >
+          <div className="absolute w-5 h-5 flex items-center justify-center bg-background border-2 border-primary z-[200] rounded-full shadow-md top-[-25px] left-1/2 -translate-x-1/2 cursor-alias pointer-events-auto" onPointerDown={(e) => { e.stopPropagation(); handlePointerDown(e, id, 'rotate'); }}>
             <RotateCw className="h-3 w-3 text-primary" />
           </div>
         )}
@@ -945,52 +580,19 @@ function AdvancedProfileEditor({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-none w-screen h-screen p-0 border-none flex flex-col items-center justify-center bg-black/50 backdrop-blur-sm">
-        <div
-          className="w-full h-full overflow-hidden relative flex flex-col items-center justify-center"
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
-          onClick={() => setSelectedId(null)}
-        >
-          {/* Header Bar */}
+      <DialogContent className="max-w-none w-screen h-screen p-0 border-none flex flex-col items-center justify-center bg-black/80 backdrop-blur-md">
+        <div className="w-full h-full overflow-hidden relative flex flex-col items-center justify-center" onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onClick={() => setSelectedId(null)}>
           <div className="absolute top-6 left-1/2 -translate-x-1/2 z-[250] flex items-center gap-6">
             <div className="flex items-center gap-2 bg-background/50 backdrop-blur-md rounded-full border border-white/10 p-1.5 shadow-xl">
-               <button 
-                onClick={() => setViewMode('preview')}
-                className={cn(
-                  "px-6 py-2 rounded-full text-xs font-bold transition-all lowercase flex items-center gap-2",
-                  viewMode === 'preview' ? "bg-white text-black shadow-md" : "text-white/60 hover:text-white"
-                )}
-               >
-                 <Eye size={14} /> preview
-               </button>
-               <button 
-                onClick={() => setViewMode('page')}
-                className={cn(
-                  "px-6 py-2 rounded-full text-xs font-bold transition-all lowercase flex items-center gap-2",
-                  viewMode === 'page' ? "bg-white text-black shadow-md" : "text-white/60 hover:text-white"
-                )}
-               >
-                 <Layout size={14} /> page
-               </button>
+               <button onClick={() => setViewMode('preview')} className={cn("px-6 py-2 rounded-full text-xs font-bold transition-all lowercase flex items-center gap-2", viewMode === 'preview' ? "bg-white text-black shadow-md" : "text-white/60 hover:text-white")}><Eye size={14} /> preview</button>
+               <button onClick={() => setViewMode('page')} className={cn("px-6 py-2 rounded-full text-xs font-bold transition-all lowercase flex items-center gap-2", viewMode === 'page' ? "bg-white text-black shadow-md" : "text-white/60 hover:text-white")}><Layout size={14} /> page</button>
             </div>
           </div>
-
-          <div className="absolute top-6 right-6 z-[250]">
-            <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="text-foreground bg-background/50 hover:bg-background/80 rounded-full h-10 w-10">
-              <X className="h-5 w-5" />
-            </Button>
-          </div>
-
+          <div className="absolute top-6 right-6 z-[250]"><Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="text-foreground bg-background/50 hover:bg-background/80 rounded-full h-10 w-10"><X className="h-5 w-5" /></Button></div>
           <div className="absolute top-6 left-6 z-[250] flex items-center gap-2 bg-background/50 backdrop-blur-md rounded-2xl border border-white/10 p-2 shadow-xl">
-            <Button variant="ghost" size="icon" onClick={undo} disabled={historyIndex <= 0} className="text-foreground hover:bg-white/10 rounded-xl h-9 w-9 disabled:opacity-50">
-              <Undo2 className="h-5 w-5" />
-            </Button>
-            <Button variant="ghost" size="icon" onClick={redo} disabled={historyIndex >= history.length - 1} className="text-foreground hover:bg-white/10 rounded-xl h-9 w-9 disabled:opacity-50">
-              <Redo2 className="h-5 w-5" />
-            </Button>
+            <Button variant="ghost" size="icon" onClick={undo} disabled={historyIndex <= 0} className="text-foreground hover:bg-white/10 rounded-xl h-9 w-9 disabled:opacity-50"><Undo2 className="h-5 w-5" /></Button>
+            <Button variant="ghost" size="icon" onClick={redo} disabled={historyIndex >= history.length - 1} className="text-foreground hover:bg-white/10 rounded-xl h-9 w-9 disabled:opacity-50"><Redo2 className="h-5 w-5" /></Button>
           </div>
-
           <div className="absolute top-1/2 -translate-y-1/2 left-6 z-[250] flex flex-col items-center gap-2 bg-background/50 backdrop-blur-md rounded-2xl border border-white/10 p-2 shadow-xl">
             <label className="relative h-10 w-10 flex items-center justify-center rounded-xl hover:bg-white/10 cursor-pointer text-foreground">
               {uploadingSticker ? <Loader2 className="h-5 w-5 animate-spin" /> : <Star className="h-5 w-5" />}
@@ -999,234 +601,69 @@ function AdvancedProfileEditor({
           </div>
 
           {selectedId && (
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[250] flex flex-col items-center gap-4">
+            <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-[250] flex flex-col items-center gap-4">
               {isTextElement && selectedElement && (
                 <div className="flex items-center gap-4 bg-background/50 backdrop-blur-md rounded-2xl border border-white/10 p-4 shadow-xl text-foreground">
                    <div className="flex flex-col gap-1 w-32">
-                      <div className="flex justify-between items-center px-1">
-                        <span className="text-[9px] font-black uppercase opacity-40">text size</span>
-                        <span className="text-[10px] font-mono">{selectedElement.fontSize || 16}px</span>
-                      </div>
-                      <Slider value={[selectedElement.fontSize || 16]} min={8} max={72} onValueChange={(v) => updateFontSize(v[0])} onPointerUp={() => saveToHistory(formData)} />
+                      <div className="flex justify-between items-center px-1"><span className="text-[9px] font-black uppercase opacity-40">text size</span><span className="text-[10px] font-mono">{selectedElement.fontSize || 16}px</span></div>
+                      <Slider value={[selectedElement.fontSize || 16]} min={8} max={120} onValueChange={(v) => updateFontSize(v[0])} onPointerUp={() => saveToHistory(formData)} />
                    </div>
                    <div className="w-px h-8 bg-white/10"></div>
-                   <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    onClick={toggleBold} 
-                    className={cn(
-                      "rounded-xl h-9 w-9 transition-all",
-                      selectedElement.fontWeight === 'bold' ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-white/10"
-                    )}
-                   >
-                     <Bold className="h-4 w-4" />
-                   </Button>
+                   <Button variant="ghost" size="icon" onClick={toggleBold} className={cn("rounded-xl h-9 w-9 transition-all", selectedElement.fontWeight === 'bold' ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-white/10")}><Bold className="h-4 w-4" /></Button>
                 </div>
               )}
-              
               <div className="flex items-center gap-2 bg-background/50 backdrop-blur-md rounded-2xl border border-white/10 p-2 shadow-xl">
-                <Button variant="ghost" size="icon" onClick={() => changeLayer(-1)} className="text-foreground hover:bg-white/10 rounded-xl h-9 w-9">
-                  <Layers className="h-5 w-5" />
-                </Button>
-                <Button variant="ghost" size="icon" onClick={() => changeLayer(1)} className="text-foreground hover:bg-white/10 rounded-xl h-9 w-9">
-                  <Layers className="h-5 w-5" style={{transform: 'scaleY(-1)'}}/>
-                </Button>
-                {selectedId.startsWith('sticker-') && (
-                  <>
-                    <div className="w-px h-6 bg-white/10 mx-1"></div>
-                    <Button variant="ghost" size="icon" onClick={deleteSelected} className="text-destructive hover:bg-destructive/10 rounded-xl h-9 w-9">
-                      <Trash2 className="h-5 w-5" />
-                    </Button>
-                  </>
-                )}
+                <Button variant="ghost" size="icon" onClick={() => changeLayer(-1)} className="text-foreground hover:bg-white/10 rounded-xl h-9 w-9"><Layers className="h-5 w-5" /></Button>
+                <Button variant="ghost" size="icon" onClick={() => changeLayer(1)} className="text-foreground hover:bg-white/10 rounded-xl h-9 w-9"><Layers className="h-5 w-5" style={{transform: 'scaleY(-1)'}}/></Button>
+                {selectedId.startsWith('sticker-') && (<><div className="w-px h-6 bg-white/10 mx-1"></div><Button variant="ghost" size="icon" onClick={deleteSelected} className="text-destructive hover:bg-destructive/10 rounded-xl h-9 w-9"><Trash2 className="h-5 w-5" /></Button></>)}
               </div>
             </div>
           )}
 
           <div 
             className={cn(
-              "relative shadow-2xl overflow-hidden shrink-0 border-2 border-border/20 transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)]",
-              viewMode === 'preview' ? "w-[600px] h-[400px]" : "w-[1200px] h-[800px]"
+              "relative shadow-2xl transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] border border-white/5",
+              viewMode === 'preview' ? "w-[600px] h-[400px]" : "w-full max-w-[1400px] h-[90vh]"
             )}
-            style={{ 
-              borderRadius: previewRounding,
-              fontFamily: formData.font,
-              background: bodyBgStyle,
-            }}
+            style={{ borderRadius: previewRounding, fontFamily: formData.font, background: bodyBgStyle }}
           >
-            {/* Page Mode Backdrop */}
-            {viewMode === 'page' && (
-              <div className="absolute inset-0 border-4 border-dashed border-white/5 pointer-events-none z-0" />
-            )}
+            <div className="w-full h-full overflow-y-auto overflow-x-hidden relative custom-scrollbar">
+              <div className="relative" style={{ width: '100%', height: viewMode === 'preview' ? '400px' : '1500px' }}>
+                <div className="absolute cursor-pointer" onPointerDown={(e) => handlePointerDown(e, 'banner', 'move')} onClick={e => e.stopPropagation()} style={{ left: 0, top: 0, width: '100%', height: formData.layout.banner?.h ?? 220, zIndex: formData.layout.banner?.zIndex ?? 0 }}>
+                  {formData.bannerUrl ? (<img src={formData.bannerUrl} className="w-full h-full object-cover select-none pointer-events-none" alt="banner" />) : (<div className="w-full h-full bg-muted/10" />)}
+                </div>
 
-            <div 
-              className={cn("absolute cursor-pointer", selectedId === 'banner' ? "z-[100]" : "z-[1]")}
-              onPointerDown={(e) => handlePointerDown(e, 'banner', 'move')}
-              onClick={e => e.stopPropagation()}
-              style={{ 
-                left: formData.layout.banner?.x ?? 0, 
-                top: formData.layout.banner?.y ?? 0,
-                width: formData.layout.banner?.w ?? 0,
-                height: formData.layout.banner?.h ?? 0,
-                zIndex: formData.layout.banner?.zIndex ?? 0
-              }}
-            >
-              {formData.bannerUrl ? (
-                <img src={formData.bannerUrl} className="w-full h-full object-cover select-none pointer-events-none" alt="banner" />
-              ) : (
-                <div className="w-full h-full bg-muted/10" />
-              )}
-            </div>
+                <div className="absolute cursor-pointer" onPointerDown={(e) => handlePointerDown(e, 'pfp', 'move')} onClick={e => e.stopPropagation()} style={{ left: formData.layout.pfp?.x ?? 0, top: formData.layout.pfp?.y ?? 0, width: formData.layout.pfp?.w ?? 0, height: formData.layout.pfp?.h ?? 0, borderRadius: previewRounding, zIndex: formData.layout.pfp?.zIndex ?? 10, ...getTargetBorderStyle('profile', 'white'), overflow: 'hidden' }}>
+                  {formData.photoUrl ? (<img src={formData.photoUrl} className="w-full h-full object-cover select-none pointer-events-none" alt="pfp" />) : (<div className="w-full h-full flex items-center justify-center bg-muted/20"><UserCircle2 className="h-10 w-10 opacity-20" /></div>)}
+                </div>
 
-            <div 
-              className={cn("absolute cursor-pointer", selectedId === 'pfp' ? "z-[100]" : "z-[10]")}
-              onPointerDown={(e) => handlePointerDown(e, 'pfp', 'move')}
-              onClick={e => e.stopPropagation()}
-              style={{ 
-                left: formData.layout.pfp?.x ?? 0, 
-                top: formData.layout.pfp?.y ?? 0,
-                width: formData.layout.pfp?.w ?? 0,
-                height: formData.layout.pfp?.h ?? 0,
-                borderRadius: previewRounding,
-                zIndex: formData.layout.pfp?.zIndex ?? 2,
-                ...getTargetBorderStyle('profile', bodyBgStyle),
-                overflow: 'hidden'
-              }}
-            >
-              {formData.photoUrl ? (
-                <img src={formData.photoUrl} className="w-full h-full object-cover select-none pointer-events-none" alt="pfp" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center bg-muted/20"><UserCircle2 className="h-8 w-8 opacity-20" /></div>
-              )}
-            </div>
+                <div className="absolute cursor-pointer flex flex-col justify-center" onPointerDown={(e) => handlePointerDown(e, 'name', 'move')} onClick={e => e.stopPropagation()} style={{ left: formData.layout.name?.x ?? 0, top: formData.layout.name?.y ?? 0, width: formData.layout.name?.w ?? 0, height: formData.layout.name?.h ?? 0, zIndex: formData.layout.name?.zIndex ?? 10, color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor', fontSize: formData.layout.name?.fontSize ? `${formData.layout.name.fontSize}px` : '32px', fontWeight: formData.layout.name?.fontWeight || 'bold' }}><h4 className="leading-tight lowercase truncate select-none pointer-events-none">{formData.displayName || 'name'}</h4></div>
+                <div className="absolute cursor-pointer" onPointerDown={(e) => handlePointerDown(e, 'username', 'move')} onClick={e => e.stopPropagation()} style={{ left: formData.layout.username?.x ?? 0, top: formData.layout.username?.y ?? 0, width: formData.layout.username?.w ?? 0, height: formData.layout.username?.h ?? 0, zIndex: formData.layout.username?.zIndex ?? 10, color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor', opacity: 0.6, fontSize: formData.layout.username?.fontSize ? `${formData.layout.username.fontSize}px` : '14px', fontWeight: formData.layout.username?.fontWeight || 'normal' }}><p className="lowercase truncate select-none pointer-events-none">{formData.username ? `@${formData.username}` : '@username'}</p></div>
+                <div className="absolute cursor-pointer" onPointerDown={(e) => handlePointerDown(e, 'addBtn', 'move')} onClick={e => e.stopPropagation()} style={{ left: formData.layout.addBtn?.x ?? 0, top: formData.layout.addBtn?.y ?? 0, width: formData.layout.addBtn?.w ?? 0, height: formData.layout.addBtn?.h ?? 0, zIndex: formData.layout.addBtn?.zIndex ?? 10 }}><Button className="w-full h-full p-0 lowercase border-none transition-all shadow-none pointer-events-none" style={{ background: getColorStyle(formData.theme.buttons), color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'white', borderRadius: previewRounding, fontSize: formData.layout.addBtn?.fontSize ? `${formData.layout.addBtn.fontSize}px` : '11px', fontWeight: formData.layout.addBtn?.fontWeight || 'bold', ...getTargetBorderStyle('add', getColorStyle(formData.theme.buttons)) }}>add friend</Button></div>
+                <div className="absolute cursor-pointer" onPointerDown={(e) => handlePointerDown(e, 'aboutHeader', 'move')} onClick={e => e.stopPropagation()} style={{ left: formData.layout.aboutHeader?.x ?? 0, top: formData.layout.aboutHeader?.y ?? 0, width: formData.layout.aboutHeader?.w ?? 0, height: formData.layout.aboutHeader?.h ?? 0, zIndex: formData.layout.aboutHeader?.zIndex ?? 10, color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor', opacity: 0.4, fontSize: formData.layout.aboutHeader?.fontSize ? `${formData.layout.aboutHeader.fontSize}px` : '10px', fontWeight: formData.layout.aboutHeader?.fontWeight || 'bold' }}><h5 className="uppercase tracking-widest select-none pointer-events-none">about me</h5></div>
+                <div className="absolute cursor-pointer" onPointerDown={(e) => handlePointerDown(e, 'bio', 'move')} onClick={e => e.stopPropagation()} style={{ left: formData.layout.bio?.x ?? 0, top: formData.layout.bio?.y ?? 0, width: formData.layout.bio?.w ?? 0, height: formData.layout.bio?.h ?? 0, zIndex: formData.layout.bio?.zIndex ?? 10, color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor', fontSize: formData.layout.bio?.fontSize ? `${formData.layout.bio.fontSize}px` : '12px', fontWeight: formData.layout.bio?.fontWeight || 'normal' }}><p className="leading-relaxed lowercase opacity-90 italic line-clamp-3 select-none pointer-events-none">{formData.bio || 'your bio will appear here...'}</p></div>
 
-            <div 
-              className={cn("absolute cursor-pointer", selectedId === 'name' ? "z-[100]" : "z-[10]")}
-              onPointerDown={(e) => handlePointerDown(e, 'name', 'move')}
-              onClick={e => e.stopPropagation()}
-              style={{ 
-                left: formData.layout.name?.x ?? 0, 
-                top: formData.layout.name?.y ?? 0,
-                width: formData.layout.name?.w ?? 0,
-                height: formData.layout.name?.h ?? 0,
-                zIndex: formData.layout.name?.zIndex ?? 2,
-                color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor',
-                fontSize: formData.layout.name?.fontSize ? `${formData.layout.name.fontSize}px` : '32px',
-                fontWeight: formData.layout.name?.fontWeight || 'bold'
-              }}
-            >
-              <h4 className="leading-tight lowercase truncate select-none pointer-events-none">
-                {formData.displayName || 'name'}
-              </h4>
-            </div>
+                {formData.stickers.map((sticker: any) => (<div key={sticker.id} className="absolute cursor-pointer" onPointerDown={(e) => handlePointerDown(e, `sticker-${sticker.id}`, 'move')} onClick={e => e.stopPropagation()} style={{ left: sticker.x, top: sticker.y, width: sticker.w, height: sticker.h, zIndex: sticker.zIndex, transform: `rotate(${sticker.rotation || 0}deg)` }}><img src={sticker.url} className="w-full h-full object-fill select-none pointer-events-none" alt="sticker" /></div>))}
 
-            <div 
-              className={cn("absolute cursor-pointer", selectedId === 'username' ? "z-[100]" : "z-[10]")}
-              onPointerDown={(e) => handlePointerDown(e, 'username', 'move')}
-              onClick={e => e.stopPropagation()}
-              style={{ 
-                left: formData.layout.username?.x ?? 0, 
-                top: formData.layout.username?.y ?? 0,
-                width: formData.layout.username?.w ?? 0,
-                height: formData.layout.username?.h ?? 0,
-                zIndex: formData.layout.username?.zIndex ?? 2,
-                color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor',
-                opacity: 0.6,
-                fontSize: formData.layout.username?.fontSize ? `${formData.layout.username.fontSize}px` : '14px',
-                fontWeight: formData.layout.username?.fontWeight || 'normal'
-              }}
-            >
-              <p className="lowercase truncate select-none pointer-events-none">{formData.username ? `@${formData.username}` : '@username'}</p>
-            </div>
+                {Object.keys(formData.layout).map(key => renderSelectionBox(key, formData.layout[key as keyof ProfileLayout]))}
+                {formData.stickers.map((sticker: Sticker) => renderSelectionBox(`sticker-${sticker.id}`, sticker))}
 
-            <div 
-              className={cn("absolute cursor-pointer", selectedId === 'addBtn' ? "z-[100]" : "z-[10]")}
-              onPointerDown={(e) => handlePointerDown(e, 'addBtn', 'move')}
-              onClick={e => e.stopPropagation()}
-              style={{ 
-                left: formData.layout.addBtn?.x ?? 0, 
-                top: formData.layout.addBtn?.y ?? 0,
-                width: formData.layout.addBtn?.w ?? 0,
-                height: formData.layout.addBtn?.h ?? 0,
-                zIndex: formData.layout.addBtn?.zIndex ?? 2
-              }}
-            >
-              <Button 
-                className="w-full h-full p-0 lowercase border-none shadow-none pointer-events-none"
-                style={{ 
-                  background: getColorStyle(formData.theme.buttons),
-                  color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'white',
-                  borderRadius: previewRounding,
-                  fontSize: formData.layout.addBtn?.fontSize ? `${formData.layout.addBtn.fontSize}px` : '11px',
-                  fontWeight: formData.layout.addBtn?.fontWeight || 'bold',
-                  ...getTargetBorderStyle('add', getColorStyle(formData.theme.buttons))
-                }}
-              >
-                add friend
-              </Button>
-            </div>
-
-            <div 
-              className={cn("absolute cursor-pointer", selectedId === 'aboutHeader' ? "z-[100]" : "z-[10]")}
-              onPointerDown={(e) => handlePointerDown(e, 'aboutHeader', 'move')}
-              onClick={e => e.stopPropagation()}
-              style={{ 
-                left: formData.layout.aboutHeader?.x ?? 0, 
-                top: formData.layout.aboutHeader?.y ?? 0,
-                width: formData.layout.aboutHeader?.w ?? 0,
-                height: formData.layout.aboutHeader?.h ?? 0,
-                zIndex: formData.layout.aboutHeader?.zIndex ?? 2,
-                color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor',
-                opacity: 0.4,
-                fontSize: formData.layout.aboutHeader?.fontSize ? `${formData.layout.aboutHeader.fontSize}px` : '10px',
-                fontWeight: formData.layout.aboutHeader?.fontWeight || 'bold'
-              }}
-            >
-              <h5 className="uppercase tracking-widest select-none pointer-events-none">about me</h5>
-            </div>
-
-            <div 
-              className={cn("absolute cursor-pointer", selectedId === 'bio' ? "z-[100]" : "z-[10]")}
-              onPointerDown={(e) => handlePointerDown(e, 'bio', 'move')}
-              onClick={e => e.stopPropagation()}
-              style={{ 
-                left: formData.layout.bio?.x ?? 0, 
-                top: formData.layout.bio?.y ?? 0,
-                width: formData.layout.bio?.w ?? 0,
-                height: formData.layout.bio?.h ?? 0,
-                zIndex: formData.layout.bio?.zIndex ?? 2,
-                color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor',
-                fontSize: formData.layout.bio?.fontSize ? `${formData.layout.bio.fontSize}px` : '12px',
-                fontWeight: formData.layout.bio?.fontWeight || 'normal'
-              }}
-            >
-              <p className="leading-relaxed lowercase opacity-90 italic line-clamp-3 select-none pointer-events-none">
-                {formData.bio || 'your bio will appear here...'}
-              </p>
-            </div>
-
-            {formData.stickers.map((sticker: Sticker) => (
-              <div 
-                key={sticker.id}
-                className={cn("absolute cursor-pointer", selectedId === `sticker-${sticker.id}` ? "z-[150]" : "z-[15]")}
-                onPointerDown={(e) => handlePointerDown(e, `sticker-${sticker.id}`, 'move')}
-                onClick={e => e.stopPropagation()}
-                style={{
-                  left: sticker.x, top: sticker.y, width: sticker.w, height: sticker.h,
-                  zIndex: sticker.zIndex,
-                  transform: `rotate(${sticker.rotation || 0}deg)`
-                }}
-              >
-                <img src={sticker.url} className="w-full h-full object-fill select-none pointer-events-none" alt="sticker" />
+                {viewMode === 'page' && (
+                  <>
+                    <div className="absolute top-[500px] left-0 w-full h-16 flex border-y border-white/5 opacity-50 pointer-events-none" style={{ background: getColorStyle(formData.theme.buttons) }}>
+                      <div className="flex-1 flex items-center justify-center text-[10px] font-black text-white/40 tracking-[0.2em]">ALL POSTS</div>
+                      <div className="flex-1 flex items-center justify-center text-[10px] font-black text-white/40 tracking-[0.2em]">NOTEBOOKS</div>
+                      <div className="flex-1 flex items-center justify-center text-[10px] font-black text-white/40 tracking-[0.2em]">FLASHCARDS</div>
+                      <div className="flex-1 flex items-center justify-center text-[10px] font-black text-white/40 tracking-[0.2em]">THOUGHTS</div>
+                    </div>
+                    <div className="absolute top-[600px] left-10 right-10 flex gap-8">
+                       <div className="flex-1 aspect-[4/3] rounded-3xl bg-white/5 border border-white/5" />
+                       <div className="flex-1 aspect-[4/3] rounded-3xl bg-white/5 border border-white/5" />
+                    </div>
+                  </>
+                )}
               </div>
-            ))}
-
-            {Object.keys(formData.layout).map(key =>
-              renderSelectionBox(key, formData.layout[key as keyof ProfileLayout])
-            )}
-            {formData.stickers.map((sticker: Sticker) => (
-              renderSelectionBox(`sticker-${sticker.id}`, sticker)
-            ))}
+            </div>
           </div>
         </div>
       </DialogContent>
@@ -1236,15 +673,11 @@ function AdvancedProfileEditor({
 
 function AestheticColorPickerMini({ label, value, onChange }: { label: string, value: ColorValue, onChange: (v: ColorValue) => void }) {
   const [isOpen, setIsOpen] = React.useState(false);
-
   return (
     <div className="flex flex-col items-center gap-1 cursor-pointer group" onClick={() => setIsOpen(true)}>
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>
-          <div 
-            className="h-7 w-7 rounded-lg border border-border transition-transform group-hover:scale-110 shadow-lg shrink-0" 
-            style={{ background: value.type === 'solid' ? value.solid : `linear-gradient(${value.rotation ?? 90}deg, ${value.gradient.map(s => `${s.color} ${s.offset}%`).join(', ')})` }}
-          />
+          <div className="h-7 w-7 rounded-lg border border-border transition-transform group-hover:scale-110 shadow-lg shrink-0" style={{ background: value.type === 'solid' ? value.solid : `linear-gradient(${value.rotation ?? 90}deg, ${value.gradient.map(s => `${s.color} ${s.offset}%`).join(', ')})` }} />
         </DialogTrigger>
         <DialogContent className="sm:rounded-[24px] p-6 bg-card text-foreground border-none shadow-3xl max-w-[350px]">
           <DialogTitle className="sr-only">pick color for {label}</DialogTitle>
@@ -1268,32 +701,14 @@ function AestheticColorPickerContent({ label, value, onChange }: { label: string
           <button onClick={() => onChange({ ...value, type: 'gradient' })} className={cn("px-3 py-1 text-[9px] font-bold rounded-md transition-all", value.type === 'gradient' ? "bg-card text-foreground shadow-sm" : "opacity-30 hover:opacity-60")}>gradient</button>
         </div>
       </div>
-
       {value.type === 'solid' ? (
         <div className="space-y-4">
           <div className="flex items-center gap-3">
-            <div className="relative h-12 w-12 rounded-xl overflow-hidden border border-border">
-              <input type="color" value={value.solid} onChange={(e) => onChange({ ...value, solid: e.target.value })} className="absolute inset-0 w-[200%] h-[200%] -translate-x-1/4 -translate-y-1/4 cursor-pointer" />
-            </div>
-            <div className="relative flex-1">
-              <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-3 w-3 opacity-30 text-foreground" />
-              <Input 
-                value={value.solid.replace('#', '')} 
-                onChange={(e) => onChange({ ...value, solid: `#${e.target.value.replace(/[^0-9a-fA-F]/gi, '')}` })}
-                className="bg-background border-border text-foreground pl-8 h-12 text-sm font-mono rounded-xl !lowercase"
-                placeholder="ffffff"
-              />
-            </div>
+            <div className="relative h-12 w-12 rounded-xl overflow-hidden border border-border"><input type="color" value={value.solid} onChange={(e) => onChange({ ...value, solid: e.target.value })} className="absolute inset-0 w-[200%] h-[200%] -translate-x-1/4 -translate-y-1/4 cursor-pointer" /></div>
+            <div className="relative flex-1"><Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-3 w-3 opacity-30 text-foreground" /><Input value={value.solid.replace('#', '')} onChange={(e) => onChange({ ...value, solid: `#${e.target.value.replace(/[^0-9a-fA-F]/gi, '')}` })} className="bg-background border-border text-foreground pl-8 h-12 text-sm font-mono rounded-xl !lowercase" placeholder="ffffff" /></div>
           </div>
         </div>
-      ) : (
-        <GradientPicker 
-          gradient={value.gradient}
-          setGradient={(newGradient) => onChange({ ...value, gradient: newGradient })}
-          rotation={value.rotation ?? 90}
-          setRotation={(newRotation) => onChange({ ...value, rotation: newRotation })}
-        />
-      )}
+      ) : (<GradientPicker gradient={value.gradient} setGradient={(newGradient) => onChange({ ...value, gradient: newGradient })} rotation={value.rotation ?? 90} setRotation={(newRotation) => onChange({ ...value, rotation: newRotation })} />)}
     </div>
   );
 }
