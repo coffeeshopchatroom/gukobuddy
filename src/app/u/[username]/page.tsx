@@ -58,7 +58,7 @@ export default function PublicProfilePage() {
         const result = await getDocs(q)
         if (!result.empty) {
           const profileDoc = result.docs[0]
-          const uid = profileDoc.ref.parent.parent?.id
+          const uid = profileDoc.data().id || profileDoc.ref.parent.parent?.id
           setProfile({ ...profileDoc.data(), uid })
         }
       } catch (e) {
@@ -70,7 +70,7 @@ export default function PublicProfilePage() {
     resolveProfile()
   }, [username, db])
 
-  // Fetch user posts
+  // Fetch user posts - Use simple query to avoid index issues in preview
   const postsQuery = useMemoFirebase(() => {
     if (!profile?.uid || !db) return null
     return query(
@@ -84,6 +84,7 @@ export default function PublicProfilePage() {
   const filteredPosts = React.useMemo(() => {
     if (!userPosts) return []
     
+    // Sort in memory to avoid missing index errors during workstation previews
     const sorted = [...userPosts].sort((a, b) => 
       new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     )
@@ -266,11 +267,13 @@ export default function PublicProfilePage() {
             <div className="flex items-center gap-3">
               <button 
                 onClick={sendRequest}
-                className="px-10 py-3 text-sm font-bold lowercase transition-all shadow-md hover:brightness-95 active:scale-95"
+                className="px-10 py-3 text-sm lowercase transition-all shadow-md hover:brightness-95 active:scale-95"
                 style={{ 
                   background: btnStyle, 
                   color: 'white',
                   borderRadius: cornerRounding,
+                  fontSize: layout.addBtn?.fontSize ? `${layout.addBtn.fontSize}px` : '14px',
+                  fontWeight: layout.addBtn?.fontWeight || 'bold',
                   ...getTargetBorderStyle('add', btnStyle)
                 }}
               >

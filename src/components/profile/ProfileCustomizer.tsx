@@ -38,7 +38,9 @@ import {
   Layers,
   Gamepad2,
   Bold,
-  Type
+  Type,
+  Eye,
+  Layout
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { 
@@ -116,7 +118,7 @@ const DEFAULT_LAYOUT: ProfileLayout = {
   name: { x: 136, y: 50, w: 280, h: 48, zIndex: 2, fontSize: 32, fontWeight: 'bold' },
   username: { x: 136, y: 98, w: 150, h: 24, zIndex: 2, fontSize: 14, fontWeight: 'normal' },
   bio: { x: 24, y: 200, w: 300, h: 60, zIndex: 2, fontSize: 12, fontWeight: 'normal' },
-  addBtn: { x: 440, y: 50, w: 130, h: 44, zIndex: 2 },
+  addBtn: { x: 440, y: 50, w: 130, h: 44, zIndex: 2, fontSize: 11, fontWeight: 'bold' },
   aboutHeader: { x: 24, y: 175, w: 100, h: 20, zIndex: 2, fontSize: 10, fontWeight: 'bold' }
 };
 
@@ -585,11 +587,13 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
                   }}
                 >
                   <Button 
-                    className="w-full h-full p-0 text-[11px] font-bold lowercase border-none transition-all shadow-none"
+                    className="w-full h-full p-0 lowercase border-none transition-all shadow-none"
                     style={{ 
                       background: getColorStyle(formData.theme.buttons),
                       color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'white',
                       borderRadius: previewRounding,
+                      fontSize: formData.layout.addBtn?.fontSize ? `${formData.layout.addBtn.fontSize}px` : '11px',
+                      fontWeight: formData.layout.addBtn?.fontWeight || 'bold',
                       ...getTargetBorderStyle('add', getColorStyle(formData.theme.buttons))
                     }}
                   >
@@ -682,6 +686,7 @@ function AdvancedProfileEditor({
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
   const [history, setHistory] = React.useState<any[]>([]);
   const [historyIndex, setHistoryIndex] = React.useState(-1);
+  const [viewMode, setViewMode] = React.useState<'preview' | 'page'>('preview');
 
   const [dragState, setDragging] = React.useState<{ 
     id: string, 
@@ -851,7 +856,7 @@ function AdvancedProfileEditor({
   };
 
   const toggleBold = () => {
-    if (!selectedId || selectedId === 'pfp' || selectedId === 'banner' || selectedId === 'addBtn' || selectedId.startsWith('sticker-')) return;
+    if (!selectedId || selectedId === 'pfp' || selectedId === 'banner' || selectedId === 'aboutHeader' || selectedId.startsWith('sticker-')) return;
     
     setFormData((prev: any) => {
       const newFormData = JSON.parse(JSON.stringify(prev));
@@ -865,7 +870,7 @@ function AdvancedProfileEditor({
   };
 
   const updateFontSize = (v: number) => {
-    if (!selectedId || selectedId === 'pfp' || selectedId === 'banner' || selectedId === 'addBtn' || selectedId.startsWith('sticker-')) return;
+    if (!selectedId || selectedId === 'pfp' || selectedId === 'banner' || selectedId.startsWith('sticker-')) return;
     
     setFormData((prev: any) => {
       const newFormData = JSON.parse(JSON.stringify(prev));
@@ -935,18 +940,42 @@ function AdvancedProfileEditor({
     );
   };
 
-  const isTextElement = selectedId && ['name', 'username', 'bio', 'aboutHeader'].includes(selectedId);
+  const isTextElement = selectedId && ['name', 'username', 'bio', 'aboutHeader', 'addBtn'].includes(selectedId);
   const selectedElement = selectedId ? (selectedId.startsWith('sticker-') ? formData.stickers.find((s:any) => s.id === selectedId.replace('sticker-','')) : formData.layout[selectedId]) : null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-none w-screen h-screen p-0 border-none flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <DialogContent className="max-w-none w-screen h-screen p-0 border-none flex flex-col items-center justify-center bg-black/50 backdrop-blur-sm">
         <div
-          className="w-full h-full overflow-hidden relative flex items-center justify-center"
+          className="w-full h-full overflow-hidden relative flex flex-col items-center justify-center"
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onClick={() => setSelectedId(null)}
         >
+          {/* Header Bar */}
+          <div className="absolute top-6 left-1/2 -translate-x-1/2 z-[250] flex items-center gap-6">
+            <div className="flex items-center gap-2 bg-background/50 backdrop-blur-md rounded-full border border-white/10 p-1.5 shadow-xl">
+               <button 
+                onClick={() => setViewMode('preview')}
+                className={cn(
+                  "px-6 py-2 rounded-full text-xs font-bold transition-all lowercase flex items-center gap-2",
+                  viewMode === 'preview' ? "bg-white text-black shadow-md" : "text-white/60 hover:text-white"
+                )}
+               >
+                 <Eye size={14} /> preview
+               </button>
+               <button 
+                onClick={() => setViewMode('page')}
+                className={cn(
+                  "px-6 py-2 rounded-full text-xs font-bold transition-all lowercase flex items-center gap-2",
+                  viewMode === 'page' ? "bg-white text-black shadow-md" : "text-white/60 hover:text-white"
+                )}
+               >
+                 <Layout size={14} /> page
+               </button>
+            </div>
+          </div>
+
           <div className="absolute top-6 right-6 z-[250]">
             <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="text-foreground bg-background/50 hover:bg-background/80 rounded-full h-10 w-10">
               <X className="h-5 w-5" />
@@ -1015,14 +1044,21 @@ function AdvancedProfileEditor({
           )}
 
           <div 
-            className="w-[600px] h-[400px] relative shadow-2xl overflow-hidden shrink-0 border-2 border-border/20"
+            className={cn(
+              "relative shadow-2xl overflow-hidden shrink-0 border-2 border-border/20 transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)]",
+              viewMode === 'preview' ? "w-[600px] h-[400px]" : "w-[1200px] h-[800px]"
+            )}
             style={{ 
-              transform: 'scale(1.2)',
               borderRadius: previewRounding,
               fontFamily: formData.font,
               background: bodyBgStyle,
             }}
           >
+            {/* Page Mode Backdrop */}
+            {viewMode === 'page' && (
+              <div className="absolute inset-0 border-4 border-dashed border-white/5 pointer-events-none z-0" />
+            )}
+
             <div 
               className={cn("absolute cursor-pointer", selectedId === 'banner' ? "z-[100]" : "z-[1]")}
               onPointerDown={(e) => handlePointerDown(e, 'banner', 'move')}
@@ -1060,7 +1096,7 @@ function AdvancedProfileEditor({
               {formData.photoUrl ? (
                 <img src={formData.photoUrl} className="w-full h-full object-cover select-none pointer-events-none" alt="pfp" />
               ) : (
-                <div className="w-full h-full flex items-center justify-center bg-muted/10"><UserCircle2 className="h-8 w-8 opacity-20" /></div>
+                <div className="w-full h-full flex items-center justify-center bg-muted/20"><UserCircle2 className="h-8 w-8 opacity-20" /></div>
               )}
             </div>
 
@@ -1116,11 +1152,13 @@ function AdvancedProfileEditor({
               }}
             >
               <Button 
-                className="w-full h-full p-0 text-[11px] font-bold lowercase border-none shadow-none pointer-events-none"
+                className="w-full h-full p-0 lowercase border-none shadow-none pointer-events-none"
                 style={{ 
                   background: getColorStyle(formData.theme.buttons),
                   color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'white',
                   borderRadius: previewRounding,
+                  fontSize: formData.layout.addBtn?.fontSize ? `${formData.layout.addBtn.fontSize}px` : '11px',
+                  fontWeight: formData.layout.addBtn?.fontWeight || 'bold',
                   ...getTargetBorderStyle('add', getColorStyle(formData.theme.buttons))
                 }}
               >
