@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -67,10 +68,13 @@ export function useCollection<T = any>(
       (snapshot: QuerySnapshot<DocumentData>) => {
         const results: ResultItemType[] = [];
         for (const doc of snapshot.docs) {
-          // Put the doc.id first so that if the data has an 'id' property 
-          // (like the UserProfile UID), it correctly overwrites the doc ID.
-          // This is critical for collection group queries on documents with same names like "settings".
-          results.push({ id: doc.id, ...(doc.data() as T) } as ResultItemType);
+          const docData = doc.data() as any;
+          // Priority for ID resolution: 
+          // 1. Data-embedded 'id' (from backend entities)
+          // 2. Data-embedded 'uid' (alternative naming)
+          // 3. Document ID (default)
+          const resolvedId = docData.id || docData.uid || doc.id;
+          results.push({ ...docData, id: resolvedId } as ResultItemType);
         }
         setData(results);
         setError(null);

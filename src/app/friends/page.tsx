@@ -120,7 +120,8 @@ export default function FriendsPage() {
 
   const allUsersQuery = useMemoFirebase(() => {
     if (!user || !db || !isGukoMode) return null
-    return query(collectionGroup(db, "profile"), limit(50))
+    // Increased limit to 200 for better community visibility in Guko mode
+    return query(collectionGroup(db, "profile"), limit(200))
   }, [user, db, isGukoMode])
   const { data: allUsers } = useCollection(allUsersQuery)
 
@@ -162,7 +163,7 @@ export default function FriendsPage() {
       const results = querySnapshot.docs
         .map(doc => ({ 
           ...doc.data(), 
-          uid: doc.ref.parent.parent?.id 
+          uid: doc.data().id || doc.ref.parent.parent?.id 
         }))
         .filter(u => u.uid !== user?.uid && u.uid !== 'guko')
 
@@ -228,7 +229,7 @@ export default function FriendsPage() {
       const now = new Date().toISOString();
 
       for (const profileDoc of allProfiles.docs) {
-        const targetUid = profileDoc.ref.parent.parent?.id;
+        const targetUid = profileDoc.data().id || profileDoc.ref.parent.parent?.id;
         if (!targetUid || targetUid === 'guko') continue;
 
         const chatId = ['guko', targetUid].sort().join('_');
@@ -263,7 +264,7 @@ export default function FriendsPage() {
   };
 
   const rawClassmates = isGukoMode 
-    ? (allUsers?.map(u => ({ ...u, uid: u.id })) || []) 
+    ? (allUsers?.map(u => ({ ...u, uid: u.id && u.id !== 'settings' ? u.id : (u as any).uid || u.username })) || []) 
     : (acceptedFriends || []);
 
   // Filter Guko for separate section
