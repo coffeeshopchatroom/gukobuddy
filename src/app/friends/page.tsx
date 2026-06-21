@@ -120,7 +120,7 @@ export default function FriendsPage() {
 
   const allUsersQuery = useMemoFirebase(() => {
     if (!user || !db || !isGukoMode) return null
-    // Increased limit to 200 for better community visibility in Guko mode
+    // Increased limit to 200 for community visibility
     return query(collectionGroup(db, "profile"), limit(200))
   }, [user, db, isGukoMode])
   const { data: allUsers } = useCollection(allUsersQuery)
@@ -263,13 +263,27 @@ export default function FriendsPage() {
     }
   };
 
-  const rawClassmates = isGukoMode 
-    ? (allUsers?.map(u => ({ ...u, uid: u.id && u.id !== 'settings' ? u.id : (u as any).uid || u.username })) || []) 
-    : (acceptedFriends || []);
+  // Robust classmate mapping to prevent ghost users/duplicates
+  const rawClassmates = React.useMemo(() => {
+    if (isGukoMode) {
+      if (!allUsers) return [];
+      return allUsers
+        .filter(u => u.username && u.displayName) // Must have profile data
+        .map(u => ({ 
+          ...u, 
+          uid: u.id && u.id !== 'settings' ? u.id : (u as any).uid || u.username 
+        }));
+    }
+    return acceptedFriends || [];
+  }, [allUsers, acceptedFriends, isGukoMode]);
 
-  // Filter Guko for separate section
+  // Filter Guko for separate section and exclude self to prevent reflection
   const officialGuko = rawClassmates.find(c => c.uid === 'guko' || c.username === 'guko');
-  const otherClassmates = rawClassmates.filter(c => c.uid !== 'guko' && c.username !== 'guko');
+  const otherClassmates = rawClassmates.filter(c => 
+    c.uid !== 'guko' && 
+    c.username !== 'guko' && 
+    c.uid !== user?.uid // Filter out self to prevent ghost entry
+  );
 
   return (
     <div className="h-[calc(100vh-100px)] flex flex-col animate-smooth-slow overflow-hidden">
@@ -360,7 +374,7 @@ export default function FriendsPage() {
                   />
                 ))
               ) : (
-                <div className="px-4 py-10 text-center text-xs text-muted-foreground italic lowercase">no friends added yet.</div>
+                <div className="px-4 py-10 text-center text-xs text-muted-foreground italic lowercase">no classmates found.</div>
               )}
             </div>
           </ScrollArea>
@@ -824,7 +838,7 @@ function ChatInterface({ friend, user, db, actualMyProfile, effectiveUid }: any)
         if (msg.shareData.itemType === 'notebook') {
           const newNoteId = doc(collection(db, "temp")).id;
           const newNoteRef = doc(db, "users", effectiveUid, "notes", newNoteId);
-          setDocumentNonBlocking(newNoteRef, {
+          setDocumentNonBlocking(newTaskRef, {
             ...shareInfo.itemData,
             id: newNoteId,
             createdAt: new Date().toISOString(),
