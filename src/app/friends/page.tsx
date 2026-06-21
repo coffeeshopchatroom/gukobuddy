@@ -26,7 +26,8 @@ import {
   Paperclip,
   ImageIcon,
   BadgeCheck,
-  Megaphone
+  Megaphone,
+  Star
 } from "lucide-react"
 import { 
   useUser, 
@@ -261,9 +262,13 @@ export default function FriendsPage() {
     }
   };
 
-  const classmates = isGukoMode 
+  const rawClassmates = isGukoMode 
     ? (allUsers?.map(u => ({ ...u, uid: u.id })) || []) 
     : (acceptedFriends || []);
+
+  // Filter Guko for separate section
+  const officialGuko = rawClassmates.find(c => c.uid === 'guko' || c.username === 'guko');
+  const otherClassmates = rawClassmates.filter(c => c.uid !== 'guko' && c.username !== 'guko');
 
   return (
     <div className="h-[calc(100vh-100px)] flex flex-col animate-smooth-slow overflow-hidden">
@@ -326,41 +331,33 @@ export default function FriendsPage() {
                 </div>
               )}
 
+              {/* Official Section */}
+              {!isGukoMode && officialGuko && (
+                <div className="mb-6 space-y-2">
+                   <h3 className="px-4 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 mb-2">Verified Official</h3>
+                   <ClassmateItem 
+                    friend={officialGuko} 
+                    isActive={activeFriend?.uid === officialGuko.uid} 
+                    onClick={() => { setActiveFriend(officialGuko); setViewMode('chat'); setSelectedUser(null); }}
+                   />
+                </div>
+              )}
+
               <h3 className="px-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground opacity-50 mb-2">
                 {isGukoMode ? "Global Classmates" : "My Classmates"}
               </h3>
               
               {isFriendsLoading ? (
                 <div className="flex justify-center py-10"><Loader2 className="animate-spin text-primary/30" /></div>
-              ) : classmates.length > 0 ? (
-                classmates.map(friend => {
-                  const isGuko = friend.username === 'guko' || friend.isGukoMode === true;
-                  return (
-                    <button
-                      key={friend.uid}
-                      onClick={() => { setActiveFriend(friend); setViewMode('chat'); setSelectedUser(null); }}
-                      className={cn(
-                        "w-full flex items-center justify-between p-4 rounded-3xl transition-all group",
-                        activeFriend?.uid === friend.uid ? "bg-primary text-primary-foreground shadow-lg" : "hover:bg-muted"
-                      )}
-                    >
-                      <div className="flex items-center gap-4 overflow-hidden">
-                        <Avatar className="h-10 w-10 border-2 border-white/20">
-                          <AvatarImage src={friend.photoUrl} className="object-cover" />
-                          <AvatarFallback className="bg-primary/20 text-[10px] font-bold">{friend.displayName?.[0]}</AvatarFallback>
-                        </Avatar>
-                        <div className="text-left min-w-0">
-                          <div className="flex items-center gap-1">
-                             <p className={cn("font-bold text-sm truncate lowercase", isGuko && "italic font-black")}>{friend.displayName}</p>
-                             {isGuko && <BadgeCheck className="h-3 w-3" />}
-                          </div>
-                          <p className={cn("text-[10px] lowercase truncate opacity-60", activeFriend?.uid === friend.uid ? "text-primary-foreground" : "text-muted-foreground")}>@{friend.username}</p>
-                        </div>
-                      </div>
-                      {activeFriend?.uid === friend.uid && <div className="h-2 w-2 rounded-full bg-white animate-pulse" />}
-                    </button>
-                  )
-                })
+              ) : otherClassmates.length > 0 ? (
+                otherClassmates.map(friend => (
+                  <ClassmateItem 
+                    key={friend.uid}
+                    friend={friend} 
+                    isActive={activeFriend?.uid === friend.uid} 
+                    onClick={() => { setActiveFriend(friend); setViewMode('chat'); setSelectedUser(null); }}
+                  />
+                ))
               ) : (
                 <div className="px-4 py-10 text-center text-xs text-muted-foreground italic lowercase">no friends added yet.</div>
               )}
@@ -451,6 +448,39 @@ export default function FriendsPage() {
         </DialogContent>
       </Dialog>
     </div>
+  )
+}
+
+function ClassmateItem({ friend, isActive, onClick }: { friend: any, isActive: boolean, onClick: () => void }) {
+  const isGuko = friend.username === 'guko' || friend.isGukoMode === true || friend.uid === 'guko';
+  
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "w-full flex items-center justify-between p-4 rounded-3xl transition-all group",
+        isActive ? "bg-primary text-primary-foreground shadow-lg scale-[1.02]" : "hover:bg-muted"
+      )}
+    >
+      <div className="flex items-center gap-4 overflow-hidden">
+        <Avatar className="h-10 w-10 border-2 border-white/20">
+          <AvatarImage src={friend.photoUrl} className="object-cover" />
+          <AvatarFallback className="bg-primary/20 text-[10px] font-bold">{friend.displayName?.[0]}</AvatarFallback>
+        </Avatar>
+        <div className="text-left min-w-0">
+          <div className="flex items-center gap-1">
+             <p className={cn("font-bold text-sm truncate lowercase", isGuko && "italic font-black")}>{friend.displayName}</p>
+             {isGuko && <BadgeCheck className="h-3 w-3" />}
+          </div>
+          <p className={cn("text-[10px] lowercase truncate opacity-60", isActive ? "text-primary-foreground" : "text-muted-foreground")}>@{friend.username}</p>
+        </div>
+      </div>
+      {isActive ? (
+        <div className="h-2 w-2 rounded-full bg-white animate-pulse" />
+      ) : isGuko && (
+        <Star className="h-3 w-3 text-primary fill-primary/20" />
+      )}
+    </button>
   )
 }
 

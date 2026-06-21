@@ -2,6 +2,11 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Helper function to check if a user is an admin
+    function isAdmin() {
+      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)/profile/settings).data.isAdmin == true;
+    }
+
     // Allows collection group queries for searching profiles by username
     match /{path=**}/profile/{docId} {
       allow read: if request.auth != null;
@@ -10,23 +15,23 @@ service cloud.firestore {
     // Explicit rules for user settings
     match /users/{userId}/profile/settings {
       allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null && (request.auth.uid == userId || isAdmin());
     }
 
     // Friend requests logic
     match /users/{userId}/friends/{friendId} {
-      allow read, write: if request.auth != null && (request.auth.uid == userId || request.auth.uid == friendId);
+      allow read, write: if request.auth != null && (request.auth.uid == userId || request.auth.uid == friendId || isAdmin());
     }
 
     // User-specific data
     match /users/{userId}/{allPaths=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if request.auth != null && (request.auth.uid == userId || isAdmin());
     }
 
     // Chats and messaging
     match /chats/{chatId} {
       function isParticipant() {
-        return request.auth != null && (request.auth.uid in chatId.split('_'));
+        return request.auth != null && (request.auth.uid in chatId.split('_') || isAdmin());
       }
       allow read, write: if isParticipant();
       match /messages/{messageId} {
@@ -36,16 +41,16 @@ service cloud.firestore {
 
     // Shared items
     match /sharedItems/{shareId} {
-      allow read: if request.auth != null && (resource.data.fromUid == request.auth.uid || resource.data.toUid == request.auth.uid);
-      allow create: if request.auth != null && request.resource.data.fromUid == request.auth.uid;
+      allow read: if request.auth != null && (resource.data.fromUid == request.auth.uid || resource.data.toUid == request.auth.uid || isAdmin());
+      allow create: if request.auth != null && (request.resource.data.fromUid == request.auth.uid || isAdmin());
       allow update, delete: if false;
     }
 
     // Share Hub Posts
     match /posts/{postId} {
       allow read: if request.auth != null;
-      allow create: if request.auth != null && request.resource.data.authorUid == request.auth.uid;
-      allow delete: if request.auth != null && resource.data.authorUid == request.auth.uid;
+      allow create: if request.auth != null && (request.resource.data.authorUid == request.auth.uid || isAdmin());
+      allow delete: if request.auth != null && (resource.data.authorUid == request.auth.uid || isAdmin());
       allow update: if false;
     }
     
