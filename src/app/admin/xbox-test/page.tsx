@@ -5,7 +5,7 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 import { useUser, useDoc, useMemoFirebase, useFirestore } from "@/firebase"
 import { doc, setDoc } from "firebase/firestore"
-import { X, Check, Play, MessageSquare, Smile } from "lucide-react"
+import { X, Check, Play, MessageSquare, Smile, BadgeCheck } from "lucide-react"
 
 type CardProps = {
   className?: string;
@@ -138,6 +138,7 @@ const FriendTile = ({ friend, index, active }: { friend: typeof MOCK_FRIENDS[0],
   const isOnline = friend.status === 'online';
   const isActive = friend.status === 'active';
   const isOffline = friend.status === 'offline';
+  const isVerified = friend.username === 'guko';
 
   return (
     <div 
@@ -168,7 +169,10 @@ const FriendTile = ({ friend, index, active }: { friend: typeof MOCK_FRIENDS[0],
          <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_0%,rgba(0,0,0,0.4)_100%)]" />
          
          <div className="absolute top-8 left-8 space-y-2">
-            <h3 className="text-black text-3xl font-bold lowercase opacity-80">{friend.username}</h3>
+            <div className="flex items-center gap-2">
+               <h3 className={cn("text-black text-3xl font-bold lowercase opacity-80", isVerified && "italic font-black")}>{friend.username}</h3>
+               {isVerified && <BadgeCheck className="w-6 h-6 text-black/40" />}
+            </div>
             <p className={cn("text-4xl font-headline font-medium lowercase", isOnline ? "text-white" : "text-black/40")}>
               {friend.status === 'joins-off' ? 'active' : friend.status}!
             </p>
@@ -254,6 +258,7 @@ export default function Xbox360ThemeReplica() {
   const avatarUrl = profile?.photoUrl || user?.photoURL || "https://picsum.photos/seed/xboxava/200/200";
   const selectedAvatarId = profile?.selectedAvatar || 'mii-m2';
   const selectedAvatarGender = profile?.avatarGender || 'male';
+  const isOfficial = profile?.isGukoMode === true || profile?.username === 'guko';
 
   const previewAvatarPath = `/avatars/${selectedAvatarGender}/${selectedAvatarId}/${selectedAvatarId}_${hoverEmotion || currentEmotion}.png`;
 
@@ -274,7 +279,15 @@ export default function Xbox360ThemeReplica() {
         <div className="absolute top-32 left-[1812px] flex flex-col items-end gap-2 z-50 animate-fade-in">
           <div className="flex items-center gap-6">
              <div className="text-right">
-                <div className="[text-shadow:0px_4px_4px_#00000040] font-normal text-white text-6xl tracking-tight  font-headline">{displayName}</div>
+                <div className="flex items-center justify-end gap-4">
+                  <div className={cn(
+                    "[text-shadow:0px_4px_4px_#00000040] font-normal text-white text-6xl tracking-tight font-headline",
+                    isOfficial && "italic font-black"
+                  )}>
+                    {displayName}
+                  </div>
+                  {isOfficial && <BadgeCheck className="w-10 h-10 text-white fill-white/20" />}
+                </div>
                 <div className="flex items-center justify-end gap-3 mt-2">
                   <div className="[text-shadow:0px_4px_4px_#00000040] font-normal text-[#dddddd] text-[50px] tracking-wide">700</div>
                   <div className="w-[49px] h-[47px] rounded-full shadow-[0px_4px_4px_#00000040] flex items-center justify-center">
@@ -551,31 +564,20 @@ export default function Xbox360ThemeReplica() {
         <div className="absolute bottom-[100px] left-[134px] z-[100] flex items-center gap-8">
            <div className="flex items-center gap-4 group">
              <div className="w-[50px] h-[50px] bg-green-500 rounded-full flex items-center justify-center text-white font-black text-2xl shadow-lg group-hover:animate-pulse">A</div>
-             <span className="text-white text-3xl  font-medium">select</span>
+             <span className="text-white text-3xl font-medium">select</span>
            </div>
            <div className="flex items-center gap-4 group">
              <div className="w-[50px] h-[50px] bg-red-500 rounded-full flex items-center justify-center text-white font-black text-2xl shadow-lg group-hover:animate-pulse">B</div>
-             <span className="text-white text-3xl  font-medium">back</span>
+             <span className="text-white text-3xl font-medium">back</span>
            </div>
         </div>
       </main>
 
       <style jsx global>{`
         @import url('https://fonts.googleapis.com/css2?family=Cabin:wght@400;500&family=Roboto:wght@400;700&display=swap');
-
-        body {
-          background: #243d15 !important;
-          margin: 0;
-          padding: 0;
-        }
-
-        .font-headline {
-          font-family: 'Cabin', sans-serif !important;
-        }
-
-        * {
-          font-family: 'Roboto', sans-serif;
-        }
+        body { background: #243d15 !important; margin: 0; padding: 0; }
+        .font-headline { font-family: 'Cabin', sans-serif !important; }
+        * { font-family: 'Roboto', sans-serif; }
 
         @keyframes background-shift {
           0%, 100% { --bg-x: 17.13%; --bg-y: -29.45%; }

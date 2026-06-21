@@ -5,7 +5,7 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 import { useUser, useDoc, useMemoFirebase, useFirestore } from "@/firebase"
 import { doc, setDoc } from "firebase/firestore"
-import { X, Check, MessageSquare, Smile, Home } from "lucide-react"
+import { X, Check, MessageSquare, Smile, Home, BadgeCheck } from "lucide-react"
 import Link from "next/link"
 
 type CardProps = {
@@ -157,6 +157,7 @@ export default function MyChannelPage() {
   const avatarUrl = profile?.photoUrl || user?.photoURL || "https://picsum.photos/seed/xboxava/200/200";
   const selectedAvatarId = profile?.selectedAvatar || 'mii-m2';
   const selectedAvatarGender = profile?.avatarGender || 'male';
+  const isOfficial = profile?.isGukoMode === true || profile?.username === 'guko';
 
   const previewAvatarPath = `/avatars/${selectedAvatarGender}/${selectedAvatarId}/${selectedAvatarId}_${hoverEmotion || currentEmotion}.png`;
 
@@ -177,7 +178,15 @@ export default function MyChannelPage() {
         <div className="absolute top-32 left-[1812px] flex flex-col items-end gap-2 z-50 animate-fade-in">
           <div className="flex items-center gap-6">
              <div className="text-right">
-                <div className="[text-shadow:0px_4px_4px_#00000040] font-normal text-white text-6xl tracking-tight  font-headline">{displayName}</div>
+                <div className="flex items-center justify-end gap-4">
+                  <div className={cn(
+                    "[text-shadow:0px_4px_4px_#00000040] font-normal text-white text-6xl tracking-tight font-headline",
+                    isOfficial && "italic font-black"
+                  )}>
+                    {displayName}
+                  </div>
+                  {isOfficial && <BadgeCheck className="w-10 h-10 text-white fill-white/20" />}
+                </div>
                 <div className="flex items-center justify-end gap-3 mt-2">
                   <div className="[text-shadow:0px_4px_4px_#00000040] font-normal text-[#dddddd] text-[50px] tracking-wide">700</div>
                   <div className="w-[49px] h-[47px] rounded-full shadow-[0px_4px_4px_#00000040] flex items-center justify-center">

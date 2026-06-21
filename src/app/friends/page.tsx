@@ -247,7 +247,7 @@ export default function FriendsPage() {
                 <div className="flex justify-center py-10"><Loader2 className="animate-spin text-primary/30" /></div>
               ) : acceptedFriends && acceptedFriends.length > 0 ? (
                 acceptedFriends.map(friend => {
-                  const isGuko = friend.username === 'guko';
+                  const isGuko = friend.username === 'guko' || friend.isGukoMode === true;
                   return (
                     <button
                       key={friend.uid}
@@ -332,28 +332,34 @@ export default function FriendsPage() {
              </DialogTitle>
           </DialogHeader>
           <div className="p-8 space-y-4 max-h-[400px] overflow-y-auto custom-scrollbar">
-            {incomingRequests?.map(req => (
-              <div key={req.uid} className="flex items-center justify-between p-5 rounded-3xl bg-muted/30 border border-border/50 shadow-sm hover:bg-muted/50 transition-colors group">
-                <div className="flex items-center gap-4">
-                  <Avatar className="h-14 w-14 border-4 border-white shadow-md group-hover:scale-110 transition-transform">
-                    <AvatarImage src={req.photoUrl} className="object-cover" />
-                    <AvatarFallback className="bg-primary/20 text-primary text-xl font-bold">{req.displayName?.[0]}</AvatarFallback>
-                  </Avatar>
-                  <div className="min-w-0">
-                    <h4 className="font-bold text-lg lowercase truncate text-foreground">{req.displayName}</h4>
-                    <p className="text-xs opacity-60 lowercase">@{req.username}</p>
+            {incomingRequests?.map(req => {
+              const isGuko = req.username === 'guko' || req.isGukoMode === true;
+              return (
+                <div key={req.uid} className="flex items-center justify-between p-5 rounded-3xl bg-muted/30 border border-border/50 shadow-sm hover:bg-muted/50 transition-colors group">
+                  <div className="flex items-center gap-4">
+                    <Avatar className="h-14 w-14 border-4 border-white shadow-md group-hover:scale-110 transition-transform">
+                      <AvatarImage src={req.photoUrl} className="object-cover" />
+                      <AvatarFallback className="bg-primary/20 text-primary text-xl font-bold">{req.displayName?.[0]}</AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <h4 className={cn("font-bold text-lg lowercase truncate text-foreground", isGuko && "italic font-black")}>{req.displayName}</h4>
+                        {isGuko && <BadgeCheck className="h-4 w-4 text-primary" />}
+                      </div>
+                      <p className="text-xs opacity-60 lowercase">@{req.username}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="icon" onClick={() => handleAcceptRequest(req)} className="h-10 w-10 rounded-full bg-primary text-primary-foreground hover:scale-110 transition-transform">
+                      <Check className="h-5 w-5" />
+                    </Button>
+                    <Button size="icon" variant="ghost" onClick={() => handleDeclineRequest(req)} className="h-10 w-10 rounded-full bg-destructive/10 text-destructive hover:bg-destructive/20 hover:scale-110 transition-transform">
+                      <X className="h-5 w-5" />
+                    </Button>
                   </div>
                 </div>
-                <div className="flex gap-2">
-                   <Button size="icon" onClick={() => handleAcceptRequest(req)} className="h-10 w-10 rounded-full bg-primary text-primary-foreground hover:scale-110 transition-transform">
-                     <Check className="h-5 w-5" />
-                   </Button>
-                   <Button size="icon" variant="ghost" onClick={() => handleDeclineRequest(req)} className="h-10 w-10 rounded-full bg-destructive/10 text-destructive hover:bg-destructive/20 hover:scale-110 transition-transform">
-                     <X className="h-5 w-5" />
-                   </Button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </DialogContent>
       </Dialog>
@@ -787,7 +793,7 @@ function ChatInterface({ friend, user, db, actualMyProfile }: any) {
     return []
   }
 
-  const isFriendGuko = friend.username === 'guko';
+  const isFriendGuko = friend.username === 'guko' || friend.isGukoMode === true;
 
   return (
     <div className="flex flex-col h-full bg-background">
