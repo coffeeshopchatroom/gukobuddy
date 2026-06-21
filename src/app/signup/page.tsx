@@ -1,10 +1,11 @@
+
 'use client';
 
 import * as React from 'react';
 import { useState, useEffect } from 'react';
-import { useAuth, useFirestore, useUser } from '@/firebase';
+import { useAuth, useFirestore, useUser, setDocumentNonBlocking } from '@/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, query, collectionGroup, where, getDocs } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -74,10 +75,30 @@ export default function SignupPage() {
       await setDoc(profileRef, {
         id: user.uid,
         username: username.toLowerCase().trim(),
+        displayName: username,
         studentType,
         useAi,
         focus,
       }, { merge: true });
+
+      // Auto-friend official Guko account
+      const gukoQuery = query(collectionGroup(db, "profile"), where("username", "==", "guko"));
+      const gukoSnap = await getDocs(gukoQuery);
+      if (!gukoSnap.empty) {
+        const gukoUid = gukoSnap.docs[0].ref.parent.parent?.id;
+        if (gukoUid) {
+          const friendRef = doc(db, "users", user.uid, "friends", gukoUid);
+          setDocumentNonBlocking(friendRef, {
+            uid: gukoUid,
+            username: 'guko',
+            displayName: 'guko',
+            photoUrl: '/devmade-icons/gukologo.png',
+            status: 'accepted',
+            createdAt: new Date().toISOString()
+          }, { merge: true });
+        }
+      }
+
       router.push('/');
     } catch (e: any) {
       console.error('profile save error:', e);

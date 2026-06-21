@@ -25,7 +25,8 @@ import {
   Smile,
   Paperclip,
   Image as ImageIcon,
-  BadgeCheck
+  BadgeCheck,
+  Megaphone
 } from "lucide-react"
 import { 
   useUser, 
@@ -57,6 +58,7 @@ import { useToast } from "@/hooks/use-toast"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Card, CardContent } from "@/components/ui/card"
+import { Textarea } from "@/components/ui/textarea"
 import {
   Popover,
   PopoverContent,
@@ -70,6 +72,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
 import Link from "next/link"
 
 const PORTAL_BASE_W = 600;
@@ -99,15 +102,26 @@ export default function FriendsPage() {
   const [activeFriend, setActiveFriend] = React.useState<any | null>(null)
   const [viewMode, setViewMode] = React.useState<'discovery' | 'chat'>('discovery')
 
+  const [broadcastText, setBroadcastText] = React.useState("")
+  const [isBroadcasting, setIsBroadcasting] = React.useState(false)
+
   const myProfileQuery = useMemoFirebase(() => user ? query(collection(db, 'users', user.uid, 'profile')) : null, [user, db])
   const { data: myProfile } = useCollection(myProfileQuery)
   const actualMyProfile = myProfile?.find(p => p.id === 'settings')
+  const isGukoMode = actualMyProfile?.isGukoMode === true;
 
   const acceptedFriendsQuery = useMemoFirebase(() => {
-    if (!user || !db) return null
+    if (!user || !db || isGukoMode) return null
     return query(collection(db, "users", user.uid, "friends"), where("status", "==", "accepted"))
-  }, [user, db])
+  }, [user, db, isGukoMode])
   const { data: acceptedFriends, isLoading: isFriendsLoading } = useCollection(acceptedFriendsQuery)
+
+  // Global user list for Guko Mode
+  const allUsersQuery = useMemoFirebase(() => {
+    if (!user || !db || !isGukoMode) return null
+    return query(collectionGroup(db, "profile"), limit(50))
+  }, [user, db, isGukoMode])
+  const { data: allUsers } = useCollection(allUsersQuery)
 
   const incomingRequestsQuery = useMemoFirebase(() => {
     if (!user || !db) return null
@@ -128,6 +142,36 @@ export default function FriendsPage() {
       setIsRequestModalOpen(true);
     }
   }, [incomingRequests?.length]);
+
+  // Ensure Guko is friended for the current user
+  React.useEffect(() => {
+    if (user && db && acceptedFriends && !isGukoMode) {
+      const hasGuko = acceptedFriends.some(f => f.username === 'guko');
+      if (!hasGuko) {
+        // Find guko in database
+        async function autoFriendGuko() {
+          const gukoQuery = query(collectionGroup(db, "profile"), where("username", "==", "guko"));
+          const snap = await getDocs(gukoQuery);
+          if (!snap.empty) {
+            const gukoData = snap.docs[0].data();
+            const gukoUid = snap.docs[0].ref.parent.parent?.id;
+            if (gukoUid) {
+              const myFriendRef = doc(db, "users", user.uid, "friends", gukoUid);
+              setDocumentNonBlocking(myFriendRef, {
+                uid: gukoUid,
+                username: 'guko',
+                displayName: 'guko',
+                photoUrl: '/devmade-icons/gukologo.png',
+                status: 'accepted',
+                createdAt: new Date().toISOString()
+              }, { merge: true });
+            }
+          }
+        }
+        autoFriendGuko();
+      }
+    }
+  }, [user, db, acceptedFriends, isGukoMode]);
 
   const handleSearch = async () => {
     if (!searchQuery.trim() || !db) return
@@ -204,6 +248,57 @@ export default function FriendsPage() {
     if (incomingRequests && incomingRequests.length <= 1) setIsRequestModalOpen(false)
   }
 
+  const handleBroadcast = async () => {
+    if (!user || !db || !broadcastText.trim()) return;
+    setIsBroadcasting(true);
+
+    try {
+      // Get all users
+      const allProfiles = await getDocs(query(collectionGroup(db, "profile"), limit(200)));
+      const messageId = doc(collection(db, "temp")).id;
+      const now = new Date().toISOString();
+
+      for (const profileDoc of allProfiles.docs) {
+        const targetUid = profileDoc.ref.parent.parent?.id;
+        if (!targetUid || targetUid === user.uid) continue;
+
+        const chatId = [user.uid, targetUid].sort().join('_');
+        
+        // 1. Update Chat
+        const chatRef = doc(db, "chats", chatId);
+        setDocumentNonBlocking(chatRef, {
+          participants: [user.uid, targetUid],
+          lastMessage: broadcastText,
+          updatedAt: now
+        }, { merge: true });
+
+        // 2. Create Message
+        const msgId = doc(collection(db, "temp")).id;
+        const msgRef = doc(db, "chats", chatId, "messages", msgId);
+        setDocumentNonBlocking(msgRef, {
+          id: msgId,
+          senderId: user.uid,
+          type: 'text',
+          text: broadcastText,
+          createdAt: now,
+          isBroadcast: true
+        }, { merge: true });
+      }
+
+      setBroadcastText("");
+      toast({ title: "broadcast sent successfully" });
+    } catch (e) {
+      console.error("Broadcast failed", e);
+      toast({ variant: "destructive", title: "failed to send broadcast" });
+    } finally {
+      setIsBroadcasting(false);
+    }
+  };
+
+  const classmates = isGukoMode 
+    ? (allUsers?.map(u => ({ ...u, uid: u.id })) || []) 
+    : (acceptedFriends || []);
+
   return (
     <div className="h-[calc(100vh-100px)] flex flex-col animate-smooth-slow overflow-hidden">
       <div className="flex items-center justify-between mb-8">
@@ -241,12 +336,38 @@ export default function FriendsPage() {
           </div>
 
           <ScrollArea className="flex-1 px-4 py-4">
-            <div className="space-y-2">
-              <h3 className="px-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground opacity-50 mb-2">my classmates</h3>
+            <div className="space-y-4">
+              {isGukoMode && (
+                <div className="p-4 bg-primary/5 rounded-[32px] border border-primary/10 mb-6 space-y-4">
+                  <div className="flex items-center gap-2 px-2">
+                    <Megaphone size={16} className="text-primary" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-primary">Global Broadcast</span>
+                  </div>
+                  <Textarea 
+                    value={broadcastText}
+                    onChange={(e) => setBroadcastText(e.target.value)}
+                    placeholder="Message all students..."
+                    className="min-h-[100px] rounded-2xl border-none bg-background lowercase p-4 text-sm"
+                  />
+                  <Button 
+                    onClick={handleBroadcast} 
+                    disabled={isBroadcasting || !broadcastText.trim()}
+                    className="w-full rounded-xl font-bold lowercase shadow-lg shadow-primary/20"
+                  >
+                    {isBroadcasting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
+                    Broadcast message
+                  </Button>
+                </div>
+              )}
+
+              <h3 className="px-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground opacity-50 mb-2">
+                {isGukoMode ? "Global Classmates" : "My Classmates"}
+              </h3>
+              
               {isFriendsLoading ? (
                 <div className="flex justify-center py-10"><Loader2 className="animate-spin text-primary/30" /></div>
-              ) : acceptedFriends && acceptedFriends.length > 0 ? (
-                acceptedFriends.map(friend => {
+              ) : classmates.length > 0 ? (
+                classmates.map(friend => {
                   const isGuko = friend.username === 'guko' || friend.isGukoMode === true;
                   return (
                     <button
@@ -275,7 +396,7 @@ export default function FriendsPage() {
                   )
                 })
               ) : (
-                <div className="px-4 py-10 text-center text-xs text-muted-foreground italic lowercase.">no friends added yet.</div>
+                <div className="px-4 py-10 text-center text-xs text-muted-foreground italic lowercase">no friends added yet.</div>
               )}
             </div>
           </ScrollArea>
@@ -443,22 +564,6 @@ function ImmersiveProfilePreview({ profile, onAction, relationshipStatus }: { pr
     return `linear-gradient(${rotation}deg, ${stops.map((s: any) => `${s.color} ${s.offset}%`).join(', ')})`;
   };
 
-  const getTargetBorderStyle = (target: string, itemBg: string) => {
-    const isSelected = profile.borderTargets?.includes(target);
-    const width = profile.borderWidth || 0;
-    const color = profile.targetColors?.[target] || theme.border || { type: 'solid', solid: '#ffffff33' };
-
-    if (!isSelected || width <= 0) return { border: 'none' };
-    if (color.type === 'solid') return { border: `${width}px solid ${color.solid}` };
-    const gradient = getColorStyle(color);
-    return {
-      border: `${width}px solid transparent`,
-      backgroundImage: `linear-gradient(${itemBg}, ${itemBg}), ${gradient}`,
-      backgroundOrigin: 'border-box',
-      backgroundClip: 'padding-box, border-box'
-    };
-  };
-
   const cornerRadius = `${profile.cornerRounding ?? 16}px`;
 
   return (
@@ -497,7 +602,6 @@ function ImmersiveProfilePreview({ profile, onAction, relationshipStatus }: { pr
             left: layout.pfp?.x ?? 24, top: layout.pfp?.y ?? 40,
             width: layout.pfp?.w ?? 140, height: layout.pfp?.h ?? 140,
             borderRadius: cornerRadius, zIndex: layout.pfp?.zIndex ?? 2,
-            ...getTargetBorderStyle('profile', 'rgba(0,0,0,0.1)'),
             backgroundColor: 'rgba(0,0,0,0.1)'
           }}>
             {profile.photoUrl ? (
@@ -539,8 +643,7 @@ function ImmersiveProfilePreview({ profile, onAction, relationshipStatus }: { pr
               className="w-full h-full font-bold lowercase border-none shadow-xl transition-all"
               style={{ 
                 background: getColorStyle(theme.buttons || customColors.primary),
-                color: 'white', borderRadius: cornerRadius,
-                ...getTargetBorderStyle('add', getColorStyle(theme.buttons || customColors.primary))
+                color: 'white', borderRadius: cornerRadius
               }}
             >
               {relationshipStatus === 'accepted' ? 'friends' : (relationshipStatus === 'pending_out' || relationshipStatus === 'pending_in') ? 'requested!' : 'add friend'}
@@ -943,5 +1046,50 @@ function ShareRow({ icon, label, onClick }: any) {
       <span className="font-bold text-sm lowercase flex-1">{label}</span>
       <ChevronRight size={16} className="text-muted-foreground opacity-40" />
     </button>
+  )
+}
+
+function UserSearchCard({ user, onClick }: { user: any, onClick: () => void }) {
+  const primary = user.theme?.customColors?.primary || '#A7C4A0'
+  const background = user.theme?.customColors?.background || '#FFFFFF'
+  const isGuko = user.username === 'guko' || user.isGukoMode === true;
+  
+  return (
+    <div 
+      onClick={onClick}
+      className="group relative h-48 rounded-[32px] overflow-hidden border border-border/10 cursor-pointer shadow-sm hover:shadow-2xl transition-all duration-500 bg-card"
+    >
+      <div className="absolute inset-0 flex flex-col">
+        <div className="h-1/2 bg-cover bg-center" style={{ backgroundImage: `url(${user.bannerUrl})`, backgroundColor: primary }}>
+          <div className="absolute inset-0 bg-black/10" />
+        </div>
+        <div className="h-1/2" style={{ backgroundColor: background }} />
+      </div>
+
+      <div className="relative h-full flex flex-col items-center justify-center gap-2">
+        <div className="h-16 w-16 rounded-[20px] overflow-hidden border-4 border-white shadow-xl bg-white shrink-0 group-hover:scale-110 transition-transform mt-2">
+          {user.photoUrl ? (
+            <img src={user.photoUrl} className="w-full h-full object-cover" alt="avatar" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-primary/10 text-primary font-bold">
+              {user.displayName?.[0]}
+            </div>
+          )}
+        </div>
+        <div className="text-center px-4 w-full">
+          <div className="flex items-center justify-center gap-1">
+             <h4 className={cn("font-bold text-sm lowercase truncate text-foreground", isGuko && "italic font-black")}>{user.displayName}</h4>
+             {isGuko && <BadgeCheck className="h-3.5 w-3.5 text-primary" />}
+          </div>
+          <p className="text-[10px] lowercase truncate opacity-40 text-foreground">@{user.username}</p>
+        </div>
+      </div>
+      
+      <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all">
+        <div className="h-10 w-10 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-lg">
+          <ChevronRight size={20} className="text-primary" />
+        </div>
+      </div>
+    </div>
   )
 }
