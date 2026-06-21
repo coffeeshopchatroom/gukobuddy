@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -24,7 +23,7 @@ import {
   CheckSquare,
   Smile,
   Paperclip,
-  Image as ImageIcon,
+  ImageIcon,
   BadgeCheck,
   Megaphone
 } from "lucide-react"
@@ -1046,50 +1045,5 @@ function ShareRow({ icon, label, onClick }: any) {
       <span className="font-bold text-sm lowercase flex-1">{label}</span>
       <ChevronRight size={16} className="text-muted-foreground opacity-40" />
     </button>
-  )
-}
-
-function UserSearchCard({ user, onClick }: { user: any, onClick: () => void }) {
-  const primary = user.theme?.customColors?.primary || '#A7C4A0'
-  const background = user.theme?.customColors?.background || '#FFFFFF'
-  const isGuko = user.username === 'guko' || user.isGukoMode === true;
-  
-  return (
-    <div 
-      onClick={onClick}
-      className="group relative h-48 rounded-[32px] overflow-hidden border border-border/10 cursor-pointer shadow-sm hover:shadow-2xl transition-all duration-500 bg-card"
-    >
-      <div className="absolute inset-0 flex flex-col">
-        <div className="h-1/2 bg-cover bg-center" style={{ backgroundImage: `url(${user.bannerUrl})`, backgroundColor: primary }}>
-          <div className="absolute inset-0 bg-black/10" />
-        </div>
-        <div className="h-1/2" style={{ backgroundColor: background }} />
-      </div>
-
-      <div className="relative h-full flex flex-col items-center justify-center gap-2">
-        <div className="h-16 w-16 rounded-[20px] overflow-hidden border-4 border-white shadow-xl bg-white shrink-0 group-hover:scale-110 transition-transform mt-2">
-          {user.photoUrl ? (
-            <img src={user.photoUrl} className="w-full h-full object-cover" alt="avatar" />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center bg-primary/10 text-primary font-bold">
-              {user.displayName?.[0]}
-            </div>
-          )}
-        </div>
-        <div className="text-center px-4 w-full">
-          <div className="flex items-center justify-center gap-1">
-             <h4 className={cn("font-bold text-sm lowercase truncate text-foreground", isGuko && "italic font-black")}>{user.displayName}</h4>
-             {isGuko && <BadgeCheck className="h-3.5 w-3.5 text-primary" />}
-          </div>
-          <p className="text-[10px] lowercase truncate opacity-40 text-foreground">@{user.username}</p>
-        </div>
-      </div>
-      
-      <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all">
-        <div className="h-10 w-10 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-lg">
-          <ChevronRight size={20} className="text-primary" />
-        </div>
-      </div>
-    </div>
   )
 }
