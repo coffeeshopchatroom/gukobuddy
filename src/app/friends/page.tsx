@@ -106,7 +106,8 @@ export default function FriendsPage() {
 
   const myProfileQuery = useMemoFirebase(() => user ? query(collection(db, 'users', user.uid, 'profile')) : null, [user, db])
   const { data: myProfile } = useCollection(myProfileQuery)
-  const actualMyProfile = myProfile?.find(p => p.id === 'settings')
+  // Simplified lookup: the profile collection should only have one doc (settings)
+  const actualMyProfile = myProfile?.[0]
   const isGukoMode = actualMyProfile?.isGukoMode === true;
 
   const acceptedFriendsQuery = useMemoFirebase(() => {
@@ -260,6 +261,7 @@ export default function FriendsPage() {
     }
   };
 
+  // Map students for the list: Guko sees everyone, users see their friends
   const classmates = isGukoMode 
     ? (allUsers?.map(u => ({ ...u, uid: u.id })) || []) 
     : (acceptedFriends || []);
@@ -374,7 +376,7 @@ export default function FriendsPage() {
                 <div className="space-y-6 animate-in fade-in">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {searchResults.map(res => (
-                      <UserSearchCard key={res.uid} user={res} onClick={() => setSelectedUser(res)} />
+                      <UserSearchCardMini key={res.uid} user={res} onClick={() => setSelectedUser(res)} />
                     ))}
                   </div>
                   {hasSearched && searchResults.length === 0 && !isSearching && (
@@ -453,9 +455,11 @@ export default function FriendsPage() {
   )
 }
 
-function UserSearchCard({ user, onClick }: { user: any, onClick: () => void }) {
-  const primary = user.theme?.customColors?.primary || '#A7C4A0'
-  const background = user.theme?.customColors?.background || '#FFFFFF'
+function UserSearchCardMini({ user, onClick }: { user: any, onClick: () => void }) {
+  const theme = {
+    primary: user.theme?.customColors?.primary || '#A7C4A0',
+    background: user.theme?.customColors?.background || '#FFFFFF'
+  }
   const isGuko = user.username === 'guko' || user.isGukoMode === true;
   
   return (
@@ -464,10 +468,10 @@ function UserSearchCard({ user, onClick }: { user: any, onClick: () => void }) {
       className="group relative h-48 rounded-[32px] overflow-hidden border border-border/10 cursor-pointer shadow-sm hover:shadow-2xl transition-all duration-500 bg-card"
     >
       <div className="absolute inset-0 flex flex-col">
-        <div className="h-1/2 bg-cover bg-center" style={{ backgroundImage: `url(${user.bannerUrl})`, backgroundColor: primary }}>
+        <div className="h-1/2 bg-cover bg-center" style={{ backgroundImage: `url(${user.bannerUrl})`, backgroundColor: theme.primary }}>
           <div className="absolute inset-0 bg-black/10" />
         </div>
-        <div className="h-1/2" style={{ backgroundColor: background }} />
+        <div className="h-1/2" style={{ backgroundColor: theme.background }} />
       </div>
 
       <div className="relative h-full flex flex-col items-center justify-center gap-2">
@@ -1011,42 +1015,5 @@ function ShareCategoryRow({ icon, label, onClick }: any) {
       <span className="font-bold text-sm lowercase flex-1">{label}</span>
       <ChevronRight size={16} className="text-muted-foreground opacity-40" />
     </button>
-  )
-}
-
-function UserSearchCardMini({ user, onClick }: { user: any, onClick: () => void }) {
-  const theme = {
-    primary: user.theme?.customColors?.primary || '#A7C4A0',
-    background: user.theme?.customColors?.background || '#FFFFFF'
-  }
-  return (
-    <div 
-      onClick={onClick}
-      className="group flex items-center justify-between p-1 pr-6 rounded-2xl border border-border/10 bg-card hover:shadow-xl transition-all cursor-pointer overflow-hidden h-20"
-    >
-      <div className="flex items-center gap-4 h-full">
-        <div className="h-full w-20 bg-muted/10 shrink-0 overflow-hidden relative">
-          {user.photoUrl ? (
-            <img src={user.photoUrl} className="w-full h-full object-cover" alt="pfp" />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center bg-primary/10 text-primary font-bold">
-              {user.displayName?.[0]}
-            </div>
-          )}
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors" />
-        </div>
-        <div>
-          <h4 className="font-bold text-sm lowercase">{user.displayName}</h4>
-          <p className="text-[10px] text-muted-foreground lowercase">@{user.username}</p>
-        </div>
-      </div>
-      <div className="flex items-center gap-3">
-        <div className="flex gap-1 h-3">
-          <div className="w-3 h-3 rounded-full shadow-sm" style={{ background: theme.primary }} />
-          <div className="w-3 h-3 rounded-full shadow-sm" style={{ background: theme.background }} />
-        </div>
-        <ChevronRight size={16} className="text-muted-foreground group-hover:text-primary transition-transform group-hover:translate-x-1" />
-      </div>
-    </div>
   )
 }

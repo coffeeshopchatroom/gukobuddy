@@ -69,7 +69,7 @@ export function useCollection<T = any>(
         for (const doc of snapshot.docs) {
           // Put the doc.id first so that if the data has an 'id' property 
           // (like the UserProfile UID), it correctly overwrites the doc ID.
-          // This is critical for collection group queries on documents with same names.
+          // This is critical for collection group queries on documents with same names like "settings".
           results.push({ id: doc.id, ...(doc.data() as T) } as ResultItemType);
         }
         setData(results);
