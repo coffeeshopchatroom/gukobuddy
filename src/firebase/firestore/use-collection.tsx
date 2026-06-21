@@ -67,7 +67,10 @@ export function useCollection<T = any>(
       (snapshot: QuerySnapshot<DocumentData>) => {
         const results: ResultItemType[] = [];
         for (const doc of snapshot.docs) {
-          results.push({ ...(doc.data() as T), id: doc.id });
+          // Put the doc.id first so that if the data has an 'id' property 
+          // (like the UserProfile UID), it correctly overwrites the doc ID.
+          // This is critical for collection group queries on documents with same names.
+          results.push({ id: doc.id, ...(doc.data() as T) } as ResultItemType);
         }
         setData(results);
         setError(null);

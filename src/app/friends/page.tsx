@@ -222,7 +222,6 @@ export default function FriendsPage() {
     setIsBroadcasting(true);
 
     try {
-      // Get all users
       const allProfiles = await getDocs(query(collectionGroup(db, "profile"), limit(200)));
       const now = new Date().toISOString();
 
@@ -232,7 +231,6 @@ export default function FriendsPage() {
 
         const chatId = [user.uid, targetUid].sort().join('_');
         
-        // 1. Update Chat
         const chatRef = doc(db, "chats", chatId);
         setDocumentNonBlocking(chatRef, {
           participants: [user.uid, targetUid],
@@ -240,7 +238,6 @@ export default function FriendsPage() {
           updatedAt: now
         }, { merge: true });
 
-        // 2. Create Message
         const msgId = doc(collection(db, "temp")).id;
         const msgRef = doc(db, "chats", chatId, "messages", msgId);
         setDocumentNonBlocking(msgRef, {
@@ -964,9 +961,9 @@ function ChatInterface({ friend, user, db, actualMyProfile }: any) {
           </DialogHeader>
           {!shareCategory ? (
             <div className="grid gap-3 py-6">
-              <ShareRow icon={<Layers />} label="flashcard decks" onClick={() => setShareCategory('flashcardSet')} />
-              <ShareRow icon={<BookOpen />} label="notebook pages" onClick={() => setShareCategory('notebook')} />
-              <ShareRow icon={<CheckSquare />} label="tasks" onClick={() => setShareCategory('task')} />
+              <ShareCategoryRow icon={<Layers />} label="flashcard decks" onClick={() => setShareCategory('flashcardSet')} />
+              <ShareCategoryRow icon={<BookOpen />} label="notebook pages" onClick={() => setShareCategory('notebook')} />
+              <ShareCategoryRow icon={<CheckSquare />} label="tasks" onClick={() => setShareCategory('task')} />
             </div>
           ) : (
             <div className="space-y-4">
@@ -1007,12 +1004,49 @@ function ChatInterface({ friend, user, db, actualMyProfile }: any) {
   )
 }
 
-function ShareRow({ icon, label, onClick }: any) {
+function ShareCategoryRow({ icon, label, onClick }: any) {
   return (
     <button onClick={onClick} className="flex items-center gap-4 p-4 rounded-2xl bg-muted/30 hover:bg-primary/5 transition-all text-left group">
       <div className="p-2 rounded-xl bg-white border border-border shadow-sm group-hover:text-primary transition-colors">{React.cloneElement(icon, { size: 18 })}</div>
       <span className="font-bold text-sm lowercase flex-1">{label}</span>
       <ChevronRight size={16} className="text-muted-foreground opacity-40" />
     </button>
+  )
+}
+
+function UserSearchCardMini({ user, onClick }: { user: any, onClick: () => void }) {
+  const theme = {
+    primary: user.theme?.customColors?.primary || '#A7C4A0',
+    background: user.theme?.customColors?.background || '#FFFFFF'
+  }
+  return (
+    <div 
+      onClick={onClick}
+      className="group flex items-center justify-between p-1 pr-6 rounded-2xl border border-border/10 bg-card hover:shadow-xl transition-all cursor-pointer overflow-hidden h-20"
+    >
+      <div className="flex items-center gap-4 h-full">
+        <div className="h-full w-20 bg-muted/10 shrink-0 overflow-hidden relative">
+          {user.photoUrl ? (
+            <img src={user.photoUrl} className="w-full h-full object-cover" alt="pfp" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-primary/10 text-primary font-bold">
+              {user.displayName?.[0]}
+            </div>
+          )}
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors" />
+        </div>
+        <div>
+          <h4 className="font-bold text-sm lowercase">{user.displayName}</h4>
+          <p className="text-[10px] text-muted-foreground lowercase">@{user.username}</p>
+        </div>
+      </div>
+      <div className="flex items-center gap-3">
+        <div className="flex gap-1 h-3">
+          <div className="w-3 h-3 rounded-full shadow-sm" style={{ background: theme.primary }} />
+          <div className="w-3 h-3 rounded-full shadow-sm" style={{ background: theme.background }} />
+        </div>
+        <ChevronRight size={16} className="text-muted-foreground group-hover:text-primary transition-transform group-hover:translate-x-1" />
+      </div>
+    </div>
   )
 }
