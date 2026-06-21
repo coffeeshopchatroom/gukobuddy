@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -51,7 +52,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { useFirebase, useUser, useDoc, useMemoFirebase } from "@/firebase"
 import { signOut, updateProfile } from "firebase/auth"
-import { doc, collection, query, orderBy, where, setDoc, getDocs, collectionGroup } from 'firebase/firestore'
+import { doc, collection, query, orderBy, where, setDoc, getDocs, collectionGroup, getDoc } from 'firebase/firestore'
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ProfileCustomizer } from "@/components/profile/ProfileCustomizer"
 import {
@@ -89,6 +90,7 @@ export function AppSidebar() {
   const [isAdminPanelOpen, setIsAdminPanelOpen] = React.useState(false);
   
   const isGukoMode = profile?.isGukoMode === true;
+  const effectiveUid = isGukoMode ? 'guko' : (user?.uid || '');
   
   const isTaskRelated = pathname.startsWith('/tasks') || pathname === '/pomodoro' || pathname === '/study-session';
   const isNotebookRelated = pathname.startsWith('/notebooks');
@@ -107,34 +109,25 @@ export function AppSidebar() {
   // Ensure Guko is friended for existing users
   React.useEffect(() => {
     if (user && firestore && !isGukoMode) {
-       // We only check once per session to avoid heavy querying
        const hasCheckedGuko = sessionStorage.getItem(`guko-checked-${user.uid}`);
        if (hasCheckedGuko) return;
 
        async function ensureGukoFriend() {
          try {
-           const gukoQuery = query(collectionGroup(firestore, "profile"), where("username", "==", "guko"));
-           const snap = await getDocs(gukoQuery);
-           if (!snap.empty) {
-             const gukoUid = snap.docs[0].ref.parent.parent?.id;
-             if (gukoUid && gukoUid !== user.uid) {
-               const myFriendRef = doc(firestore, "users", user.uid, "friends", gukoUid);
-               
-               // Check if already friended
-               const friendDoc = await doc(firestore, "users", user.uid, "friends", gukoUid);
-               
-               setDoc(myFriendRef, {
-                 uid: gukoUid,
-                 username: 'guko',
-                 displayName: 'guko',
-                 photoUrl: '/devmade-icons/gukologo.png',
-                 status: 'accepted',
-                 createdAt: new Date().toISOString()
-               }, { merge: true }).catch(err => console.warn("Failed to auto-friend Guko", err));
+           const gukoFriendRef = doc(firestore, "users", user.uid, "friends", "guko");
+           const gukoFriendSnap = await getDoc(gukoFriendRef);
 
-               sessionStorage.setItem(`guko-checked-${user.uid}`, 'true');
-             }
+           if (!gukoFriendSnap.exists()) {
+             await setDoc(gukoFriendRef, {
+               uid: 'guko',
+               username: 'guko',
+               displayName: 'guko',
+               photoUrl: '/devmade-icons/gukologo.png',
+               status: 'accepted',
+               createdAt: new Date().toISOString()
+             }, { merge: true });
            }
+           sessionStorage.setItem(`guko-checked-${user.uid}`, 'true');
          } catch (e) {
            console.warn("Guko auto-friend check skipped", e);
          }
@@ -201,7 +194,7 @@ export function AppSidebar() {
                     </button>
                   </Link>
                   
-                  <NotificationCenter user={user} firestore={firestore} />
+                  <NotificationCenter user={user} firestore={firestore} effectiveUid={effectiveUid} />
                 </>
               )}
             </div>
@@ -222,7 +215,6 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
-              {/* Hide focus features if in Guko mode (commercial) */}
               {!isGukoMode && (
                 <>
                   {(focus === 'all' || focus === 'tasks') && (
@@ -548,15 +540,15 @@ function AdminPanelDialog({ children, open, onOpenChange, profile, user, firesto
   const handleToggleGukoMode = async () => {
     if (!user || !firestore || !profile) return;
     const userRef = doc(firestore, 'users', user.uid, 'profile', 'settings');
+    const gukoRef = doc(firestore, 'users', 'guko', 'profile', 'settings');
     
     if (isGukoMode) {
-      // Restore everything from backup
       const backup = profile.personalBackup || {};
       await setDoc(userRef, {
         ...backup,
         isGukoMode: false,
         personalBackup: null,
-        isAdmin: true, // Preserve admin status
+        isAdmin: true,
         id: user.uid
       }, { merge: false });
       
@@ -567,7 +559,6 @@ function AdminPanelDialog({ children, open, onOpenChange, profile, user, firesto
 
       toast({ title: "returned to personal account" });
     } else {
-      // Backup full current state
       const backup = {
         displayName: profile.displayName || '',
         username: profile.username || '',
@@ -586,28 +577,8 @@ function AdminPanelDialog({ children, open, onOpenChange, profile, user, firesto
         studentType: profile.studentType || 'college'
       };
       
-      const gukoTheme = {
-        activeTheme: 'classic',
-        customColors: { primary: '#A7C4A0', background: '#FFFFFF', accent: '#FFF0F0', foreground: '#1a1c19', muted: '#71717a' },
-        backgroundImage: '',
-        bgOpacity: 20,
-        bgBlur: 0,
-        fontFamily: 'Plus Jakarta Sans',
-        fontSize: 'base'
-      };
-
-      const gukoLayout = {
-         banner: { x: 0, y: 0, w: 600, h: 120, zIndex: 0 },
-         pfp: { x: 40, y: 80, w: 120, h: 120, zIndex: 10 },
-         name: { x: 180, y: 130, w: 300, h: 48, zIndex: 10 },
-         username: { x: 180, y: 170, w: 200, h: 24, zIndex: 10 },
-         bio: { x: 40, y: 220, w: 520, h: 80, zIndex: 10 },
-         addBtn: { x: 440, y: 130, w: 130, h: 44, zIndex: 10 },
-         aboutHeader: { x: 40, y: 200, w: 100, h: 20, zIndex: 10 }
-      };
-
-      await setDoc(userRef, {
-        id: user.uid,
+      const gukoData = {
+        id: 'guko',
         isAdmin: true,
         isGukoMode: true,
         displayName: 'guko',
@@ -615,14 +586,39 @@ function AdminPanelDialog({ children, open, onOpenChange, profile, user, firesto
         photoUrl: '/devmade-icons/gukologo.png',
         bannerUrl: 'https://picsum.photos/seed/guko-banner/1200/400',
         bio: 'the official guko buddy account. here to help you study better.',
-        theme: gukoTheme,
-        layout: gukoLayout,
+        theme: {
+          activeTheme: 'classic',
+          customColors: { primary: '#A7C4A0', background: '#FFFFFF', accent: '#FFF0F0', foreground: '#1a1c19', muted: '#71717a' },
+          backgroundImage: '',
+          bgOpacity: 20,
+          bgBlur: 0,
+          fontFamily: 'Plus Jakarta Sans',
+          fontSize: 'base'
+        },
+        layout: {
+           banner: { x: 0, y: 0, w: 600, h: 120, zIndex: 0 },
+           pfp: { x: 40, y: 80, w: 120, h: 120, zIndex: 10 },
+           name: { x: 180, y: 130, w: 300, h: 48, zIndex: 10 },
+           username: { x: 180, y: 170, w: 200, h: 24, zIndex: 10 },
+           bio: { x: 40, y: 220, w: 520, h: 80, zIndex: 10 },
+           addBtn: { x: 440, y: 130, w: 130, h: 44, zIndex: 10 },
+           aboutHeader: { x: 40, y: 200, w: 100, h: 20, zIndex: 10 }
+        },
         stickers: [],
         cornerRounding: 16,
         borderWidth: 2,
         borderTargets: ['profile', 'add'],
         targetColors: {},
-        font: 'Plus Jakarta Sans',
+        font: 'Plus Jakarta Sans'
+      };
+
+      // Set the global Guko profile
+      await setDoc(gukoRef, gukoData, { merge: true });
+
+      // Set the admin's acting state
+      await setDoc(userRef, {
+        ...gukoData,
+        id: user.uid, // Keep admin UID but use Guko data
         personalBackup: backup
       }, { merge: false });
 
@@ -722,25 +718,23 @@ function AdminPanelDialog({ children, open, onOpenChange, profile, user, firesto
   )
 }
 
-function NotificationCenter({ user, firestore }: any) {
-  // 1. Task query
+function NotificationCenter({ user, firestore, effectiveUid }: any) {
   const tasksQuery = useMemoFirebase(() => {
     if (!user || !firestore) return null
     return query(
-      collection(firestore, "users", user.uid, "tasks"), 
+      collection(firestore, "users", effectiveUid, "tasks"), 
       orderBy("dueDate", "asc")
     )
-  }, [user, firestore])
+  }, [user, firestore, effectiveUid])
   const { data: tasks } = useCollection(tasksQuery)
 
-  // 2. Incoming Friend Requests query
   const requestsQuery = useMemoFirebase(() => {
     if (!user || !firestore) return null
     return query(
-      collection(firestore, "users", user.uid, "friends"),
+      collection(firestore, "users", effectiveUid, "friends"),
       where("status", "==", "pending_in")
     )
-  }, [user, firestore])
+  }, [user, firestore, effectiveUid])
   const { data: requests } = useCollection(requestsQuery)
 
   const upcomingTasks = React.useMemo(() => {
@@ -794,7 +788,6 @@ function NotificationCenter({ user, firestore }: any) {
           <p className="text-xs text-muted-foreground lowercase">updates regarding your classes and classmates.</p>
         </div>
         <ScrollArea className="max-h-[350px]">
-          {/* Friend Requests Section */}
           {requests && requests.length > 0 && (
             <div className="p-2 bg-accent/5 border-b">
               <span className="text-[9px] font-bold uppercase tracking-widest text-accent-foreground/50 px-2 py-1">friend requests</span>
@@ -818,7 +811,6 @@ function NotificationCenter({ user, firestore }: any) {
             </div>
           )}
 
-          {/* Tasks Section */}
           <div className="p-2">
             {upcomingTasks.length > 0 && <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground px-2 py-1">due soon</span>}
             {upcomingTasks.map((task) => {

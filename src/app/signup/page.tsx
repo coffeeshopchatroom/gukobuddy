@@ -5,7 +5,7 @@ import * as React from 'react';
 import { useState, useEffect } from 'react';
 import { useAuth, useFirestore, useUser, setDocumentNonBlocking } from '@/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc, query, collectionGroup, where, getDocs } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -30,13 +30,11 @@ export default function SignupPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // profile data
   const [username, setUsername] = useState('');
   const [studentType, setStudentType] = useState<'high-school' | 'college'>('college');
   const [useAi, setUseAi] = useState(true);
   const [focus, setFocus] = useState<'flashcards' | 'notebooks' | 'tasks' | 'all'>('all');
 
-  // if user is already signed in and on the account step, move them forward
   useEffect(() => {
     if (user && step === 'account') {
       setStep('profile');
@@ -53,7 +51,6 @@ export default function SignupPage() {
     setError(null);
     try {
       await createUserWithEmailAndPassword(auth, email, password);
-      // step transition handled by useEffect once user state updates
     } catch (e: any) {
       console.error('signup error:', e);
       setError(e.message || 'could not create account. please try again.');
@@ -81,23 +78,16 @@ export default function SignupPage() {
         focus,
       }, { merge: true });
 
-      // Auto-friend official Guko account
-      const gukoQuery = query(collectionGroup(db, "profile"), where("username", "==", "guko"));
-      const gukoSnap = await getDocs(gukoQuery);
-      if (!gukoSnap.empty) {
-        const gukoUid = gukoSnap.docs[0].ref.parent.parent?.id;
-        if (gukoUid) {
-          const friendRef = doc(db, "users", user.uid, "friends", gukoUid);
-          setDocumentNonBlocking(friendRef, {
-            uid: gukoUid,
-            username: 'guko',
-            displayName: 'guko',
-            photoUrl: '/devmade-icons/gukologo.png',
-            status: 'accepted',
-            createdAt: new Date().toISOString()
-          }, { merge: true });
-        }
-      }
+      // Auto-friend official Guko account with fixed UID "guko"
+      const friendRef = doc(db, "users", user.uid, "friends", "guko");
+      setDocumentNonBlocking(friendRef, {
+        uid: 'guko',
+        username: 'guko',
+        displayName: 'guko',
+        photoUrl: '/devmade-icons/gukologo.png',
+        status: 'accepted',
+        createdAt: new Date().toISOString()
+      }, { merge: true });
 
       router.push('/');
     } catch (e: any) {
@@ -112,7 +102,7 @@ export default function SignupPage() {
     <div className="flex flex-col items-center justify-center min-h-[80vh] px-4 animate-smooth-slow">
       <div className="mb-8 text-center space-y-2">
         <div className="mx-auto w-12 h-12 bg-primary rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-primary/20">
-          <GraduationCap className="h-7 w-7 text-primary-foreground" />
+          < GraduationCap className="h-7 w-7 text-primary-foreground" />
         </div>
         <h1 className="text-4xl font-bold font-headline tracking-tight lowercase">setup your guko buddy</h1>
         <p className="text-muted-foreground text-lg lowercase">lets get your study experience ready.</p>

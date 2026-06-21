@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -106,9 +107,9 @@ export default function FriendsPage() {
 
   const myProfileQuery = useMemoFirebase(() => user ? query(collection(db, 'users', user.uid, 'profile')) : null, [user, db])
   const { data: myProfile } = useCollection(myProfileQuery)
-  // Simplified lookup: the profile collection should only have one doc (settings)
   const actualMyProfile = myProfile?.[0]
   const isGukoMode = actualMyProfile?.isGukoMode === true;
+  const effectiveUid = isGukoMode ? 'guko' : (user?.uid || '');
 
   const acceptedFriendsQuery = useMemoFirebase(() => {
     if (!user || !db || isGukoMode) return null
@@ -116,7 +117,6 @@ export default function FriendsPage() {
   }, [user, db, isGukoMode])
   const { data: acceptedFriends, isLoading: isFriendsLoading } = useCollection(acceptedFriendsQuery)
 
-  // Global user list for Guko Mode
   const allUsersQuery = useMemoFirebase(() => {
     if (!user || !db || !isGukoMode) return null
     return query(collectionGroup(db, "profile"), limit(50))
@@ -125,14 +125,14 @@ export default function FriendsPage() {
 
   const incomingRequestsQuery = useMemoFirebase(() => {
     if (!user || !db) return null
-    return query(collection(db, "users", user.uid, "friends"), where("status", "==", "pending_in"))
-  }, [user, db])
+    return query(collection(db, "users", effectiveUid, "friends"), where("status", "==", "pending_in"))
+  }, [user, db, effectiveUid])
   const { data: incomingRequests } = useCollection(incomingRequestsQuery)
 
   const myRequestsQuery = useMemoFirebase(() => {
     if (!user || !db) return null
-    return query(collection(db, "users", user.uid, "friends"))
-  }, [user, db])
+    return query(collection(db, "users", effectiveUid, "friends"))
+  }, [user, db, effectiveUid])
   const { data: allMyFriends } = useCollection(myRequestsQuery)
 
   const [isRequestModalOpen, setIsRequestModalOpen] = React.useState(false);
@@ -163,7 +163,7 @@ export default function FriendsPage() {
           ...doc.data(), 
           uid: doc.ref.parent.parent?.id 
         }))
-        .filter(u => u.uid !== user?.uid)
+        .filter(u => u.uid !== user?.uid && u.uid !== 'guko')
 
       setSearchResults(results)
     } catch (e: any) {
@@ -175,8 +175,8 @@ export default function FriendsPage() {
 
   const sendRequest = (targetUser: any) => {
     if (!user || !db) return
-    const myFriendRef = doc(db, "users", user.uid, "friends", targetUser.uid)
-    const theirFriendRef = doc(db, "users", targetUser.uid, "friends", user.uid)
+    const myFriendRef = doc(db, "users", effectiveUid, "friends", targetUser.uid)
+    const theirFriendRef = doc(db, "users", targetUser.uid, "friends", effectiveUid)
 
     setDocumentNonBlocking(myFriendRef, {
       uid: targetUser.uid,
@@ -188,7 +188,7 @@ export default function FriendsPage() {
     }, { merge: true })
 
     setDocumentNonBlocking(theirFriendRef, {
-      uid: user.uid,
+      uid: effectiveUid,
       username: actualMyProfile?.username || "student",
       displayName: actualMyProfile?.displayName || user.displayName || 'guko student',
       photoUrl: actualMyProfile?.photoUrl || user.photoURL || '',
@@ -201,8 +201,8 @@ export default function FriendsPage() {
 
   const handleAcceptRequest = (request: any) => {
     if (!user || !db) return
-    const myRef = doc(db, "users", user.uid, "friends", request.uid)
-    const theirRef = doc(db, "users", request.uid, "friends", user.uid)
+    const myRef = doc(db, "users", effectiveUid, "friends", request.uid)
+    const theirRef = doc(db, "users", request.uid, "friends", effectiveUid)
 
     updateDocumentNonBlocking(myRef, { status: 'accepted' })
     updateDocumentNonBlocking(theirRef, { status: 'accepted' })
@@ -213,8 +213,8 @@ export default function FriendsPage() {
 
   const handleDeclineRequest = (request: any) => {
     if (!user || !db) return
-    deleteDocumentNonBlocking(doc(db, "users", user.uid, "friends", request.uid))
-    deleteDocumentNonBlocking(doc(db, "users", request.uid, "friends", user.uid))
+    deleteDocumentNonBlocking(doc(db, "users", effectiveUid, "friends", request.uid))
+    deleteDocumentNonBlocking(doc(db, "users", request.uid, "friends", effectiveUid))
     if (incomingRequests && incomingRequests.length <= 1) setIsRequestModalOpen(false)
   }
 
@@ -228,13 +228,13 @@ export default function FriendsPage() {
 
       for (const profileDoc of allProfiles.docs) {
         const targetUid = profileDoc.ref.parent.parent?.id;
-        if (!targetUid || targetUid === user.uid) continue;
+        if (!targetUid || targetUid === 'guko') continue;
 
-        const chatId = [user.uid, targetUid].sort().join('_');
+        const chatId = ['guko', targetUid].sort().join('_');
         
         const chatRef = doc(db, "chats", chatId);
         setDocumentNonBlocking(chatRef, {
-          participants: [user.uid, targetUid],
+          participants: ['guko', targetUid],
           lastMessage: broadcastText,
           updatedAt: now
         }, { merge: true });
@@ -243,7 +243,7 @@ export default function FriendsPage() {
         const msgRef = doc(db, "chats", chatId, "messages", msgId);
         setDocumentNonBlocking(msgRef, {
           id: msgId,
-          senderId: user.uid,
+          senderId: 'guko',
           type: 'text',
           text: broadcastText,
           createdAt: now,
@@ -261,7 +261,6 @@ export default function FriendsPage() {
     }
   };
 
-  // Map students for the list: Guko sees everyone, users see their friends
   const classmates = isGukoMode 
     ? (allUsers?.map(u => ({ ...u, uid: u.id })) || []) 
     : (acceptedFriends || []);
@@ -402,7 +401,7 @@ export default function FriendsPage() {
               )}
             </div>
           ) : activeFriend ? (
-            <ChatInterface friend={activeFriend} user={user} db={db} actualMyProfile={actualMyProfile} />
+            <ChatInterface friend={activeFriend} user={user} db={db} actualMyProfile={actualMyProfile} effectiveUid={effectiveUid} />
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground">
               <MessageSquare className="h-12 w-12 opacity-10 mb-4" />
@@ -657,7 +656,7 @@ function ImmersiveProfilePreview({ profile, onAction, relationshipStatus }: { pr
   );
 }
 
-function ChatInterface({ friend, user, db, actualMyProfile }: any) {
+function ChatInterface({ friend, user, db, actualMyProfile, effectiveUid }: any) {
   const { toast } = useToast();
   const [inputText, setInputText] = React.useState("")
   const [showSharePicker, setShowSharePicker] = React.useState(false)
@@ -669,21 +668,21 @@ function ChatInterface({ friend, user, db, actualMyProfile }: any) {
   const [showGiphyPicker, setShowGiphyPicker] = React.useState(false);
   const scrollRef = React.useRef<HTMLDivElement>(null)
 
-  const chatId = [user.uid, friend.uid].sort().join('_')
+  const chatId = [effectiveUid, friend.uid].sort().join('_')
   const messagesQuery = useMemoFirebase(() => query(collection(db, "chats", chatId, "messages"), orderBy("createdAt", "asc")), [chatId, db])
   const { data: messages } = useCollection(messagesQuery)
 
-  const coursesQuery = useMemoFirebase(() => query(collection(db, "users", user.uid, "courses")), [user, db])
+  const coursesQuery = useMemoFirebase(() => query(collection(db, "users", effectiveUid, "courses")), [effectiveUid, db])
   const { data: courses } = useCollection(coursesQuery)
-  const notesQuery = useMemoFirebase(() => query(collection(db, "users", user.uid, "notes"), orderBy("updatedAt", "desc")), [user, db])
+  const notesQuery = useMemoFirebase(() => query(collection(db, "users", effectiveUid, "notes"), orderBy("updatedAt", "desc")), [effectiveUid, db])
   const { data: notes } = useCollection(notesQuery)
-  const tasksQuery = useMemoFirebase(() => query(collection(db, "users", user.uid, "tasks"), orderBy("dueDate", "asc")), [user, db])
+  const tasksQuery = useMemoFirebase(() => query(collection(db, "users", effectiveUid, "tasks"), orderBy("dueDate", "asc")), [effectiveUid, db])
   const { data: tasks } = useCollection(tasksQuery)
 
   const flashcardSetsQuery = useMemoFirebase(() => {
     if (!courses || courses.length === 0) return null
-    return query(collection(db, "users", user.uid, "courses", courses[0].id, "flashcardSets"))
-  }, [user, db, courses])
+    return query(collection(db, "users", effectiveUid, "courses", courses[0].id, "flashcardSets"))
+  }, [effectiveUid, db, courses])
   const { data: decks } = useCollection(flashcardSetsQuery)
 
   React.useEffect(() => {
@@ -695,7 +694,7 @@ function ChatInterface({ friend, user, db, actualMyProfile }: any) {
 
     const chatRef = doc(db, "chats", chatId);
     setDocumentNonBlocking(chatRef, {
-      participants: [user.uid, friend.uid],
+      participants: [effectiveUid, friend.uid],
       lastMessage: type === 'text' ? inputText : type === 'gif' ? 'Sent a GIF' : `shared a ${content.itemType}`,
       updatedAt: new Date().toISOString()
     }, { merge: true });
@@ -705,7 +704,7 @@ function ChatInterface({ friend, user, db, actualMyProfile }: any) {
 
     let messageData: any = {
       id: msgId,
-      senderId: user.uid,
+      senderId: effectiveUid,
       type,
       createdAt: new Date().toISOString()
     };
@@ -739,7 +738,7 @@ function ChatInterface({ friend, user, db, actualMyProfile }: any) {
       let itemDataWithChildren = { ...selectedItem };
 
       if (shareCategory === 'flashcardSet') {
-        const cardsRef = collection(db, "users", user.uid, "courses", selectedItem.courseId, "flashcardSets", selectedItem.id, "flashcards")
+        const cardsRef = collection(db, "users", effectiveUid, "courses", selectedItem.courseId, "flashcardSets", selectedItem.id, "flashcards")
         const cardsSnap = await getDocs(cardsRef);
         itemDataWithChildren.cards = cardsSnap.docs.map(d => ({ ...d.data(), id: d.id }));
       }
@@ -754,7 +753,7 @@ function ChatInterface({ friend, user, db, actualMyProfile }: any) {
 
       setDocumentNonBlocking(shareRef, {
         id: shareId,
-        fromUid: user.uid,
+        fromUid: effectiveUid,
         toUid: friend.uid,
         itemType: shareCategory,
         itemId: selectedItem.id,
@@ -793,7 +792,7 @@ function ChatInterface({ friend, user, db, actualMyProfile }: any) {
       if (msg.shareData.mode === 'copy') {
         if (msg.shareData.itemType === 'notebook') {
           const newNoteId = doc(collection(db, "temp")).id;
-          const newNoteRef = doc(db, "users", user.uid, "notes", newNoteId);
+          const newNoteRef = doc(db, "users", effectiveUid, "notes", newNoteId);
           setDocumentNonBlocking(newNoteRef, {
             ...shareInfo.itemData,
             id: newNoteId,
@@ -803,7 +802,7 @@ function ChatInterface({ friend, user, db, actualMyProfile }: any) {
           toast({ title: "Page added!" });
         } else if (msg.shareData.itemType === 'task') {
           const newTaskId = doc(collection(db, "temp")).id;
-          const newTaskRef = doc(db, "users", user.uid, "tasks", newTaskId);
+          const newTaskRef = doc(db, "users", effectiveUid, "tasks", newTaskId);
           setDocumentNonBlocking(newTaskRef, {
             ...shareInfo.itemData,
             id: newTaskId,
@@ -811,13 +810,13 @@ function ChatInterface({ friend, user, db, actualMyProfile }: any) {
           }, { merge: true });
           toast({ title: "Task added!" });
         } else if (msg.shareData.itemType === 'flashcardSet') {
-          const coursesRef = collection(db, "users", user.uid, "courses");
+          const coursesRef = collection(db, "users", effectiveUid, "courses");
           const coursesSnap = await getDocs(query(coursesRef, limit(1)));
           let courseId = coursesSnap.docs[0]?.id;
           
           if (!courseId) {
             courseId = doc(collection(db, "temp")).id;
-            setDocumentNonBlocking(doc(db, "users", user.uid, "courses", courseId), {
+            setDocumentNonBlocking(doc(db, "users", effectiveUid, "courses", courseId), {
               id: courseId,
               name: "shared studies",
               createdAt: new Date().toISOString()
@@ -825,7 +824,7 @@ function ChatInterface({ friend, user, db, actualMyProfile }: any) {
           }
 
           const newDeckId = doc(collection(db, "temp")).id;
-          const deckRef = doc(db, "users", user.uid, "courses", courseId, "flashcardSets", newDeckId);
+          const deckRef = doc(db, "users", effectiveUid, "courses", courseId, "flashcardSets", newDeckId);
           
           setDocumentNonBlocking(deckRef, {
             ...shareInfo.itemData,
@@ -837,7 +836,7 @@ function ChatInterface({ friend, user, db, actualMyProfile }: any) {
           if (shareInfo.itemData.cards && Array.isArray(shareInfo.itemData.cards)) {
             shareInfo.itemData.cards.forEach((card: any) => {
                const newCardId = doc(collection(db, "temp")).id;
-               const cardRef = doc(db, "users", user.uid, "courses", courseId, "flashcardSets", newDeckId, "flashcards", newCardId);
+               const cardRef = doc(db, "users", effectiveUid, "courses", courseId, "flashcardSets", newDeckId, "flashcards", newCardId);
                setDocumentNonBlocking(cardRef, {
                  ...card,
                  id: newCardId,
@@ -865,7 +864,7 @@ function ChatInterface({ friend, user, db, actualMyProfile }: any) {
     return []
   }
 
-  const isFriendGuko = friend.username === 'guko' || friend.isGukoMode === true;
+  const isFriendGuko = friend.username === 'guko' || friend.uid === 'guko';
 
   return (
     <div className="flex flex-col h-full bg-background">
@@ -888,10 +887,10 @@ function ChatInterface({ friend, user, db, actualMyProfile }: any) {
       <ScrollArea className="flex-1 p-6">
         <div className="space-y-6">
           {messages?.map(msg => (
-            <div key={msg.id} className={cn("flex", msg.senderId === user.uid ? "justify-end" : "justify-start")}>
+            <div key={msg.id} className={cn("flex", msg.senderId === effectiveUid ? "justify-end" : "justify-start")}>
               <div className={cn(
                 "max-w-[80%] rounded-[24px] overflow-hidden shadow-sm",
-                msg.type === 'gif' ? '' : (msg.senderId === user.uid ? "bg-primary text-primary-foreground" : "bg-muted text-foreground")
+                msg.type === 'gif' ? '' : (msg.senderId === effectiveUid ? "bg-primary text-primary-foreground" : "bg-muted text-foreground")
               )}>
                 {msg.type === 'text' ? (
                   <div className="p-4 px-6 text-sm leading-relaxed lowercase">{msg.text}</div>
@@ -910,7 +909,7 @@ function ChatInterface({ friend, user, db, actualMyProfile }: any) {
                           <h5 className="font-bold text-sm truncate lowercase">{msg.shareData.itemName}</h5>
                        </div>
                     </div>
-                    {msg.senderId !== user.uid && (
+                    {msg.senderId !== effectiveUid && (
                       <Button 
                         disabled={isAccepting === msg.id}
                         onClick={() => handleAcceptInvite(msg)}
