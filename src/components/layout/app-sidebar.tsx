@@ -508,19 +508,19 @@ function AdminPanelDialog({ children, open, onOpenChange, profile, user, firesto
   }
 
   const handleToggleGukoMode = async () => {
-    if (!user || !firestore) return;
+    if (!user || !firestore || !profile) return;
     const userRef = doc(firestore, 'users', user.uid, 'profile', 'settings');
     
     if (isGukoMode) {
-      // Restore from backup
+      // Restore everything from backup
       const backup = profile.personalBackup || {};
       await setDoc(userRef, {
+        ...backup,
         isGukoMode: false,
-        displayName: backup.displayName || user.displayName || 'student',
-        username: backup.username || user.email?.split('@')[0] || 'student',
-        photoUrl: backup.photoUrl || user.photoURL || '',
-        personalBackup: null
-      }, { merge: true });
+        personalBackup: null,
+        isAdmin: true, // Preserve admin status
+        id: user.uid
+      }, { merge: false });
       
       await updateProfile(user, {
         displayName: backup.displayName || 'student',
@@ -529,20 +529,64 @@ function AdminPanelDialog({ children, open, onOpenChange, profile, user, firesto
 
       toast({ title: "returned to personal account" });
     } else {
-      // Backup current and switch
+      // Backup full current state
       const backup = {
-        displayName: profile.displayName || user.displayName || '',
+        displayName: profile.displayName || '',
         username: profile.username || '',
-        photoUrl: profile.photoUrl || user.photoURL || ''
+        photoUrl: profile.photoUrl || '',
+        bannerUrl: profile.bannerUrl || '',
+        bio: profile.bio || '',
+        theme: profile.theme || null,
+        layout: profile.layout || null,
+        stickers: profile.stickers || [],
+        cornerRounding: profile.cornerRounding ?? 16,
+        borderWidth: profile.borderWidth ?? 1,
+        borderTargets: profile.borderTargets || [],
+        targetColors: profile.targetColors || {},
+        font: profile.font || '',
+        focus: profile.focus || 'all',
+        studentType: profile.studentType || 'college'
       };
       
+      const gukoTheme = {
+        activeTheme: 'classic',
+        customColors: { primary: '#A7C4A0', background: '#FFFFFF', accent: '#FFF0F0', foreground: '#1a1c19', muted: '#71717a' },
+        backgroundImage: '',
+        bgOpacity: 20,
+        bgBlur: 0,
+        fontFamily: 'Plus Jakarta Sans',
+        fontSize: 'base'
+      };
+
+      const gukoLayout = {
+         banner: { x: 0, y: 0, w: 600, h: 120, zIndex: 0 },
+         pfp: { x: 40, y: 80, w: 120, h: 120, zIndex: 10 },
+         name: { x: 180, y: 130, w: 300, h: 48, zIndex: 10 },
+         username: { x: 180, y: 170, w: 200, h: 24, zIndex: 10 },
+         bio: { x: 40, y: 220, w: 520, h: 80, zIndex: 10 },
+         addBtn: { x: 440, y: 130, w: 130, h: 44, zIndex: 10 },
+         aboutHeader: { x: 40, y: 200, w: 100, h: 20, zIndex: 10 }
+      };
+
       await setDoc(userRef, {
+        id: user.uid,
+        isAdmin: true,
         isGukoMode: true,
         displayName: 'guko',
         username: 'guko',
         photoUrl: '/devmade-icons/gukologo.png',
+        bannerUrl: 'https://picsum.photos/seed/guko-banner/1200/400',
+        bio: 'the official guko buddy account. here to help you study better.',
+        theme: gukoTheme,
+        layout: gukoLayout,
+        stickers: [],
+        cornerRounding: 16,
+        borderWidth: 2,
+        borderTargets: ['profile', 'add'],
+        targetColors: {},
+        font: 'Plus Jakarta Sans',
         personalBackup: backup
-      }, { merge: true });
+      }, { merge: false });
 
       await updateProfile(user, {
         displayName: 'guko',
