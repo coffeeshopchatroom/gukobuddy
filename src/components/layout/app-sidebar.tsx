@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -52,7 +51,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { useFirebase, useUser, useDoc, useMemoFirebase } from "@/firebase"
 import { signOut, updateProfile } from "firebase/auth"
-import { doc, collection, query, orderBy, where, setDoc } from 'firebase/firestore'
+import { doc, collection, query, orderBy, where, setDoc, getDocs, collectionGroup } from 'firebase/firestore'
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ProfileCustomizer } from "@/components/profile/ProfileCustomizer"
 import {
@@ -104,6 +103,45 @@ export function AppSidebar() {
     if (isNotebookRelated) setIsNotebooksOpen(true);
     if (isFlashcardRelated) setIsFlashcardsOpen(true);
   }, [pathname, isTaskRelated, isNotebookRelated, isFlashcardRelated]);
+
+  // Ensure Guko is friended for existing users
+  React.useEffect(() => {
+    if (user && firestore && !isGukoMode) {
+       // We only check once per session to avoid heavy querying
+       const hasCheckedGuko = sessionStorage.getItem(`guko-checked-${user.uid}`);
+       if (hasCheckedGuko) return;
+
+       async function ensureGukoFriend() {
+         try {
+           const gukoQuery = query(collectionGroup(firestore, "profile"), where("username", "==", "guko"));
+           const snap = await getDocs(gukoQuery);
+           if (!snap.empty) {
+             const gukoUid = snap.docs[0].ref.parent.parent?.id;
+             if (gukoUid && gukoUid !== user.uid) {
+               const myFriendRef = doc(firestore, "users", user.uid, "friends", gukoUid);
+               
+               // Check if already friended
+               const friendDoc = await doc(firestore, "users", user.uid, "friends", gukoUid);
+               
+               setDoc(myFriendRef, {
+                 uid: gukoUid,
+                 username: 'guko',
+                 displayName: 'guko',
+                 photoUrl: '/devmade-icons/gukologo.png',
+                 status: 'accepted',
+                 createdAt: new Date().toISOString()
+               }, { merge: true }).catch(err => console.warn("Failed to auto-friend Guko", err));
+
+               sessionStorage.setItem(`guko-checked-${user.uid}`, 'true');
+             }
+           }
+         } catch (e) {
+           console.warn("Guko auto-friend check skipped", e);
+         }
+       }
+       ensureGukoFriend();
+    }
+  }, [user, firestore, isGukoMode]);
 
   const handleSignOut = () => {
     if(auth) {

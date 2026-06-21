@@ -142,36 +142,6 @@ export default function FriendsPage() {
     }
   }, [incomingRequests?.length]);
 
-  // Ensure Guko is friended for the current user
-  React.useEffect(() => {
-    if (user && db && acceptedFriends && !isGukoMode) {
-      const hasGuko = acceptedFriends.some(f => f.username === 'guko');
-      if (!hasGuko) {
-        // Find guko in database
-        async function autoFriendGuko() {
-          const gukoQuery = query(collectionGroup(db, "profile"), where("username", "==", "guko"));
-          const snap = await getDocs(gukoQuery);
-          if (!snap.empty) {
-            const gukoData = snap.docs[0].data();
-            const gukoUid = snap.docs[0].ref.parent.parent?.id;
-            if (gukoUid) {
-              const myFriendRef = doc(db, "users", user.uid, "friends", gukoUid);
-              setDocumentNonBlocking(myFriendRef, {
-                uid: gukoUid,
-                username: 'guko',
-                displayName: 'guko',
-                photoUrl: '/devmade-icons/gukologo.png',
-                status: 'accepted',
-                createdAt: new Date().toISOString()
-              }, { merge: true });
-            }
-          }
-        }
-        autoFriendGuko();
-      }
-    }
-  }, [user, db, acceptedFriends, isGukoMode]);
-
   const handleSearch = async () => {
     if (!searchQuery.trim() || !db) return
     setIsSearching(true)
@@ -254,7 +224,6 @@ export default function FriendsPage() {
     try {
       // Get all users
       const allProfiles = await getDocs(query(collectionGroup(db, "profile"), limit(200)));
-      const messageId = doc(collection(db, "temp")).id;
       const now = new Date().toISOString();
 
       for (const profileDoc of allProfiles.docs) {
