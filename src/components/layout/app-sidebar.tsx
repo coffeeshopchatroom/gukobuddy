@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -451,7 +450,7 @@ export function AppSidebar() {
                     <div className="flex flex-col min-0 group-data-[collapsible=icon]:hidden">
                       <div className="flex items-center gap-1.5">
                         <span className={cn("text-sm font-semibold truncate lowercase", isGukoMode && "italic font-bold")}>{userName}</span>
-                        {isGukoMode && <BadgeCheck className="h-3 w-3 text-primary" />}
+                        {(isGukoMode || isAdmin) && <BadgeCheck className="h-3 w-3 text-primary" />}
                       </div>
                       <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-tighter truncate lowercase">{isGukoMode ? 'official' : userRole}</span>
                     </div>
@@ -598,11 +597,11 @@ function AdminPanelDialog({ children, open, onOpenChange, profile, user, firesto
         layout: {
            banner: { x: 0, y: 0, w: 600, h: 120, zIndex: 0 },
            pfp: { x: 40, y: 80, w: 120, h: 120, zIndex: 10 },
-           name: { x: 180, y: 130, w: 300, h: 48, zIndex: 10 },
-           username: { x: 180, y: 170, w: 200, h: 24, zIndex: 10 },
-           bio: { x: 40, y: 220, w: 520, h: 80, zIndex: 10 },
+           name: { x: 180, y: 130, w: 300, h: 48, zIndex: 10, fontSize: 32, fontWeight: 'bold' },
+           username: { x: 180, y: 170, w: 200, h: 24, zIndex: 10, fontSize: 14, fontWeight: 'normal' },
+           bio: { x: 40, y: 220, w: 520, h: 80, zIndex: 10, fontSize: 12, fontWeight: 'normal' },
            addBtn: { x: 440, y: 130, w: 130, h: 44, zIndex: 10 },
-           aboutHeader: { x: 40, y: 200, w: 100, h: 20, zIndex: 10 }
+           aboutHeader: { x: 40, y: 200, w: 100, h: 20, zIndex: 10, fontSize: 10, fontWeight: 'bold' }
         },
         stickers: [],
         cornerRounding: 16,

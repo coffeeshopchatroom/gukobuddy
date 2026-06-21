@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -82,11 +81,11 @@ const PORTAL_BASE_H = 400;
 const DEFAULT_PROFILE_LAYOUT = {
   banner: { x: 0, y: 0, w: 600, h: 80, zIndex: 0 },
   pfp: { x: 24, y: 40, w: 140, h: 140, zIndex: 2 },
-  name: { x: 180, y: 100, w: 280, h: 48, zIndex: 2 },
-  username: { x: 180, y: 140, w: 150, h: 24, zIndex: 2 },
-  bio: { x: 24, y: 240, w: 552, h: 140, zIndex: 2 },
+  name: { x: 180, y: 100, w: 280, h: 48, zIndex: 2, fontSize: 32, fontWeight: 'bold' },
+  username: { x: 180, y: 140, w: 150, h: 24, zIndex: 2, fontSize: 14, fontWeight: 'normal' },
+  bio: { x: 24, y: 240, w: 552, h: 140, zIndex: 2, fontSize: 12, fontWeight: 'normal' },
   addBtn: { x: 440, y: 100, w: 130, h: 44, zIndex: 2 },
-  aboutHeader: { x: 24, y: 210, w: 100, h: 20, zIndex: 2 }
+  aboutHeader: { x: 24, y: 210, w: 100, h: 20, zIndex: 2, fontSize: 10, fontWeight: 'bold' }
 };
 
 export default function FriendsPage() {
@@ -120,7 +119,6 @@ export default function FriendsPage() {
 
   const allUsersQuery = useMemoFirebase(() => {
     if (!user || !db || !isGukoMode) return null
-    // Increased limit to 200 for community visibility
     return query(collectionGroup(db, "profile"), limit(200))
   }, [user, db, isGukoMode])
   const { data: allUsers } = useCollection(allUsersQuery)
@@ -263,12 +261,11 @@ export default function FriendsPage() {
     }
   };
 
-  // Robust classmate mapping to prevent ghost users/duplicates
   const rawClassmates = React.useMemo(() => {
     if (isGukoMode) {
       if (!allUsers) return [];
       return allUsers
-        .filter(u => u.username && u.displayName) // Must have profile data
+        .filter(u => u.username && u.displayName) 
         .map(u => ({ 
           ...u, 
           uid: u.id && u.id !== 'settings' ? u.id : (u as any).uid || u.username 
@@ -277,12 +274,11 @@ export default function FriendsPage() {
     return acceptedFriends || [];
   }, [allUsers, acceptedFriends, isGukoMode]);
 
-  // Filter Guko for separate section and exclude self to prevent reflection
   const officialGuko = rawClassmates.find(c => c.uid === 'guko' || c.username === 'guko');
   const otherClassmates = rawClassmates.filter(c => 
     c.uid !== 'guko' && 
     c.username !== 'guko' && 
-    c.uid !== user?.uid // Filter out self to prevent ghost entry
+    c.uid !== user?.uid 
   );
 
   return (
@@ -346,7 +342,6 @@ export default function FriendsPage() {
                 </div>
               )}
 
-              {/* Official Section */}
               {!isGukoMode && officialGuko && (
                 <div className="mb-6 space-y-2">
                    <h3 className="px-4 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 mb-2">Verified Official</h3>
@@ -443,7 +438,7 @@ export default function FriendsPage() {
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5">
                         <h4 className={cn("font-bold text-lg lowercase truncate text-foreground", isGuko && "italic font-black")}>{req.displayName}</h4>
-                        {isGuko && <BadgeCheck className="h-4 w-4 text-primary" />}
+                        {(isGuko || req.isAdmin) && <BadgeCheck className="h-4 w-4 text-primary" />}
                       </div>
                       <p className="text-xs opacity-60 lowercase">@{req.username}</p>
                     </div>
@@ -468,6 +463,7 @@ export default function FriendsPage() {
 
 function ClassmateItem({ friend, isActive, onClick }: { friend: any, isActive: boolean, onClick: () => void }) {
   const isGuko = friend.username === 'guko' || friend.isGukoMode === true || friend.uid === 'guko';
+  const isAdmin = friend.isAdmin === true;
   
   return (
     <button
@@ -485,7 +481,7 @@ function ClassmateItem({ friend, isActive, onClick }: { friend: any, isActive: b
         <div className="text-left min-w-0">
           <div className="flex items-center gap-1">
              <p className={cn("font-bold text-sm truncate lowercase", isGuko && "italic font-black")}>{friend.displayName}</p>
-             {isGuko && <BadgeCheck className="h-3 w-3" />}
+             {(isGuko || isAdmin) && <BadgeCheck className="h-3 w-3" />}
           </div>
           <p className={cn("text-[10px] lowercase truncate opacity-60", isActive ? "text-primary-foreground" : "text-muted-foreground")}>@{friend.username}</p>
         </div>
@@ -505,6 +501,7 @@ function UserSearchCardMini({ user, onClick }: { user: any, onClick: () => void 
     background: user.theme?.customColors?.background || '#FFFFFF'
   }
   const isGuko = user.username === 'guko' || user.isGukoMode === true;
+  const isAdmin = user.isAdmin === true;
   
   return (
     <div 
@@ -531,7 +528,7 @@ function UserSearchCardMini({ user, onClick }: { user: any, onClick: () => void 
         <div className="text-center px-4 w-full">
           <div className="flex items-center justify-center gap-1">
              <h4 className={cn("font-bold text-sm lowercase truncate text-foreground", isGuko && "italic font-black")}>{user.displayName}</h4>
-             {isGuko && <BadgeCheck className="h-3.5 w-3.5 text-primary" />}
+             {(isGuko || isAdmin) && <BadgeCheck className="h-3.5 w-3.5 text-primary" />}
           </div>
           <p className="text-[10px] lowercase truncate opacity-40 text-foreground">@{user.username}</p>
         </div>
@@ -567,6 +564,7 @@ function ImmersiveProfilePreview({ profile, onAction, relationshipStatus }: { pr
   const layout = profile.layout || DEFAULT_PROFILE_LAYOUT;
   const customColors = theme.customColors || { primary: '#A7C4A0', background: '#FFFFFF', foreground: '#1a1c19' }
   const isGuko = profile.username === 'guko' || profile.isGukoMode === true;
+  const isAdmin = profile.isAdmin === true;
 
   const getColorStyle = (val: any) => {
     if (!val) return 'transparent';
@@ -628,11 +626,13 @@ function ImmersiveProfilePreview({ profile, onAction, relationshipStatus }: { pr
             left: layout.name?.x ?? 180, top: layout.name?.y ?? 100,
             width: layout.name?.w ?? 400, height: layout.name?.h ?? 48,
             zIndex: layout.name?.zIndex ?? 2,
-            color: getColorStyle(theme.text || customColors.foreground)
+            color: getColorStyle(theme.text || customColors.foreground),
+            fontSize: layout.name?.fontSize ? `${layout.name.fontSize}px` : '32px',
+            fontWeight: layout.name?.fontWeight || 'bold'
           }}>
             <div className="flex items-center gap-2">
-              <h4 className={cn("text-4xl font-bold leading-tight lowercase truncate", isGuko && "italic font-black")}>{profile.displayName || 'student'}</h4>
-              {isGuko && <BadgeCheck size={32} className="text-primary" />}
+              <h4 className={cn("leading-tight lowercase truncate", isGuko && "italic font-black")}>{profile.displayName || 'student'}</h4>
+              {(isGuko || isAdmin) && <BadgeCheck size={layout.name?.fontSize ? layout.name.fontSize : 32} className="text-primary" />}
             </div>
           </div>
 
@@ -640,9 +640,11 @@ function ImmersiveProfilePreview({ profile, onAction, relationshipStatus }: { pr
             left: layout.username?.x ?? 180, top: layout.username?.y ?? 145,
             width: layout.username?.w ?? 200, height: layout.username?.h ?? 24,
             zIndex: layout.username?.zIndex ?? 2,
-            color: getColorStyle(theme.text || customColors.foreground), opacity: 0.6
+            color: getColorStyle(theme.text || customColors.foreground), opacity: 0.6,
+            fontSize: layout.username?.fontSize ? `${layout.username.fontSize}px` : '18px',
+            fontWeight: layout.username?.fontWeight || 'normal'
           }}>
-            <p className="text-xl lowercase">@{profile.username}</p>
+            <p className="lowercase">@{profile.username}</p>
           </div>
 
           <div className="absolute" style={{ 
@@ -667,9 +669,11 @@ function ImmersiveProfilePreview({ profile, onAction, relationshipStatus }: { pr
             left: layout.aboutHeader?.x ?? 24, top: layout.aboutHeader?.y ?? 210,
             width: layout.aboutHeader?.w ?? 100, height: layout.aboutHeader?.h ?? 20,
             zIndex: layout.aboutHeader?.zIndex ?? 2,
-            color: getColorStyle(theme.text || customColors.foreground), opacity: 0.8
+            color: getColorStyle(theme.text || customColors.foreground), opacity: 0.8,
+            fontSize: layout.aboutHeader?.fontSize ? `${layout.aboutHeader.fontSize}px` : '14px',
+            fontWeight: layout.aboutHeader?.fontWeight || 'bold'
           }}>
-             <span className="text-lg font-bold lowercase">about me:</span>
+             <span className="lowercase">about me:</span>
           </div>
 
           <div className="absolute" style={{ 
@@ -677,8 +681,10 @@ function ImmersiveProfilePreview({ profile, onAction, relationshipStatus }: { pr
             width: layout.bio?.w ?? 552, height: layout.bio?.h ?? 140,
             zIndex: layout.bio?.zIndex ?? 2,
             color: getColorStyle(theme.text || customColors.foreground),
+            fontSize: layout.bio?.fontSize ? `${layout.bio.fontSize}px` : '18px',
+            fontWeight: layout.bio?.fontWeight || 'normal'
           }}>
-            <p className="text-2xl leading-relaxed lowercase opacity-90 italic line-clamp-4">
+            <p className="leading-relaxed lowercase opacity-90 italic line-clamp-4">
               {profile.bio || 'this student has not shared a bio yet.'}
             </p>
           </div>
@@ -838,7 +844,7 @@ function ChatInterface({ friend, user, db, actualMyProfile, effectiveUid }: any)
         if (msg.shareData.itemType === 'notebook') {
           const newNoteId = doc(collection(db, "temp")).id;
           const newNoteRef = doc(db, "users", effectiveUid, "notes", newNoteId);
-          setDocumentNonBlocking(newTaskRef, {
+          setDocumentNonBlocking(newNoteRef, {
             ...shareInfo.itemData,
             id: newNoteId,
             createdAt: new Date().toISOString(),
@@ -910,6 +916,7 @@ function ChatInterface({ friend, user, db, actualMyProfile, effectiveUid }: any)
   }
 
   const isFriendGuko = friend.username === 'guko' || friend.uid === 'guko';
+  const isFriendAdmin = friend.isAdmin === true;
 
   return (
     <div className="flex flex-col h-full bg-background">
@@ -922,7 +929,7 @@ function ChatInterface({ friend, user, db, actualMyProfile, effectiveUid }: any)
           <div>
             <div className="flex items-center gap-1.5">
                <h4 className={cn("font-bold text-lg lowercase group-hover/author:text-primary transition-colors", isFriendGuko && "italic font-black")}>{friend.displayName}</h4>
-               {isFriendGuko && <BadgeCheck size={18} className="text-primary" />}
+               {(isFriendGuko || isFriendAdmin) && <BadgeCheck size={18} className="text-primary" />}
             </div>
             <span className="text-[10px] text-primary font-bold uppercase tracking-widest">online</span>
           </div>

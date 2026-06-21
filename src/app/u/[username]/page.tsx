@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -71,7 +70,7 @@ export default function PublicProfilePage() {
     resolveProfile()
   }, [username, db])
 
-  // Fetch user posts - simple query for workstation compatibility
+  // Fetch user posts
   const postsQuery = useMemoFirebase(() => {
     if (!profile?.uid || !db) return null
     return query(
@@ -85,7 +84,6 @@ export default function PublicProfilePage() {
   const filteredPosts = React.useMemo(() => {
     if (!userPosts) return []
     
-    // Sort in memory to avoid index requirements
     const sorted = [...userPosts].sort((a, b) => 
       new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     )
@@ -143,11 +141,11 @@ export default function PublicProfilePage() {
     )
   }
 
-  // --- Theme Rendering Logic ---
   const theme = profile.theme || {}
   const layout = profile.layout || {}
   const customColors = theme.customColors || { primary: '#A7C4A0', background: '#FFFFFF', foreground: '#1a1c19' }
   const isOfficial = profile.isGukoMode === true || profile.username === 'guko';
+  const isAdmin = profile.isAdmin === true;
 
   const getColorStyle = (val: any) => {
     if (!val) return 'transparent';
@@ -236,12 +234,33 @@ export default function PublicProfilePage() {
           >
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <h1 className={cn("text-4xl font-bold lowercase leading-none", isOfficial && "italic font-black")} style={{ color: textPrimary }}>
+                <h1 
+                  className={cn("leading-none lowercase", isOfficial && "italic font-black")} 
+                  style={{ 
+                    color: textPrimary,
+                    fontSize: layout.name?.fontSize ? `${layout.name.fontSize}px` : '36px',
+                    fontWeight: isOfficial ? '900' : (layout.name?.fontWeight || 'bold')
+                  }}
+                >
                   {profile.displayName || profile.username}
                 </h1>
-                {isOfficial && <BadgeCheck className="h-8 w-8 text-primary fill-primary/10" />}
+                {(isOfficial || isAdmin) && (
+                  <BadgeCheck 
+                    size={layout.name?.fontSize ? layout.name.fontSize * 0.8 : 32} 
+                    className="text-primary fill-primary/10" 
+                  />
+                )}
               </div>
-              <p className="text-sm opacity-60 lowercase" style={{ color: textPrimary }}>@{profile.username}</p>
+              <p 
+                className="opacity-60 lowercase" 
+                style={{ 
+                  color: textPrimary,
+                  fontSize: layout.username?.fontSize ? `${layout.username.fontSize}px` : '14px',
+                  fontWeight: layout.username?.fontWeight || 'normal'
+                }}
+              >
+                @{profile.username}
+              </p>
             </div>
             
             <div className="flex items-center gap-3">
@@ -277,8 +296,22 @@ export default function PublicProfilePage() {
             }}
           >
             <div className="space-y-2">
-              <span className="text-[10px] font-bold uppercase tracking-widest opacity-40">about me:</span>
-              <p className="text-lg leading-relaxed lowercase italic">
+              <span 
+                className="uppercase tracking-widest opacity-40"
+                style={{ 
+                  fontSize: layout.aboutHeader?.fontSize ? `${layout.aboutHeader.fontSize}px` : '10px',
+                  fontWeight: layout.aboutHeader?.fontWeight || 'bold'
+                }}
+              >
+                about me:
+              </span>
+              <p 
+                className="leading-relaxed lowercase italic"
+                style={{ 
+                  fontSize: layout.bio?.fontSize ? `${layout.bio.fontSize}px` : '18px',
+                  fontWeight: layout.bio?.fontWeight || 'normal'
+                }}
+              >
                 {profile.bio || 'this student has not shared a bio yet.'}
               </p>
             </div>
@@ -359,6 +392,7 @@ function FeedCard({ post, profile, onCopy, textPrimary }: { post: any, profile: 
   const isThought = post.type === 'thought'
   const postVerb = isThought ? "posted a thought" : `shared a ${post.type === 'flashcardSet' ? 'flashcard deck' : post.type}`
   const isOfficial = post.isOfficial === true || profile.username === 'guko';
+  const isAdmin = profile.isAdmin === true;
 
   return (
     <div className="bg-white rounded-2xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 border border-black/5 group">
@@ -368,7 +402,7 @@ function FeedCard({ post, profile, onCopy, textPrimary }: { post: any, profile: 
             <span className={cn("text-[10px] font-mono text-black/40 lowercase", isOfficial && "italic font-bold")}>
               {profile.displayName || profile.username} {postVerb}
             </span>
-            {isOfficial && <BadgeCheck className="h-3 w-3 text-primary" />}
+            {(isOfficial || isAdmin) && <BadgeCheck className="h-3 w-3 text-primary" />}
           </div>
         </div>
 

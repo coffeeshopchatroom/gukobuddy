@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -102,7 +101,8 @@ export default function ShareHubPage() {
         content: thoughtText,
         itemData: itemData,
         createdAt: new Date().toISOString(),
-        isOfficial: profile.isGukoMode === true
+        isOfficial: profile.isGukoMode === true,
+        isAdmin: profile.isAdmin === true
       }
 
       setDocumentNonBlocking(postRef, postData, { merge: true })
@@ -240,6 +240,7 @@ function PostCard({ post, isOwner, onDelete }: { post: any, isOwner: boolean, on
   const isThought = post.type === 'thought'
   const postVerb = isThought ? "posted a thought" : `shared a ${post.type === 'flashcardSet' ? 'flashcard deck' : post.type}`
   const isOfficial = post.isOfficial === true || post.authorUsername === 'guko';
+  const isAdmin = post.isAdmin === true;
 
   return (
     <div className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col group border border-black/5">
@@ -254,11 +255,11 @@ function PostCard({ post, isOwner, onDelete }: { post: any, isOwner: boolean, on
                <div className="flex items-center gap-1.5">
                   <h4 className={cn(
                     "font-bold text-sm lowercase leading-tight truncate group-hover/author:text-primary transition-colors",
-                    isOfficial && "italic font-bold"
+                    isOfficial && "italic font-black"
                   )}>
                     {post.authorDisplayName}
                   </h4>
-                  {isOfficial && <BadgeCheck className="h-3.5 w-3.5 text-primary" />}
+                  {(isOfficial || isAdmin) && <BadgeCheck className="h-3.5 w-3.5 text-primary" />}
                </div>
                <p className="text-[10px] text-muted-foreground lowercase">@{post.authorUsername}</p>
             </div>

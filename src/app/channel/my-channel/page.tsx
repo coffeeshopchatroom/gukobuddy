@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -158,6 +157,7 @@ export default function MyChannelPage() {
   const selectedAvatarId = profile?.selectedAvatar || 'mii-m2';
   const selectedAvatarGender = profile?.avatarGender || 'male';
   const isOfficial = profile?.isGukoMode === true || profile?.username === 'guko';
+  const isAdmin = profile?.isAdmin === true;
 
   const previewAvatarPath = `/avatars/${selectedAvatarGender}/${selectedAvatarId}/${selectedAvatarId}_${hoverEmotion || currentEmotion}.png`;
 
@@ -185,7 +185,7 @@ export default function MyChannelPage() {
                   )}>
                     {displayName}
                   </div>
-                  {isOfficial && <BadgeCheck className="w-10 h-10 text-white fill-white/20" />}
+                  {(isOfficial || isAdmin) && <BadgeCheck className="w-10 h-10 text-white fill-white/20" />}
                 </div>
                 <div className="flex items-center justify-end gap-3 mt-2">
                   <div className="[text-shadow:0px_4px_4px_#00000040] font-normal text-[#dddddd] text-[50px] tracking-wide">700</div>
@@ -222,7 +222,7 @@ export default function MyChannelPage() {
         <div className="absolute top-[878px] left-[-35px] w-[1562px] h-[370px] rounded-full [background:radial-gradient(50%_50%_at_50%_50%,rgba(217,217,217,0.4)_0%,rgba(115,115,115,0)_100%)] z-20 animate-pulse-slow" />
         <div className="absolute top-[794px] left-[720px] w-[1281px] h-[353px] rounded-full [background:radial-gradient(50%_50%_at_50%_50%,rgba(217,217,217,0.4)_0%,rgba(115,115,115,0)_100%)] z-20 animate-pulse-slow" style={{ animationDelay: '1s' }} />
 
-        {/* Navigation Sidebar - Simplified for My Channel */}
+        {/* Navigation Sidebar */}
         <nav className="absolute top-[134px] left-[134px] z-50 flex flex-col gap-2 items-start">
           <div className="transition-all duration-500 font-headline font-medium text-white text-[64px] ml-0">
             <span className="mr-4 inline-block animate-bounce-sideways">•</span>

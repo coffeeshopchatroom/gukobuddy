@@ -36,7 +36,9 @@ import {
   Trash2,
   RotateCw,
   Layers,
-  Gamepad2
+  Gamepad2,
+  Bold,
+  Type
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { 
@@ -88,6 +90,8 @@ type ElementLayout = {
   w: number;
   h: number;
   zIndex: number;
+  fontSize?: number;
+  fontWeight?: 'normal' | 'bold';
 };
 
 type Sticker = ElementLayout & {
@@ -109,11 +113,11 @@ type ProfileLayout = {
 const DEFAULT_LAYOUT: ProfileLayout = {
   banner: { x: 0, y: 0, w: 600, h: 80, zIndex: 0 },
   pfp: { x: 24, y: 40, w: 96, h: 96, zIndex: 2 },
-  name: { x: 136, y: 50, w: 280, h: 48, zIndex: 2 },
-  username: { x: 136, y: 98, w: 150, h: 24, zIndex: 2 },
-  bio: { x: 24, y: 200, w: 300, h: 60, zIndex: 2 },
+  name: { x: 136, y: 50, w: 280, h: 48, zIndex: 2, fontSize: 32, fontWeight: 'bold' },
+  username: { x: 136, y: 98, w: 150, h: 24, zIndex: 2, fontSize: 14, fontWeight: 'normal' },
+  bio: { x: 24, y: 200, w: 300, h: 60, zIndex: 2, fontSize: 12, fontWeight: 'normal' },
   addBtn: { x: 440, y: 50, w: 130, h: 44, zIndex: 2 },
-  aboutHeader: { x: 24, y: 175, w: 100, h: 20, zIndex: 2 }
+  aboutHeader: { x: 24, y: 175, w: 100, h: 20, zIndex: 2, fontSize: 10, fontWeight: 'bold' }
 };
 
 export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCustomizerProps) {
@@ -244,7 +248,6 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
   const handleSave = async () => {
     if (!profileRef || !user) return;
 
-    // Sync with Firebase Auth for standard components
     try {
       await updateProfile(user, {
         displayName: formData.displayName,
@@ -254,7 +257,6 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
       console.warn("Auth profile sync failed", e);
     }
 
-    // Persist to Firestore
     setDocumentNonBlocking(profileRef, {
       ...formData,
       updatedAt: new Date().toISOString()
@@ -313,7 +315,7 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
   };
 
   return (
-<Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
@@ -547,10 +549,12 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
                     width: formData.layout.name?.w ?? 0,
                     height: formData.layout.name?.h ?? 0,
                     zIndex: formData.layout.name?.zIndex ?? 2,
-                    color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor'
+                    color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor',
+                    fontSize: formData.layout.name?.fontSize ? `${formData.layout.name.fontSize}px` : '32px',
+                    fontWeight: formData.layout.name?.fontWeight || 'bold'
                   }}
                 >
-                  <h4 className="text-3xl font-bold leading-tight lowercase truncate">{formData.displayName || 'name'}</h4>
+                  <h4 className="leading-tight lowercase truncate">{formData.displayName || 'name'}</h4>
                 </div>
 
                 <div 
@@ -562,10 +566,12 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
                     height: formData.layout.username?.h ?? 0,
                     zIndex: formData.layout.username?.zIndex ?? 2,
                     color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor',
-                    opacity: 0.6
+                    opacity: 0.6,
+                    fontSize: formData.layout.username?.fontSize ? `${formData.layout.username.fontSize}px` : '14px',
+                    fontWeight: formData.layout.username?.fontWeight || 'normal'
                   }}
                 >
-                  <p className="text-sm lowercase truncate">{formData.username ? `@${formData.username}` : '@username'}</p>
+                  <p className="lowercase truncate">{formData.username ? `@${formData.username}` : '@username'}</p>
                 </div>
 
                 <div 
@@ -600,10 +606,12 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
                     height: formData.layout.aboutHeader?.h ?? 0,
                     zIndex: formData.layout.aboutHeader?.zIndex ?? 2,
                     color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor',
-                    opacity: 0.4
+                    opacity: 0.4,
+                    fontSize: formData.layout.aboutHeader?.fontSize ? `${formData.layout.aboutHeader.fontSize}px` : '10px',
+                    fontWeight: formData.layout.aboutHeader?.fontWeight || 'bold'
                   }}
                 >
-                  <h5 className="text-[10px] font-bold uppercase tracking-widest">about me</h5>
+                  <h5 className="uppercase tracking-widest">about me</h5>
                 </div>
 
                 <div 
@@ -615,9 +623,11 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
                     height: formData.layout.bio?.h ?? 0,
                     zIndex: formData.layout.bio?.zIndex ?? 2,
                     color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor',
+                    fontSize: formData.layout.bio?.fontSize ? `${formData.layout.bio.fontSize}px` : '12px',
+                    fontWeight: formData.layout.bio?.fontWeight || 'normal'
                   }}
                 >
-                  <p className="text-xs leading-relaxed lowercase opacity-90 italic line-clamp-3">
+                  <p className="leading-relaxed lowercase opacity-90 italic line-clamp-3">
                     {formData.bio || 'your bio will appear here...'}
                   </p>
                 </div>
@@ -840,6 +850,33 @@ function AdvancedProfileEditor({
     });
   };
 
+  const toggleBold = () => {
+    if (!selectedId || selectedId === 'pfp' || selectedId === 'banner' || selectedId === 'addBtn' || selectedId.startsWith('sticker-')) return;
+    
+    setFormData((prev: any) => {
+      const newFormData = JSON.parse(JSON.stringify(prev));
+      const el = newFormData.layout[selectedId];
+      if (el) {
+        el.fontWeight = el.fontWeight === 'bold' ? 'normal' : 'bold';
+      }
+      saveToHistory(newFormData);
+      return newFormData;
+    });
+  };
+
+  const updateFontSize = (v: number) => {
+    if (!selectedId || selectedId === 'pfp' || selectedId === 'banner' || selectedId === 'addBtn' || selectedId.startsWith('sticker-')) return;
+    
+    setFormData((prev: any) => {
+      const newFormData = JSON.parse(JSON.stringify(prev));
+      const el = newFormData.layout[selectedId];
+      if (el) {
+        el.fontSize = v;
+      }
+      return newFormData;
+    });
+  };
+
   const deleteSelected = () => {
     if (!selectedId) return;
     if (selectedId.startsWith('sticker-')) {
@@ -898,6 +935,9 @@ function AdvancedProfileEditor({
     );
   };
 
+  const isTextElement = selectedId && ['name', 'username', 'bio', 'aboutHeader'].includes(selectedId);
+  const selectedElement = selectedId ? (selectedId.startsWith('sticker-') ? formData.stickers.find((s:any) => s.id === selectedId.replace('sticker-','')) : formData.layout[selectedId]) : null;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-none w-screen h-screen p-0 border-none flex items-center justify-center bg-black/50 backdrop-blur-sm">
@@ -930,21 +970,47 @@ function AdvancedProfileEditor({
           </div>
 
           {selectedId && (
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[250] flex items-center gap-2 bg-background/50 backdrop-blur-md rounded-2xl border border-white/10 p-2 shadow-xl">
-              <Button variant="ghost" size="icon" onClick={() => changeLayer(-1)} className="text-foreground hover:bg-white/10 rounded-xl h-9 w-9">
-                <Layers className="h-5 w-5" />
-              </Button>
-              <Button variant="ghost" size="icon" onClick={() => changeLayer(1)} className="text-foreground hover:bg-white/10 rounded-xl h-9 w-9">
-                <Layers className="h-5 w-5" style={{transform: 'scaleY(-1)'}}/>
-              </Button>
-              {selectedId.startsWith('sticker-') && (
-                <>
-                  <div className="w-px h-6 bg-white/10 mx-1"></div>
-                  <Button variant="ghost" size="icon" onClick={deleteSelected} className="text-destructive hover:bg-destructive/10 rounded-xl h-9 w-9">
-                    <Trash2 className="h-5 w-5" />
-                  </Button>
-                </>
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[250] flex flex-col items-center gap-4">
+              {isTextElement && selectedElement && (
+                <div className="flex items-center gap-4 bg-background/50 backdrop-blur-md rounded-2xl border border-white/10 p-4 shadow-xl text-foreground">
+                   <div className="flex flex-col gap-1 w-32">
+                      <div className="flex justify-between items-center px-1">
+                        <span className="text-[9px] font-black uppercase opacity-40">text size</span>
+                        <span className="text-[10px] font-mono">{selectedElement.fontSize || 16}px</span>
+                      </div>
+                      <Slider value={[selectedElement.fontSize || 16]} min={8} max={72} onValueChange={(v) => updateFontSize(v[0])} onPointerUp={() => saveToHistory(formData)} />
+                   </div>
+                   <div className="w-px h-8 bg-white/10"></div>
+                   <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={toggleBold} 
+                    className={cn(
+                      "rounded-xl h-9 w-9 transition-all",
+                      selectedElement.fontWeight === 'bold' ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-white/10"
+                    )}
+                   >
+                     <Bold className="h-4 w-4" />
+                   </Button>
+                </div>
               )}
+              
+              <div className="flex items-center gap-2 bg-background/50 backdrop-blur-md rounded-2xl border border-white/10 p-2 shadow-xl">
+                <Button variant="ghost" size="icon" onClick={() => changeLayer(-1)} className="text-foreground hover:bg-white/10 rounded-xl h-9 w-9">
+                  <Layers className="h-5 w-5" />
+                </Button>
+                <Button variant="ghost" size="icon" onClick={() => changeLayer(1)} className="text-foreground hover:bg-white/10 rounded-xl h-9 w-9">
+                  <Layers className="h-5 w-5" style={{transform: 'scaleY(-1)'}}/>
+                </Button>
+                {selectedId.startsWith('sticker-') && (
+                  <>
+                    <div className="w-px h-6 bg-white/10 mx-1"></div>
+                    <Button variant="ghost" size="icon" onClick={deleteSelected} className="text-destructive hover:bg-destructive/10 rounded-xl h-9 w-9">
+                      <Trash2 className="h-5 w-5" />
+                    </Button>
+                  </>
+                )}
+              </div>
             </div>
           )}
 
@@ -1008,10 +1074,12 @@ function AdvancedProfileEditor({
                 width: formData.layout.name?.w ?? 0,
                 height: formData.layout.name?.h ?? 0,
                 zIndex: formData.layout.name?.zIndex ?? 2,
-                color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor'
+                color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor',
+                fontSize: formData.layout.name?.fontSize ? `${formData.layout.name.fontSize}px` : '32px',
+                fontWeight: formData.layout.name?.fontWeight || 'bold'
               }}
             >
-              <h4 className="text-3xl font-bold leading-tight lowercase truncate select-none pointer-events-none">
+              <h4 className="leading-tight lowercase truncate select-none pointer-events-none">
                 {formData.displayName || 'name'}
               </h4>
             </div>
@@ -1027,10 +1095,12 @@ function AdvancedProfileEditor({
                 height: formData.layout.username?.h ?? 0,
                 zIndex: formData.layout.username?.zIndex ?? 2,
                 color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor',
-                opacity: 0.6
+                opacity: 0.6,
+                fontSize: formData.layout.username?.fontSize ? `${formData.layout.username.fontSize}px` : '14px',
+                fontWeight: formData.layout.username?.fontWeight || 'normal'
               }}
             >
-              <p className="text-sm lowercase truncate select-none pointer-events-none">{formData.username ? `@${formData.username}` : '@username'}</p>
+              <p className="lowercase truncate select-none pointer-events-none">{formData.username ? `@${formData.username}` : '@username'}</p>
             </div>
 
             <div 
@@ -1069,10 +1139,12 @@ function AdvancedProfileEditor({
                 height: formData.layout.aboutHeader?.h ?? 0,
                 zIndex: formData.layout.aboutHeader?.zIndex ?? 2,
                 color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor',
-                opacity: 0.4
+                opacity: 0.4,
+                fontSize: formData.layout.aboutHeader?.fontSize ? `${formData.layout.aboutHeader.fontSize}px` : '10px',
+                fontWeight: formData.layout.aboutHeader?.fontWeight || 'bold'
               }}
             >
-              <h5 className="text-[10px] font-bold uppercase tracking-widest select-none pointer-events-none">about me</h5>
+              <h5 className="uppercase tracking-widest select-none pointer-events-none">about me</h5>
             </div>
 
             <div 
@@ -1086,9 +1158,11 @@ function AdvancedProfileEditor({
                 height: formData.layout.bio?.h ?? 0,
                 zIndex: formData.layout.bio?.zIndex ?? 2,
                 color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor',
+                fontSize: formData.layout.bio?.fontSize ? `${formData.layout.bio.fontSize}px` : '12px',
+                fontWeight: formData.layout.bio?.fontWeight || 'normal'
               }}
             >
-              <p className="text-xs leading-relaxed lowercase opacity-90 italic line-clamp-3 select-none pointer-events-none">
+              <p className="leading-relaxed lowercase opacity-90 italic line-clamp-3 select-none pointer-events-none">
                 {formData.bio || 'your bio will appear here...'}
               </p>
             </div>
