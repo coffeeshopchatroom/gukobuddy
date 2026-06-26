@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -7,7 +8,9 @@ import {
   useCollection, 
   useMemoFirebase,
   setDocumentNonBlocking,
-  useUser
+  updateDocumentNonBlocking,
+  useUser,
+  useDoc
 } from "@/firebase"
 import { 
   collection, 
@@ -25,11 +28,13 @@ import {
   BookOpen, 
   UserCircle2,
   AlertCircle,
-  BadgeCheck
+  BadgeCheck,
+  Edit2
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useToast } from "@/hooks/use-toast"
+import { ProfileCustomizer } from "@/components/profile/ProfileCustomizer"
 
 type ProfileTab = 'all' | 'notebooks' | 'flashcards' | 'thoughts'
 
@@ -43,6 +48,7 @@ export default function PublicProfilePage() {
   const [profile, setProfile] = React.useState<any>(null)
   const [isLoading, setIsLoading] = React.useState(true)
   const [activeTab, setActiveTab] = React.useState<ProfileTab>('all')
+  const [isEditDialogOpen, setIsEditDialogOpen] = React.useState(false)
 
   // Resolve profile by username
   React.useEffect(() => {
@@ -70,7 +76,19 @@ export default function PublicProfilePage() {
     resolveProfile()
   }, [username, db])
 
-  // Fetch user posts - Use simple query to avoid index issues in preview
+  // Current User's Profile for Admin/Guko checks
+  const myProfileRef = useMemoFirebase(() => currentUser ? doc(db, 'users', currentUser.uid, 'profile', 'settings') : null, [currentUser, db]);
+  const { data: myProfile } = useDoc(myProfileRef);
+  const isAdmin = myProfile?.isAdmin === true;
+  const isGukoMode = myProfile?.isGukoMode === true;
+  const effectiveUid = isGukoMode ? 'guko' : (currentUser?.uid || '');
+
+  // Relationship status
+  const relationshipRef = useMemoFirebase(() => (currentUser && profile?.uid) ? doc(db, "users", effectiveUid, "friends", profile.uid) : null, [currentUser, effectiveUid, profile?.uid, db]);
+  const { data: relationship, isLoading: isRelationshipLoading } = useDoc(relationshipRef);
+  const relationshipStatus = relationship?.status;
+
+  // Fetch user posts
   const postsQuery = useMemoFirebase(() => {
     if (!profile?.uid || !db) return null
     return query(
@@ -95,25 +113,53 @@ export default function PublicProfilePage() {
     return sorted
   }, [userPosts, activeTab])
 
-  const sendRequest = () => {
-    if (!currentUser || !profile || !db) return
-    const myFriendRef = doc(db, "users", currentUser.uid, "friends", profile.uid)
-    const theirFriendRef = doc(db, "users", profile.uid, "friends", currentUser.uid)
+  const handleAction = () => {
+    if (!currentUser) {
+      router.push('/login')
+      return
+    }
+
+    if (!profile || !db) return
+    
+    // Check if we are already friends or pending
+    if (relationshipStatus === 'accepted') {
+      toast({ title: "you are already friends!" })
+      return
+    }
+
+    if (relationshipStatus === 'pending_out') {
+      toast({ title: "request already sent" })
+      return
+    }
+
+    if (relationshipStatus === 'pending_in') {
+      // Accept it
+      const myRef = doc(db, "users", effectiveUid, "friends", profile.uid)
+      const theirRef = doc(db, "users", profile.uid, "friends", effectiveUid)
+      updateDocumentNonBlocking(myRef, { status: 'accepted' })
+      updateDocumentNonBlocking(theirRef, { status: 'accepted' })
+      toast({ title: "friend request accepted!" })
+      return
+    }
+
+    // Send new request
+    const myFriendRef = doc(db, "users", effectiveUid, "friends", profile.uid)
+    const theirFriendRef = doc(db, "users", profile.uid, "friends", effectiveUid)
 
     setDocumentNonBlocking(myFriendRef, {
       uid: profile.uid,
       username: profile.username,
-      displayName: profile.displayName,
-      photoUrl: profile.photoUrl,
+      displayName: profile.displayName || profile.username,
+      photoUrl: profile.photoUrl || '',
       status: 'pending_out',
       createdAt: new Date().toISOString()
     }, { merge: true })
 
     setDocumentNonBlocking(theirFriendRef, {
-      uid: currentUser.uid,
-      username: currentUser.displayName || 'student',
-      displayName: currentUser.displayName || 'student',
-      photoUrl: currentUser.photoURL || '',
+      uid: effectiveUid,
+      username: myProfile?.username || "student",
+      displayName: myProfile?.displayName || currentUser.displayName || 'guko student',
+      photoUrl: myProfile?.photoUrl || currentUser.photoURL || '',
       status: 'pending_in',
       createdAt: new Date().toISOString()
     }, { merge: true })
@@ -133,7 +179,7 @@ export default function PublicProfilePage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-6 p-6 bg-background">
          <div className="h-20 w-20 rounded-full bg-destructive/10 flex items-center justify-center text-destructive">
-            <ArrowLeft className="h-10 w-10" />
+            <AlertCircle className="h-10 w-10" />
          </div>
          <h1 className="text-3xl font-bold font-headline lowercase">student not found</h1>
          <Button onClick={() => router.push('/share-hub')} variant="outline" className="rounded-xl lowercase">back to hub</Button>
@@ -145,7 +191,10 @@ export default function PublicProfilePage() {
   const layout = profile.layout || {}
   const customColors = theme.customColors || { primary: '#A7C4A0', background: '#FFFFFF', foreground: '#1a1c19' }
   const isOfficial = profile.isGukoMode === true || profile.username === 'guko';
-  const isAdmin = profile.isAdmin === true;
+  const isProfileAdmin = profile.isAdmin === true;
+  
+  const isSelf = effectiveUid === profile.uid;
+  const canAdminEdit = isAdmin && isOfficial && !isGukoMode; // Admin viewing Guko while NOT in Guko mode
 
   const getColorStyle = (val: any) => {
     if (!val) return 'transparent';
@@ -244,7 +293,7 @@ export default function PublicProfilePage() {
                 >
                   {profile.displayName || profile.username}
                 </h1>
-                {(isOfficial || isAdmin) && (
+                {(isOfficial || isProfileAdmin) && (
                   <BadgeCheck 
                     size={layout.name?.fontSize ? layout.name.fontSize * 0.8 : 32} 
                     className="text-primary fill-primary/10" 
@@ -264,26 +313,83 @@ export default function PublicProfilePage() {
             </div>
             
             <div className="flex items-center gap-3" style={{ zIndex: layout.addBtn?.zIndex ?? 10 }}>
-              <button 
-                onClick={sendRequest}
-                className="px-10 py-3 text-sm lowercase transition-all shadow-md hover:brightness-95 active:scale-95"
-                style={{ 
-                  background: btnStyle, 
-                  color: 'white',
-                  borderRadius: cornerRounding,
-                  fontSize: layout.addBtn?.fontSize ? `${layout.addBtn.fontSize}px` : '14px',
-                  fontWeight: layout.addBtn?.fontWeight || 'bold',
-                  ...getTargetBorderStyle('add', btnStyle)
-                }}
-              >
-                add friend
-              </button>
-              <button 
-                className="p-3 bg-white border border-border rounded-sm hover:bg-muted transition-colors shadow-sm"
-                style={{ borderRadius: cornerRounding }}
-              >
-                <Bell size={20} className="text-black/60" />
-              </button>
+              {isSelf ? (
+                <ProfileCustomizer open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                  <button 
+                    onClick={() => setIsEditDialogOpen(true)}
+                    className="px-10 py-3 text-sm lowercase transition-all shadow-md hover:brightness-95 active:scale-95 flex items-center gap-2"
+                    style={{ 
+                      background: btnStyle, 
+                      color: 'white',
+                      borderRadius: cornerRounding,
+                      fontSize: layout.addBtn?.fontSize ? `${layout.addBtn.fontSize}px` : '14px',
+                      fontWeight: layout.addBtn?.fontWeight || 'bold',
+                      ...getTargetBorderStyle('add', btnStyle)
+                    }}
+                  >
+                    <Edit2 size={16} /> edit profile
+                  </button>
+                </ProfileCustomizer>
+              ) : canAdminEdit ? (
+                <ProfileCustomizer 
+                  open={isEditDialogOpen} 
+                  onOpenChange={setIsEditDialogOpen}
+                  overrideProfileRef={doc(db, 'users', 'guko', 'profile', 'settings')}
+                >
+                  <button 
+                    onClick={() => setIsEditDialogOpen(true)}
+                    className="px-10 py-3 text-sm lowercase transition-all shadow-md hover:brightness-95 active:scale-95 flex items-center gap-2"
+                    style={{ 
+                      background: btnStyle, 
+                      color: 'white',
+                      borderRadius: cornerRounding,
+                      fontSize: layout.addBtn?.fontSize ? `${layout.addBtn.fontSize}px` : '14px',
+                      fontWeight: layout.addBtn?.fontWeight || 'bold',
+                      ...getTargetBorderStyle('add', btnStyle)
+                    }}
+                  >
+                    <Edit2 size={16} /> edit official profile
+                  </button>
+                </ProfileCustomizer>
+              ) : (
+                <button 
+                  onClick={handleAction}
+                  disabled={isRelationshipLoading || relationshipStatus === 'accepted'}
+                  className={cn(
+                    "px-10 py-3 text-sm lowercase transition-all shadow-md active:scale-95",
+                    relationshipStatus === 'accepted' ? "opacity-50 cursor-default" : "hover:brightness-95"
+                  )}
+                  style={{ 
+                    background: btnStyle, 
+                    color: 'white',
+                    borderRadius: cornerRounding,
+                    fontSize: layout.addBtn?.fontSize ? `${layout.addBtn.fontSize}px` : '14px',
+                    fontWeight: layout.addBtn?.fontWeight || 'bold',
+                    ...getTargetBorderStyle('add', btnStyle)
+                  }}
+                >
+                  {isRelationshipLoading ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : relationshipStatus === 'accepted' ? (
+                    'friends'
+                  ) : relationshipStatus === 'pending_out' ? (
+                    'requested!'
+                  ) : relationshipStatus === 'pending_in' ? (
+                    'accept request'
+                  ) : (
+                    'add friend'
+                  )}
+                </button>
+              )}
+              
+              {!isSelf && (
+                <button 
+                  className="p-3 bg-white border border-border rounded-sm hover:bg-muted transition-colors shadow-sm"
+                  style={{ borderRadius: cornerRounding }}
+                >
+                  <Bell size={20} className="text-black/60" />
+                </button>
+              )}
             </div>
           </div>
 
@@ -394,7 +500,7 @@ function FeedCard({ post, profile, onCopy, textPrimary }: { post: any, profile: 
   const isThought = post.type === 'thought'
   const postVerb = isThought ? "posted a thought" : `shared a ${post.type === 'flashcardSet' ? 'flashcard deck' : post.type}`
   const isOfficial = post.isOfficial === true || profile.username === 'guko';
-  const isAdmin = profile.isAdmin === true;
+  const isAdmin = post.isAdmin === true;
 
   return (
     <div className="bg-white rounded-2xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 border border-black/5 group">
@@ -445,7 +551,10 @@ function FeedCard({ post, profile, onCopy, textPrimary }: { post: any, profile: 
 }
 
 async function handleCopyToLibrary(post: any, user: any, db: any, toast: any) {
-  if (!user || !db) return
+  if (!user) {
+    window.location.href = '/login';
+    return;
+  }
   
   try {
     const { setDocumentNonBlocking } = await import("@/firebase")

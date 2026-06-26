@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -58,6 +59,7 @@ interface ProfileCustomizerProps {
   children?: React.ReactNode;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  overrideProfileRef?: any; // For admin editing others
 }
 
 const FONT_OPTIONS = [
@@ -122,11 +124,12 @@ const DEFAULT_LAYOUT: ProfileLayout = {
   aboutHeader: { x: 40, y: 320, w: 100, h: 20, zIndex: 10, fontSize: 10, fontWeight: 'bold' }
 };
 
-export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCustomizerProps) {
+export function ProfileCustomizer({ children, open, onOpenChange, overrideProfileRef }: ProfileCustomizerProps) {
   const { user } = useUser();
   const db = useFirestore();
   const { toast } = useToast();
-  const profileRef = useMemoFirebase(() => user ? doc(db, 'users', user.uid, 'profile', 'settings') : null, [user, db]);
+  
+  const profileRef = overrideProfileRef || (user ? doc(db, 'users', user.uid, 'profile', 'settings') : null);
   const { data: profile } = useDoc(profileRef);
 
   const [formData, setFormData] = React.useState({
@@ -162,10 +165,10 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
       };
 
       setFormData({
-        displayName: profile.displayName || user?.displayName || '',
+        displayName: profile.displayName || (overrideProfileRef ? profile.displayName : user?.displayName) || '',
         username: profile.username || '',
         bio: profile.bio || '',
-        photoUrl: profile.photoUrl || user?.photoURL || '',
+        photoUrl: profile.photoUrl || (overrideProfileRef ? profile.photoUrl : user?.photoURL) || '',
         bannerUrl: profile.bannerUrl || '',
         theme: {
           body: parseColor(profile.theme?.body, formData.theme.body),
@@ -238,7 +241,10 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
   const handleSave = async () => {
     if (!profileRef || !user) return;
     try {
-      await updateProfile(user, { displayName: formData.displayName, photoURL: formData.photoUrl });
+      // Only sync auth profile if we are editing the CURRENT user
+      if (!overrideProfileRef) {
+        await updateProfile(user, { displayName: formData.displayName, photoURL: formData.photoUrl });
+      }
     } catch (e) { console.warn("Auth profile sync failed", e); }
     setDocumentNonBlocking(profileRef, { ...formData, updatedAt: new Date().toISOString() }, { merge: true });
     onOpenChange?.(false);
@@ -290,7 +296,9 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
             <Button variant="ghost" size="icon" onClick={() => onOpenChange?.(false)} className="text-foreground hover:bg-muted rounded-full h-8 w-8"><X className="h-5 w-5" /></Button>
           </div>
           <div className="absolute top-6 left-8">
-            <h2 className="text-lg font-bold font-headline lowercase tracking-tight opacity-90 text-foreground">customize account</h2>
+            <h2 className="text-lg font-bold font-headline lowercase tracking-tight opacity-90 text-foreground">
+              {overrideProfileRef ? 'admin: edit official profile' : 'customize account'}
+            </h2>
           </div>
 
           <div className="flex-[1] p-6 pt-16 space-y-4 overflow-y-auto custom-scrollbar border-r border-border/10 bg-muted/20">
@@ -312,7 +320,11 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
                 </label>
               </div>
               <Label className="text-[9px] font-bold uppercase tracking-widest opacity-40">profile photo</Label>
-              <Button variant="outline" size="sm" onClick={useChannelAvatar} className="h-7 rounded-lg text-[9px] font-bold lowercase gap-1.5 border-primary/20 hover:bg-primary/10 text-primary"><Gamepad2 size={12} /> use my channel headshot</Button>
+              {!overrideProfileRef && (
+                <Button variant="outline" size="sm" onClick={useChannelAvatar} className="h-7 rounded-lg text-[9px] font-bold lowercase gap-1.5 border-primary/20 hover:bg-primary/10 text-primary">
+                  <Gamepad2 size={12} /> use my channel headshot
+                </Button>
+              )}
             </div>
 
             <div className="space-y-3">
@@ -320,16 +332,18 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
                 <Label className="text-[10px] font-bold uppercase tracking-widest opacity-50 ml-1">display name</Label>
                 <Input value={formData.displayName} onChange={(e) => setFormData(prev => ({ ...prev, displayName: e.target.value }))} className="bg-background border-border text-foreground rounded-xl h-10 no-focus-ring text-sm" placeholder="your name" />
               </div>
-              <div className="space-y-1">
-                <Label className="text-[10px] font-bold uppercase tracking-widest opacity-50 ml-1">username</Label>
-                <Input value={formData.username} onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))} className="bg-background border-border text-foreground rounded-xl h-10 no-focus-ring text-sm" placeholder="username123" />
-              </div>
+              {!overrideProfileRef && (
+                <div className="space-y-1">
+                  <Label className="text-[10px] font-bold uppercase tracking-widest opacity-50 ml-1">username</Label>
+                  <Input value={formData.username} onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))} className="bg-background border-border text-foreground rounded-xl h-10 no-focus-ring text-sm" placeholder="username123" />
+                </div>
+              )}
               <div className="space-y-1">
                 <Label className="text-[10px] font-bold uppercase tracking-widest opacity-50 ml-1">bio</Label>
                 <Textarea value={formData.bio} onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))} className="bg-background border-border text-foreground rounded-xl min-h-[70px] no-focus-ring resize-none p-3 text-sm" placeholder="tell us something..." />
               </div>
             </div>
-            <Button onClick={handleSave} className="w-full h-11 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-bold lowercase transition-all">save profile</Button>
+            <Button onClick={handleSave} className="w-full h-11 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-bold lowercase transition-all">save changes</Button>
           </div>
 
           <div className="flex-[1.4] p-6 pt-16 space-y-6 overflow-y-auto custom-scrollbar text-foreground">
@@ -392,7 +406,7 @@ export function ProfileCustomizer({ children, open, onOpenChange }: ProfileCusto
               >
                 <div className="absolute transition-all" style={{ left: formData.layout.banner?.x ?? 0, top: formData.layout.banner?.y ?? 0, width: formData.layout.banner?.w ?? 0, height: formData.layout.banner?.h ?? 0, zIndex: formData.layout.banner?.zIndex ?? 0 }}>{formData.bannerUrl ? (<img src={formData.bannerUrl} className="w-full h-full object-cover" alt="banner" />) : (<div className="w-full h-full bg-muted/20" />)}</div>
                 <div className="absolute transition-all" style={{ left: formData.layout.pfp?.x ?? 0, top: formData.layout.pfp?.y ?? 0, width: formData.layout.pfp?.w ?? 0, height: formData.layout.pfp?.h ?? 0, borderRadius: previewRounding, zIndex: formData.layout.pfp?.zIndex ?? 2, ...getTargetBorderStyle('profile', bodyBgStyle), overflow: 'hidden' }}>{formData.photoUrl ? (<img src={formData.photoUrl} className="w-full h-full object-cover" alt="pfp" />) : (<div className="w-full h-full flex items-center justify-center bg-muted/20"><UserCircle2 className="h-8 w-8 opacity-20" /></div>)}</div>
-                <div className="absolute transition-all flex flex-col justify-center" style={{ left: formData.layout.name?.x ?? 0, top: formData.layout.name?.y ?? 0, width: formData.layout.name?.w ?? 0, height: formData.layout.name?.h ?? 0, zIndex: formData.layout.name?.zIndex ?? 2, color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor', fontSize: formData.layout.name?.fontSize ? `${formData.layout.name.fontSize}px` : '32px', fontWeight: formData.layout.name?.fontWeight || 'bold' }}><h4 className="leading-tight lowercase truncate">{formData.displayName || 'name'}</h4></div>
+                <div className="absolute transition-all flex flex-col justify-center" style={{ left: formData.layout.name?.x ?? 0, top: formData.layout.name?.y ?? 0, width: formData.layout.name?.w ?? 0, height: formData.layout.name?.h ?? 0, zIndex: formData.layout.name?.zIndex ?? 10, color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor', fontSize: formData.layout.name?.fontSize ? `${formData.layout.name.fontSize}px` : '32px', fontWeight: formData.layout.name?.fontWeight || 'bold' }}><h4 className="leading-tight lowercase truncate">{formData.displayName || 'name'}</h4></div>
                 <div className="absolute transition-all" style={{ left: formData.layout.username?.x ?? 0, top: formData.layout.username?.y ?? 0, width: formData.layout.username?.w ?? 0, height: formData.layout.username?.h ?? 0, zIndex: formData.layout.username?.zIndex ?? 2, color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor', opacity: 0.6, fontSize: formData.layout.username?.fontSize ? `${formData.layout.username.fontSize}px` : '14px', fontWeight: formData.layout.username?.fontWeight || 'normal' }}><p className="lowercase truncate">{formData.username ? `@${formData.username}` : '@username'}</p></div>
                 <div className="absolute transition-all" style={{ left: formData.layout.addBtn?.x ?? 0, top: formData.layout.addBtn?.y ?? 0, width: formData.layout.addBtn?.w ?? 0, height: formData.layout.addBtn?.h ?? 0, zIndex: formData.layout.addBtn?.zIndex ?? 2 }}><Button className="w-full h-full p-0 lowercase border-none shadow-none pointer-events-none" style={{ background: getColorStyle(formData.theme.buttons), color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'white', borderRadius: previewRounding, fontSize: formData.layout.addBtn?.fontSize ? `${formData.layout.addBtn.fontSize}px` : '11px', fontWeight: formData.layout.addBtn?.fontWeight || 'bold', ...getTargetBorderStyle('add', getColorStyle(formData.theme.buttons)) }}>add friend</Button></div>
                 <div className="absolute transition-all" style={{ left: formData.layout.aboutHeader?.x ?? 0, top: formData.layout.aboutHeader?.y ?? 0, width: formData.layout.aboutHeader?.w ?? 0, height: formData.layout.aboutHeader?.h ?? 0, zIndex: formData.layout.aboutHeader?.zIndex ?? 2, color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor', opacity: 0.4, fontSize: formData.layout.aboutHeader?.fontSize ? `${formData.layout.aboutHeader.fontSize}px` : '10px', fontWeight: formData.layout.aboutHeader?.fontWeight || 'bold' }}><h5 className="uppercase tracking-widest">about me</h5></div>
