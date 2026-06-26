@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -77,14 +76,14 @@ export default function PublicProfilePage() {
   }, [username, db])
 
   // Current User's Profile for Admin/Guko checks
-  const myProfileRef = useMemoFirebase(() => currentUser ? doc(db, 'users', currentUser.uid, 'profile', 'settings') : null, [currentUser, db]);
+  const myProfileRef = useMemoFirebase(() => currentUser ? doc(db, 'users', currentUser.uid, 'profile', 'settings') : null, [currentUser?.uid, db]);
   const { data: myProfile } = useDoc(myProfileRef);
   const isAdmin = myProfile?.isAdmin === true;
   const isGukoMode = myProfile?.isGukoMode === true;
   const effectiveUid = isGukoMode ? 'guko' : (currentUser?.uid || '');
 
   // Relationship status
-  const relationshipRef = useMemoFirebase(() => (currentUser && profile?.uid) ? doc(db, "users", effectiveUid, "friends", profile.uid) : null, [currentUser, effectiveUid, profile?.uid, db]);
+  const relationshipRef = useMemoFirebase(() => (currentUser && profile?.uid) ? doc(db, "users", effectiveUid, "friends", profile.uid) : null, [currentUser?.uid, effectiveUid, profile?.uid, db]);
   const { data: relationship, isLoading: isRelationshipLoading } = useDoc(relationshipRef);
   const relationshipStatus = relationship?.status;
 
@@ -121,7 +120,7 @@ export default function PublicProfilePage() {
 
     if (!profile || !db) return
     
-    // Check if we are already friends or pending
+    // Check relationship status and act accordingly
     if (relationshipStatus === 'accepted') {
       toast({ title: "you are already friends!" })
       return
