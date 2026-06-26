@@ -49,7 +49,7 @@ export default function PublicProfilePage() {
   const [activeTab, setActiveTab] = React.useState<ProfileTab>('all')
   const [isEditDialogOpen, setIsEditDialogOpen] = React.useState(false)
 
-  // Resolve profile by username
+  // 1. Resolve profile by username
   React.useEffect(() => {
     async function resolveProfile() {
       if (!db || !username) return
@@ -65,6 +65,8 @@ export default function PublicProfilePage() {
           const profileDoc = result.docs[0]
           const uid = profileDoc.data().id || profileDoc.ref.parent.parent?.id
           setProfile({ ...profileDoc.data(), uid })
+        } else {
+          setProfile(null)
         }
       } catch (e) {
         console.error("Resolve error", e)
@@ -75,22 +77,29 @@ export default function PublicProfilePage() {
     resolveProfile()
   }, [username, db])
 
-  // Current User's Profile for Admin/Guko checks
-  const myProfileRef = useMemoFirebase(() => currentUser ? doc(db, 'users', currentUser.uid, 'profile', 'settings') : null, [currentUser?.uid, db]);
+  // 2. Current User's Profile for Admin/Guko checks
+  const myProfileRef = useMemoFirebase(() => 
+    currentUser ? doc(db, 'users', currentUser.uid, 'profile', 'settings') : null
+  , [currentUser?.uid, db]);
   const { data: myProfile } = useDoc(myProfileRef);
+  
   const isAdmin = myProfile?.isAdmin === true;
   const isGukoMode = myProfile?.isGukoMode === true;
   const effectiveUid = isGukoMode ? 'guko' : (currentUser?.uid || '');
 
-  // Relationship status
-  const relationshipRef = useMemoFirebase(() => (currentUser && profile?.uid) ? doc(db, "users", effectiveUid, "friends", profile.uid) : null, [currentUser?.uid, effectiveUid, profile?.uid, db]);
+  // 3. Relationship status
+  const relationshipRef = useMemoFirebase(() => 
+    (effectiveUid && profile?.uid) ? doc(db, "users", effectiveUid, "friends", profile.uid) : null
+  , [effectiveUid, profile?.uid, db]);
   const { data: relationship, isLoading: isRelationshipLoading } = useDoc(relationshipRef);
   const relationshipStatus = relationship?.status;
 
-  // Memoized Guko reference for admin editing
-  const gukoProfileRef = useMemoFirebase(() => doc(db, 'users', 'guko', 'profile', 'settings'), [db]);
+  // 4. Admin Mascot reference
+  const gukoProfileRef = useMemoFirebase(() => 
+    doc(db, 'users', 'guko', 'profile', 'settings')
+  , [db]);
 
-  // Fetch user posts
+  // 5. User posts
   const postsQuery = useMemoFirebase(() => {
     if (!profile?.uid || !db) return null
     return query(
@@ -101,6 +110,7 @@ export default function PublicProfilePage() {
 
   const { data: userPosts, error: postsError } = useCollection(postsQuery)
 
+  // 6. Memoized UI helpers
   const filteredPosts = React.useMemo(() => {
     if (!userPosts) return []
     
@@ -115,6 +125,14 @@ export default function PublicProfilePage() {
     return sorted
   }, [userPosts, activeTab])
 
+  const actionButtonLabel = React.useMemo(() => {
+    if (isRelationshipLoading) return <Loader2 className="animate-spin h-4 w-4" />;
+    if (relationshipStatus === 'accepted') return 'friends';
+    if (relationshipStatus === 'pending_out') return 'requested!';
+    if (relationshipStatus === 'pending_in') return 'accept request';
+    return 'add friend';
+  }, [isRelationshipLoading, relationshipStatus]);
+
   const handleAction = () => {
     if (!currentUser) {
       router.push('/login')
@@ -123,24 +141,18 @@ export default function PublicProfilePage() {
 
     if (!profile || !db) return
     
-    // Check relationship status and act accordingly
-    if (relationshipStatus === 'accepted') {
-      toast({ title: "you are already friends!" })
-      return
-    }
-
-    if (relationshipStatus === 'pending_out') {
-      toast({ title: "request already sent" })
-      return
-    }
-
+    // Accept incoming
     if (relationshipStatus === 'pending_in') {
-      // Accept it
       const myRef = doc(db, "users", effectiveUid, "friends", profile.uid)
       const theirRef = doc(db, "users", profile.uid, "friends", effectiveUid)
       updateDocumentNonBlocking(myRef, { status: 'accepted' })
       updateDocumentNonBlocking(theirRef, { status: 'accepted' })
       toast({ title: "friend request accepted!" })
+      return
+    }
+
+    // Already handled
+    if (relationshipStatus === 'accepted' || relationshipStatus === 'pending_out') {
       return
     }
 
@@ -169,6 +181,7 @@ export default function PublicProfilePage() {
     toast({ title: "request sent!" })
   }
 
+  // EARLY RETURNS ONLY AFTER ALL HOOKS
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -196,7 +209,7 @@ export default function PublicProfilePage() {
   const isProfileAdmin = profile.isAdmin === true;
   
   const isSelf = effectiveUid === profile.uid;
-  const canAdminEdit = isAdmin && isOfficial && !isGukoMode; // Admin viewing Guko while NOT in Guko mode
+  const canAdminEdit = isAdmin && isOfficial && !isGukoMode; 
 
   const getColorStyle = (val: any) => {
     if (!val) return 'transparent';
@@ -228,14 +241,6 @@ export default function PublicProfilePage() {
       backgroundClip: 'padding-box, border-box'
     };
   };
-
-  const actionButtonLabel = React.useMemo(() => {
-    if (isRelationshipLoading) return <Loader2 className="animate-spin h-4 w-4" />;
-    if (relationshipStatus === 'accepted') return 'friends';
-    if (relationshipStatus === 'pending_out') return 'requested!';
-    if (relationshipStatus === 'pending_in') return 'accept request';
-    return 'add friend';
-  }, [isRelationshipLoading, relationshipStatus]);
 
   return (
     <div 
