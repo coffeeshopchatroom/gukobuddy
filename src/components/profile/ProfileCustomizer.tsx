@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -129,7 +128,12 @@ export function ProfileCustomizer({ children, open, onOpenChange, overrideProfil
   const db = useFirestore();
   const { toast } = useToast();
   
-  const profileRef = overrideProfileRef || (user ? doc(db, 'users', user.uid, 'profile', 'settings') : null);
+  const profileRef = useMemoFirebase(() => {
+    if (overrideProfileRef) return overrideProfileRef;
+    if (!user || !db) return null;
+    return doc(db, 'users', user.uid, 'profile', 'settings');
+  }, [user?.uid, db, overrideProfileRef]);
+  
   const { data: profile } = useDoc(profileRef);
 
   const [formData, setFormData] = React.useState({
@@ -241,7 +245,6 @@ export function ProfileCustomizer({ children, open, onOpenChange, overrideProfil
   const handleSave = async () => {
     if (!profileRef || !user) return;
     try {
-      // Only sync auth profile if we are editing the CURRENT user
       if (!overrideProfileRef) {
         await updateProfile(user, { displayName: formData.displayName, photoURL: formData.photoUrl });
       }
@@ -321,7 +324,7 @@ export function ProfileCustomizer({ children, open, onOpenChange, overrideProfil
               </div>
               <Label className="text-[9px] font-bold uppercase tracking-widest opacity-40">profile photo</Label>
               {!overrideProfileRef && (
-                <Button variant="outline" size="sm" onClick={useChannelAvatar} className="h-7 rounded-lg text-[9px] font-bold lowercase gap-1.5 border-primary/20 hover:bg-primary/10 text-primary">
+                <Button variant="outline" size="sm" onClick={useChannelAvatar} className="h-7 rounded-lg text-[9px] font-bold lowercase gap-1.5 border-primary/20 hover:bg-primary/10 text-primary h-9">
                   <Gamepad2 size={12} /> use my channel headshot
                 </Button>
               )}
@@ -404,14 +407,14 @@ export function ProfileCustomizer({ children, open, onOpenChange, overrideProfil
                 className="w-full aspect-[3/2] overflow-hidden relative transition-all duration-300 shadow-2xl border border-border"
                 style={{ borderRadius: previewRounding, fontFamily: formData.font, background: bodyBgStyle }}
               >
-                <div className="absolute transition-all" style={{ left: formData.layout.banner?.x ?? 0, top: formData.layout.banner?.y ?? 0, width: formData.layout.banner?.w ?? 0, height: formData.layout.banner?.h ?? 0, zIndex: formData.layout.banner?.zIndex ?? 0 }}>{formData.bannerUrl ? (<img src={formData.bannerUrl} className="w-full h-full object-cover" alt="banner" />) : (<div className="w-full h-full bg-muted/20" />)}</div>
+                <div className="absolute transition-all" style={{ left: formData.layout.banner?.x ?? 0, top: formData.layout.banner?.y ?? 0, width: formData.layout.banner?.w ?? '100%', height: formData.layout.banner?.h ?? 0, zIndex: formData.layout.banner?.zIndex ?? 0 }}>{formData.bannerUrl ? (<img src={formData.bannerUrl} className="w-full h-full object-cover" alt="banner" />) : (<div className="w-full h-full bg-muted/20" />)}</div>
                 <div className="absolute transition-all" style={{ left: formData.layout.pfp?.x ?? 0, top: formData.layout.pfp?.y ?? 0, width: formData.layout.pfp?.w ?? 0, height: formData.layout.pfp?.h ?? 0, borderRadius: previewRounding, zIndex: formData.layout.pfp?.zIndex ?? 2, ...getTargetBorderStyle('profile', bodyBgStyle), overflow: 'hidden' }}>{formData.photoUrl ? (<img src={formData.photoUrl} className="w-full h-full object-cover" alt="pfp" />) : (<div className="w-full h-full flex items-center justify-center bg-muted/20"><UserCircle2 className="h-8 w-8 opacity-20" /></div>)}</div>
-                <div className="absolute transition-all flex flex-col justify-center" style={{ left: formData.layout.name?.x ?? 0, top: formData.layout.name?.y ?? 0, width: formData.layout.name?.w ?? 0, height: formData.layout.name?.h ?? 0, zIndex: formData.layout.name?.zIndex ?? 10, color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor', fontSize: formData.layout.name?.fontSize ? `${formData.layout.name.fontSize}px` : '32px', fontWeight: formData.layout.name?.fontWeight || 'bold' }}><h4 className="leading-tight lowercase truncate">{formData.displayName || 'name'}</h4></div>
-                <div className="absolute transition-all" style={{ left: formData.layout.username?.x ?? 0, top: formData.layout.username?.y ?? 0, width: formData.layout.username?.w ?? 0, height: formData.layout.username?.h ?? 0, zIndex: formData.layout.username?.zIndex ?? 2, color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor', opacity: 0.6, fontSize: formData.layout.username?.fontSize ? `${formData.layout.username.fontSize}px` : '14px', fontWeight: formData.layout.username?.fontWeight || 'normal' }}><p className="lowercase truncate">{formData.username ? `@${formData.username}` : '@username'}</p></div>
+                <div className="absolute transition-all flex flex-col justify-center" style={{ left: formData.layout.name?.x ?? 0, top: formData.layout.name?.y ?? 0, width: formData.layout.name?.w ?? 400, height: formData.layout.name?.h ?? 0, zIndex: formData.layout.name?.zIndex ?? 10, color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor', fontSize: formData.layout.name?.fontSize ? `${formData.layout.name.fontSize}px` : '32px', fontWeight: formData.layout.name?.fontWeight || 'bold' }}><h4 className="leading-tight lowercase truncate">{formData.displayName || 'name'}</h4></div>
+                <div className="absolute transition-all" style={{ left: formData.layout.username?.x ?? 0, top: formData.layout.username?.y ?? 0, width: formData.layout.username?.w ?? 200, height: formData.layout.username?.h ?? 0, zIndex: formData.layout.username?.zIndex ?? 10, color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor', opacity: 0.6, fontSize: formData.layout.username?.fontSize ? `${formData.layout.username.fontSize}px` : '14px', fontWeight: formData.layout.username?.fontWeight || 'normal' }}><p className="lowercase truncate">{formData.username ? `@${formData.username}` : '@username'}</p></div>
                 <div className="absolute transition-all" style={{ left: formData.layout.addBtn?.x ?? 0, top: formData.layout.addBtn?.y ?? 0, width: formData.layout.addBtn?.w ?? 0, height: formData.layout.addBtn?.h ?? 0, zIndex: formData.layout.addBtn?.zIndex ?? 2 }}><Button className="w-full h-full p-0 lowercase border-none shadow-none pointer-events-none" style={{ background: getColorStyle(formData.theme.buttons), color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'white', borderRadius: previewRounding, fontSize: formData.layout.addBtn?.fontSize ? `${formData.layout.addBtn.fontSize}px` : '11px', fontWeight: formData.layout.addBtn?.fontWeight || 'bold', ...getTargetBorderStyle('add', getColorStyle(formData.theme.buttons)) }}>add friend</Button></div>
                 <div className="absolute transition-all" style={{ left: formData.layout.aboutHeader?.x ?? 0, top: formData.layout.aboutHeader?.y ?? 0, width: formData.layout.aboutHeader?.w ?? 0, height: formData.layout.aboutHeader?.h ?? 0, zIndex: formData.layout.aboutHeader?.zIndex ?? 2, color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor', opacity: 0.4, fontSize: formData.layout.aboutHeader?.fontSize ? `${formData.layout.aboutHeader.fontSize}px` : '10px', fontWeight: formData.layout.aboutHeader?.fontWeight || 'bold' }}><h5 className="uppercase tracking-widest">about me</h5></div>
-                <div className="absolute transition-all" style={{ left: formData.layout.bio?.x ?? 0, top: formData.layout.bio?.y ?? 0, width: formData.layout.bio?.w ?? 0, height: formData.layout.bio?.h ?? 0, zIndex: formData.layout.bio?.zIndex ?? 2, color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor', fontSize: formData.layout.bio?.fontSize ? `${formData.layout.bio.fontSize}px` : '12px', fontWeight: formData.layout.bio?.fontWeight || 'normal' }}><p className="leading-relaxed lowercase opacity-90 italic line-clamp-3">{formData.bio || 'your bio will appear here...'}</p></div>
-                {formData.stickers.map((sticker) => (<div key={sticker.id} className="absolute transition-all pointer-events-none" style={{ left: sticker.x, top: sticker.y, width: sticker.w, height: sticker.h, zIndex: sticker.zIndex, transform: `rotate(${sticker.rotation || 0}deg)` }}><img src={sticker.url} className="w-full h-full object-fill" alt="sticker" /></div>))}
+                <div className="absolute transition-all" style={{ left: formData.layout.bio?.x ?? 0, top: formData.layout.bio?.y ?? 0, width: formData.layout.bio?.w ?? 600, height: formData.layout.bio?.h ?? 0, zIndex: formData.layout.bio?.zIndex ?? 2, color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor', fontSize: formData.layout.bio?.fontSize ? `${formData.layout.bio.fontSize}px` : '12px', fontWeight: formData.layout.bio?.fontWeight || 'normal' }}><p className="leading-relaxed lowercase opacity-90 italic line-clamp-3">{formData.bio || 'your bio will appear here...'}</p></div>
+                {formData.stickers.map((sticker: any) => (<div key={sticker.id} className="absolute transition-all pointer-events-none" style={{ left: sticker.x, top: sticker.y, width: sticker.w, height: sticker.h, zIndex: sticker.zIndex, transform: `rotate(${sticker.rotation || 0}deg)` }}><img src={sticker.url} className="w-full h-full object-fill" alt="sticker" /></div>))}
               </div>
             </div>
           </div>
@@ -419,6 +422,48 @@ export function ProfileCustomizer({ children, open, onOpenChange, overrideProfil
         <AdvancedProfileEditor open={isAdvancedOpen} onOpenChange={setIsAdvancedOpen} formData={formData} setFormData={setFormData} onStickerUpload={(file: File) => handleImageUpload(file, 'sticker')} uploadingSticker={uploading === 'sticker'} previewRounding={previewRounding} bodyBgStyle={bodyBgStyle} getTargetBorderStyle={getTargetBorderStyle} getColorStyle={getColorStyle} />
       </DialogContent>
     </Dialog>
+  );
+}
+
+function AestheticColorPickerMini({ label, value, onChange }: { label: string, value: ColorValue, onChange: (v: ColorValue) => void }) {
+  const [isOpen, setIsOpen] = React.useState(false);
+  return (
+    <div className="flex flex-col items-center gap-1 cursor-pointer group" onClick={() => setIsOpen(true)}>
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogTrigger asChild>
+          <div className="h-7 w-7 rounded-lg border border-border transition-transform group-hover:scale-110 shadow-lg shrink-0" style={{ background: value.type === 'solid' ? value.solid : `linear-gradient(${value.rotation ?? 90}deg, ${value.gradient.map(s => `${s.color} ${s.offset}%`).join(', ')})` }} />
+        </DialogTrigger>
+        <DialogContent className="sm:rounded-[24px] p-6 bg-card text-foreground border-none shadow-3xl max-w-[350px]">
+          <DialogTitle className="sr-only">pick color for {label}</DialogTitle>
+          <DialogDescription className="sr-only">choose between solid or gradient colors.</DialogDescription>
+          <AestheticColorPickerContent label={label} value={value} onChange={onChange} />
+          <Button onClick={(e) => { e.stopPropagation(); setIsOpen(false); }} className="w-full h-12 rounded-xl bg-primary text-primary-foreground font-bold text-sm lowercase hover:bg-primary/90 mt-6">done</Button>
+        </DialogContent>
+      </Dialog>
+      <span className="text-[8px] font-bold lowercase opacity-30 group-hover:opacity-100 transition-opacity">{label}</span>
+    </div>
+  );
+}
+
+function AestheticColorPickerContent({ label, value, onChange }: { label: string, value: ColorValue, onChange: (v: ColorValue) => void }) {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-bold font-headline lowercase">color: {label}</h3>
+        <div className="flex gap-1 bg-muted rounded-lg p-0.5 border border-border">
+          <button onClick={() => onChange({ ...value, type: 'solid' })} className={cn("px-3 py-1 text-[9px] font-bold rounded-md transition-all", value.type === 'solid' ? "bg-card text-foreground shadow-sm" : "opacity-30 hover:opacity-60")}>solid</button>
+          <button onClick={() => onChange({ ...value, type: 'gradient' })} className={cn("px-3 py-1 text-[9px] font-bold rounded-md transition-all", value.type === 'gradient' ? "bg-card text-foreground shadow-sm" : "opacity-30 hover:opacity-60")}>gradient</button>
+        </div>
+      </div>
+      {value.type === 'solid' ? (
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="relative h-12 w-12 rounded-xl overflow-hidden border border-border"><input type="color" value={value.solid} onChange={(e) => onChange({ ...value, solid: e.target.value })} className="absolute inset-0 w-[200%] h-[200%] -translate-x-1/4 -translate-y-1/4 cursor-pointer" /></div>
+            <div className="relative flex-1"><Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-3 w-3 opacity-30 text-foreground" /><Input value={value.solid.replace('#', '')} onChange={(e) => onChange({ ...value, solid: `#${e.target.value.replace(/[^0-9a-fA-F]/gi, '')}` })} className="bg-background border-border text-foreground pl-8 h-12 text-sm font-mono rounded-xl !lowercase" placeholder="ffffff" /></div>
+          </div>
+        </div>
+      ) : (<GradientPicker gradient={value.gradient} setGradient={(newGradient) => onChange({ ...value, gradient: newGradient })} rotation={value.rotation ?? 90} setRotation={(newRotation) => onChange({ ...value, rotation: newRotation })} />)}
+    </div>
   );
 }
 
@@ -651,11 +696,11 @@ function AdvancedProfileEditor({
                   {formData.photoUrl ? (<img src={formData.photoUrl} className="w-full h-full object-cover select-none pointer-events-none" alt="pfp" />) : (<div className="w-full h-full flex items-center justify-center bg-muted/20"><UserCircle2 className="h-10 w-10 opacity-20" /></div>)}
                 </div>
 
-                <div className="absolute cursor-pointer flex flex-col justify-center" onPointerDown={(e) => handlePointerDown(e, 'name', 'move')} onClick={e => e.stopPropagation()} style={{ left: formData.layout.name?.x ?? 0, top: formData.layout.name?.y ?? 0, width: formData.layout.name?.w ?? 0, height: formData.layout.name?.h ?? 0, zIndex: formData.layout.name?.zIndex ?? 10, color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor', fontSize: formData.layout.name?.fontSize ? `${formData.layout.name.fontSize}px` : '32px', fontWeight: formData.layout.name?.fontWeight || 'bold' }}><h4 className="leading-tight lowercase truncate select-none pointer-events-none">{formData.displayName || 'name'}</h4></div>
-                <div className="absolute cursor-pointer" onPointerDown={(e) => handlePointerDown(e, 'username', 'move')} onClick={e => e.stopPropagation()} style={{ left: formData.layout.username?.x ?? 0, top: formData.layout.username?.y ?? 0, width: formData.layout.username?.w ?? 0, height: formData.layout.username?.h ?? 0, zIndex: formData.layout.username?.zIndex ?? 10, color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor', opacity: 0.6, fontSize: formData.layout.username?.fontSize ? `${formData.layout.username.fontSize}px` : '14px', fontWeight: formData.layout.username?.fontWeight || 'normal' }}><p className="lowercase truncate select-none pointer-events-none">{formData.username ? `@${formData.username}` : '@username'}</p></div>
-                <div className="absolute cursor-pointer" onPointerDown={(e) => handlePointerDown(e, 'addBtn', 'move')} onClick={e => e.stopPropagation()} style={{ left: formData.layout.addBtn?.x ?? 0, top: formData.layout.addBtn?.y ?? 0, width: formData.layout.addBtn?.w ?? 0, height: formData.layout.addBtn?.h ?? 0, zIndex: formData.layout.addBtn?.zIndex ?? 10 }}><Button className="w-full h-full p-0 lowercase border-none transition-all shadow-none pointer-events-none" style={{ background: getColorStyle(formData.theme.buttons), color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'white', borderRadius: previewRounding, fontSize: formData.layout.addBtn?.fontSize ? `${formData.layout.addBtn.fontSize}px` : '11px', fontWeight: formData.layout.addBtn?.fontWeight || 'bold', ...getTargetBorderStyle('add', getColorStyle(formData.theme.buttons)) }}>add friend</Button></div>
-                <div className="absolute cursor-pointer" onPointerDown={(e) => handlePointerDown(e, 'aboutHeader', 'move')} onClick={e => e.stopPropagation()} style={{ left: formData.layout.aboutHeader?.x ?? 0, top: formData.layout.aboutHeader?.y ?? 0, width: formData.layout.aboutHeader?.w ?? 0, height: formData.layout.aboutHeader?.h ?? 0, zIndex: formData.layout.aboutHeader?.zIndex ?? 10, color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor', opacity: 0.4, fontSize: formData.layout.aboutHeader?.fontSize ? `${formData.layout.aboutHeader.fontSize}px` : '10px', fontWeight: formData.layout.aboutHeader?.fontWeight || 'bold' }}><h5 className="uppercase tracking-widest select-none pointer-events-none">about me</h5></div>
-                <div className="absolute cursor-pointer" onPointerDown={(e) => handlePointerDown(e, 'bio', 'move')} onClick={e => e.stopPropagation()} style={{ left: formData.layout.bio?.x ?? 0, top: formData.layout.bio?.y ?? 0, width: formData.layout.bio?.w ?? 0, height: formData.layout.bio?.h ?? 0, zIndex: formData.layout.bio?.zIndex ?? 10, color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor', fontSize: formData.layout.bio?.fontSize ? `${formData.layout.bio.fontSize}px` : '12px', fontWeight: formData.layout.bio?.fontWeight || 'normal' }}><p className="leading-relaxed lowercase opacity-90 italic line-clamp-3 select-none pointer-events-none">{formData.bio || 'your bio will appear here...'}</p></div>
+                <div className="absolute cursor-pointer flex flex-col justify-center" onPointerDown={(e) => handlePointerDown(e, 'name', 'move')} onClick={e => e.stopPropagation()} style={{ left: formData.layout.name?.x ?? 0, top: formData.layout.name?.y ?? 0, width: formData.layout.name?.w ?? 400, height: formData.layout.name?.h ?? 0, zIndex: formData.layout.name?.zIndex ?? 10, color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor', fontSize: formData.layout.name?.fontSize ? `${formData.layout.name.fontSize}px` : '32px', fontWeight: formData.layout.name?.fontWeight || 'bold' }}><h4 className="leading-tight lowercase truncate select-none pointer-events-none">{formData.displayName || 'name'}</h4></div>
+                <div className="absolute cursor-pointer" onPointerDown={(e) => handlePointerDown(e, 'username', 'move')} onClick={e => e.stopPropagation()} style={{ left: formData.layout.username?.x ?? 0, top: formData.layout.username?.y ?? 0, width: formData.layout.username?.w ?? 200, height: formData.layout.username?.h ?? 0, zIndex: formData.layout.username?.zIndex ?? 10, color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor', opacity: 0.6, fontSize: formData.layout.username?.fontSize ? `${formData.layout.username.fontSize}px` : '14px', fontWeight: formData.layout.username?.fontWeight || 'normal' }}><p className="lowercase truncate select-none pointer-events-none">{formData.username ? `@${formData.username}` : '@username'}</p></div>
+                <div className="absolute cursor-pointer" onPointerDown={(e) => handlePointerDown(e, 'addBtn', 'move')} onClick={e => e.stopPropagation()} style={{ left: formData.layout.addBtn?.x ?? 0, top: formData.layout.addBtn?.y ?? 0, width: formData.layout.addBtn?.w ?? 140, height: formData.layout.addBtn?.h ?? 44, zIndex: formData.layout.addBtn?.zIndex ?? 10 }}><Button className="w-full h-full p-0 lowercase border-none transition-all shadow-none pointer-events-none" style={{ background: getColorStyle(formData.theme.buttons), color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'white', borderRadius: previewRounding, fontSize: formData.layout.addBtn?.fontSize ? `${formData.layout.addBtn.fontSize}px` : '11px', fontWeight: formData.layout.addBtn?.fontWeight || 'bold', ...getTargetBorderStyle('add', getColorStyle(formData.theme.buttons)) }}>add friend</Button></div>
+                <div className="absolute cursor-pointer" onPointerDown={(e) => handlePointerDown(e, 'aboutHeader', 'move')} onClick={e => e.stopPropagation()} style={{ left: formData.layout.aboutHeader?.x ?? 0, top: formData.layout.aboutHeader?.y ?? 0, width: formData.layout.aboutHeader?.w ?? 100, height: formData.layout.aboutHeader?.h ?? 20, zIndex: formData.layout.aboutHeader?.zIndex ?? 10, color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor', opacity: 0.4, fontSize: formData.layout.aboutHeader?.fontSize ? `${formData.layout.aboutHeader.fontSize}px` : '10px', fontWeight: formData.layout.aboutHeader?.fontWeight || 'bold' }}><h5 className="uppercase tracking-widest select-none pointer-events-none">about me</h5></div>
+                <div className="absolute cursor-pointer" onPointerDown={(e) => handlePointerDown(e, 'bio', 'move')} onClick={e => e.stopPropagation()} style={{ left: formData.layout.bio?.x ?? 0, top: formData.layout.bio?.y ?? 0, width: formData.layout.bio?.w ?? 600, height: formData.layout.bio?.h ?? 0, zIndex: formData.layout.bio?.zIndex ?? 10, color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor', fontSize: formData.layout.bio?.fontSize ? `${formData.layout.bio.fontSize}px` : '12px', fontWeight: formData.layout.bio?.fontWeight || 'normal' }}><p className="leading-relaxed lowercase opacity-90 italic line-clamp-3 select-none pointer-events-none">{formData.bio || 'your bio will appear here...'}</p></div>
 
                 {formData.stickers.map((sticker: any) => (<div key={sticker.id} className="absolute cursor-pointer" onPointerDown={(e) => handlePointerDown(e, `sticker-${sticker.id}`, 'move')} onClick={e => e.stopPropagation()} style={{ left: sticker.x, top: sticker.y, width: sticker.w, height: sticker.h, zIndex: sticker.zIndex, transform: `rotate(${sticker.rotation || 0}deg)` }}><img src={sticker.url} className="w-full h-full object-fill select-none pointer-events-none" alt="sticker" /></div>))}
 
@@ -682,47 +727,5 @@ function AdvancedProfileEditor({
         </div>
       </DialogContent>
     </Dialog>
-  );
-}
-
-function AestheticColorPickerMini({ label, value, onChange }: { label: string, value: ColorValue, onChange: (v: ColorValue) => void }) {
-  const [isOpen, setIsOpen] = React.useState(false);
-  return (
-    <div className="flex flex-col items-center gap-1 cursor-pointer group" onClick={() => setIsOpen(true)}>
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogTrigger asChild>
-          <div className="h-7 w-7 rounded-lg border border-border transition-transform group-hover:scale-110 shadow-lg shrink-0" style={{ background: value.type === 'solid' ? value.solid : `linear-gradient(${value.rotation ?? 90}deg, ${value.gradient.map(s => `${s.color} ${s.offset}%`).join(', ')})` }} />
-        </DialogTrigger>
-        <DialogContent className="sm:rounded-[24px] p-6 bg-card text-foreground border-none shadow-3xl max-w-[350px]">
-          <DialogTitle className="sr-only">pick color for {label}</DialogTitle>
-          <DialogDescription className="sr-only">choose between solid or gradient colors.</DialogDescription>
-          <AestheticColorPickerContent label={label} value={value} onChange={onChange} />
-          <Button onClick={(e) => { e.stopPropagation(); setIsOpen(false); }} className="w-full h-12 rounded-xl bg-primary text-primary-foreground font-bold text-sm lowercase hover:bg-primary/90 mt-6">done</Button>
-        </DialogContent>
-      </Dialog>
-      <span className="text-[8px] font-bold lowercase opacity-30 group-hover:opacity-100 transition-opacity">{label}</span>
-    </div>
-  );
-}
-
-function AestheticColorPickerContent({ label, value, onChange }: { label: string, value: ColorValue, onChange: (v: ColorValue) => void }) {
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-bold font-headline lowercase">color: {label}</h3>
-        <div className="flex gap-1 bg-muted rounded-lg p-0.5 border border-border">
-          <button onClick={() => onChange({ ...value, type: 'solid' })} className={cn("px-3 py-1 text-[9px] font-bold rounded-md transition-all", value.type === 'solid' ? "bg-card text-foreground shadow-sm" : "opacity-30 hover:opacity-60")}>solid</button>
-          <button onClick={() => onChange({ ...value, type: 'gradient' })} className={cn("px-3 py-1 text-[9px] font-bold rounded-md transition-all", value.type === 'gradient' ? "bg-card text-foreground shadow-sm" : "opacity-30 hover:opacity-60")}>gradient</button>
-        </div>
-      </div>
-      {value.type === 'solid' ? (
-        <div className="space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="relative h-12 w-12 rounded-xl overflow-hidden border border-border"><input type="color" value={value.solid} onChange={(e) => onChange({ ...value, solid: e.target.value })} className="absolute inset-0 w-[200%] h-[200%] -translate-x-1/4 -translate-y-1/4 cursor-pointer" /></div>
-            <div className="relative flex-1"><Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-3 w-3 opacity-30 text-foreground" /><Input value={value.solid.replace('#', '')} onChange={(e) => onChange({ ...value, solid: `#${e.target.value.replace(/[^0-9a-fA-F]/gi, '')}` })} className="bg-background border-border text-foreground pl-8 h-12 text-sm font-mono rounded-xl !lowercase" placeholder="ffffff" /></div>
-          </div>
-        </div>
-      ) : (<GradientPicker gradient={value.gradient} setGradient={(newGradient) => onChange({ ...value, gradient: newGradient })} rotation={value.rotation ?? 90} setRotation={(newRotation) => onChange({ ...value, rotation: newRotation })} />)}
-    </div>
   );
 }

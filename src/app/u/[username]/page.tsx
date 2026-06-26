@@ -87,6 +87,9 @@ export default function PublicProfilePage() {
   const { data: relationship, isLoading: isRelationshipLoading } = useDoc(relationshipRef);
   const relationshipStatus = relationship?.status;
 
+  // Memoized Guko reference for admin editing
+  const gukoProfileRef = useMemoFirebase(() => doc(db, 'users', 'guko', 'profile', 'settings'), [db]);
+
   // Fetch user posts
   const postsQuery = useMemoFirebase(() => {
     if (!profile?.uid || !db) return null
@@ -226,6 +229,14 @@ export default function PublicProfilePage() {
     };
   };
 
+  const actionButtonLabel = React.useMemo(() => {
+    if (isRelationshipLoading) return <Loader2 className="animate-spin h-4 w-4" />;
+    if (relationshipStatus === 'accepted') return 'friends';
+    if (relationshipStatus === 'pending_out') return 'requested!';
+    if (relationshipStatus === 'pending_in') return 'accept request';
+    return 'add friend';
+  }, [isRelationshipLoading, relationshipStatus]);
+
   return (
     <div 
       className="min-h-screen flex flex-col transition-colors duration-700"
@@ -333,7 +344,7 @@ export default function PublicProfilePage() {
                 <ProfileCustomizer 
                   open={isEditDialogOpen} 
                   onOpenChange={setIsEditDialogOpen}
-                  overrideProfileRef={doc(db, 'users', 'guko', 'profile', 'settings')}
+                  overrideProfileRef={gukoProfileRef}
                 >
                   <button 
                     onClick={() => setIsEditDialogOpen(true)}
@@ -367,17 +378,7 @@ export default function PublicProfilePage() {
                     ...getTargetBorderStyle('add', btnStyle)
                   }}
                 >
-                  {isRelationshipLoading ? (
-                    <Loader2 size={16} className="animate-spin" />
-                  ) : relationshipStatus === 'accepted' ? (
-                    'friends'
-                  ) : relationshipStatus === 'pending_out' ? (
-                    'requested!'
-                  ) : relationshipStatus === 'pending_in' ? (
-                    'accept request'
-                  ) : (
-                    'add friend'
-                  )}
+                  {actionButtonLabel}
                 </button>
               )}
               
