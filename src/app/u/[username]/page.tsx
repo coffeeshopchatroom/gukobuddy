@@ -126,7 +126,7 @@ export default function PublicProfilePage() {
   }, [userPosts, activeTab])
 
   const actionButtonLabel = React.useMemo(() => {
-    if (isRelationshipLoading) return <Loader2 className="animate-spin h-4 w-4" />;
+    if (isRelationshipLoading) return <Loader2 className="animate-spin h-4 w-4" />
     if (relationshipStatus === 'accepted') return 'friends';
     if (relationshipStatus === 'pending_out') return 'requested!';
     if (relationshipStatus === 'pending_in') return 'accept request';
@@ -444,7 +444,7 @@ export default function PublicProfilePage() {
 
       <div 
         className="w-full sticky top-0 z-50 border-y border-black/5"
-        style={{ background: btnStyle, opacity: 0.9, backdropBlur: '10px' }}
+        style={{ background: btnStyle, opacity: 0.9, backdropFilter: 'blur(10px)' }}
       >
         <div className="w-full flex">
           <TabItem active={activeTab === 'all'} onClick={() => setActiveTab('all')} label="ALL POSTS" />

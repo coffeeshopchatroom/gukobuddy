@@ -112,6 +112,7 @@ export function AppSidebar() {
        if (hasCheckedGuko) return;
 
        async function ensureGukoFriend() {
+         if (!user) return;
          try {
            const gukoFriendRef = doc(firestore, "users", user.uid, "friends", "guko");
            const gukoFriendSnap = await getDoc(gukoFriendRef);
