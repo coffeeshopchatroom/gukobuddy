@@ -5,7 +5,8 @@ import * as React from "react"
 import { useRouter } from "next/navigation"
 import { useUser, useFirestore, useMemoFirebase } from "@/firebase"
 import { doc, setDoc } from "firebase/firestore"
-import { ChevronLeft, Loader2 } from "lucide-react"
+import { ChevronLeft, Loader2, PlusCircle } from "lucide-react"
+import { CustomAvatarUploader } from "@/components/channel/CustomAvatarUploader"
 
 const MALE_AVATARS = [
   { id: 'mii-m1'}, { id: 'mii-m2'}, { id: 'mii-m3'},
@@ -29,6 +30,7 @@ export default function PickAvatarPage() {
   const [gender, setGender] = React.useState<'male' | 'female' | null>(null)
   const [isUpdating, setIsUpdating] = React.useState(false)
   const [mounted, setMounted] = React.useState(false)
+  const [showUploader, setShowUploader] = React.useState(false);
 
   React.useEffect(() => {
     setMounted(true)
@@ -48,12 +50,20 @@ export default function PickAvatarPage() {
       setIsUpdating(false)
     }
   }
+  
+  const handleUploadComplete = () => {
+    setShowUploader(false);
+    router.push('/channel/my-channel');
+  };
 
   const avatars = gender === 'male' ? MALE_AVATARS : FEMALE_AVATARS
   const avatarPath = gender === 'male' ? '/avatars/male/headshots/' : '/avatars/female/headshots/'
 
   return (
     <div className="fixed inset-0 bg-[#243d15] flex items-center justify-center overflow-hidden font-sans select-none z-[9999]">
+       {showUploader && gender && (
+        <CustomAvatarUploader gender={gender} onUploadComplete={handleUploadComplete} />
+      )}
       <main
         className="relative shrink-0 overflow-hidden shadow-2xl animate-background-shift [background:radial-gradient(173.24%_228.65%_at_17.13%_-29.45%,#243D15_0%,#385817_13%,#5F8F20_26%,#8AAB68_45%,#CDE5BA_67%)]"
         style={{
@@ -84,13 +94,22 @@ export default function PickAvatarPage() {
                 {step === 'gender' ? 'what style do you want?' : 'choose your avatar'}
               </h1>
               {step === 'selection' && (
-                <button 
-                  onClick={() => setStep('gender')}
-                  className="flex items-center gap-4 text-white/60 hover:text-white transition-all hover:translate-x-[-10px]"
-                >
-                  <ChevronLeft size={80} />
-                  <span className="text-5xl font-headline lowercase">back</span>
-                </button>
+                <div className="flex items-center gap-10">
+                  <button 
+                    onClick={() => setShowUploader(true)}
+                    className="flex items-center gap-4 text-white/60 hover:text-white transition-all hover:scale-105"
+                  >
+                    <PlusCircle size={80} />
+                     <span className="text-5xl font-headline lowercase">add your own</span>
+                  </button>
+                  <button 
+                    onClick={() => setStep('gender')}
+                    className="flex items-center gap-4 text-white/60 hover:text-white transition-all hover:translate-x-[-10px]"
+                  >
+                    <ChevronLeft size={80} />
+                    <span className="text-5xl font-headline lowercase">back</span>
+                  </button>
+                </div>
               )}
             </div>
             {step === 'selection' && (

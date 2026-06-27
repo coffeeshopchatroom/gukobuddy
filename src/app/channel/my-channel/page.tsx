@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -19,6 +20,7 @@ type CardProps = {
   emotion?: string;
   avatarId?: string;
   avatarGender?: 'male' | 'female';
+  customAvatar?: Record<string, string>;
   exitTransform?: string;
 };
 
@@ -43,8 +45,16 @@ const GradientCard = ({
   emotion = 'default',
   avatarId = 'mii-m2',
   avatarGender = 'male',
+  customAvatar,
   exitTransform
 }: CardProps): JSX.Element => {
+  const getAvatarUrl = () => {
+    if (avatarId?.startsWith('custom-') && customAvatar) {
+      return customAvatar[emotion] || customAvatar['default'];
+    }
+    return `/avatars/${avatarGender}/${avatarId}/${avatarId}_${emotion}.png`;
+  };
+
   return (
     <section
       onClick={onClick}
@@ -84,7 +94,7 @@ const GradientCard = ({
           isActive && "animate-float"
         )}>
           <img 
-            src={`/avatars/${avatarGender}/${avatarId}/${avatarId}_${emotion}.png`} 
+            src={getAvatarUrl()}
             alt={`${emotion} mii`} 
             className="w-full h-full object-cover drop-shadow-2xl"
             onError={(e) => {
@@ -156,10 +166,17 @@ export default function MyChannelPage() {
   const avatarUrl = profile?.photoUrl || user?.photoURL || "https://picsum.photos/seed/xboxava/200/200";
   const selectedAvatarId = profile?.selectedAvatar || 'mii-m2';
   const selectedAvatarGender = profile?.avatarGender || 'male';
+  const customAvatar = profile?.customAvatar;
   const isOfficial = profile?.isGukoMode === true || profile?.username === 'guko';
   const isAdmin = profile?.isAdmin === true;
 
-  const previewAvatarPath = `/avatars/${selectedAvatarGender}/${selectedAvatarId}/${selectedAvatarId}_${hoverEmotion || currentEmotion}.png`;
+  const getPreviewAvatarUrl = () => {
+    const emotion = hoverEmotion || currentEmotion;
+    if (selectedAvatarId.startsWith('custom-') && customAvatar) {
+      return customAvatar[emotion] || customAvatar['default'];
+    }
+    return `/avatars/${selectedAvatarGender}/${selectedAvatarId}/${selectedAvatarId}_${emotion}.png`;
+  };
 
   return (
     <div className="fixed inset-0 bg-[#243d15] flex items-center justify-center overflow-hidden font-sans select-none z-[9999]">
@@ -281,6 +298,7 @@ export default function MyChannelPage() {
                 emotion={currentEmotion}
                 avatarId={selectedAvatarId}
                 avatarGender={selectedAvatarGender}
+                customAvatar={customAvatar}
                 onClick={() => setShowPicker(true)}
               />
 
@@ -382,7 +400,7 @@ export default function MyChannelPage() {
                         {/* Preview Area */}
                         <div className="relative w-[500px] h-[500px] flex items-center justify-center bg-black/20 rounded-full border-8 border-white/10 overflow-visible">
                            <img 
-                            src={previewAvatarPath} 
+                            src={getPreviewAvatarUrl()} 
                             alt="preview" 
                             className="h-[700px] object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)] transform -translate-y-20 animate-in zoom-in duration-300"
                             onError={(e) => {
