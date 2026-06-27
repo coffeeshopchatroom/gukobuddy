@@ -4,17 +4,14 @@
 import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Loader2, UploadCloud } from 'lucide-react';
-import { useUser, useFirestore, useStorage } from '@/firebase';
-import { doc, setDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { useUser } from '@/firebase';
 import { Button } from '@/components/ui/button';
+import { put } from '@vercel/blob';
 
 const SPRITE_TYPES = ['headshot', 'default', 'happy', 'sad', 'angry', 'bored'];
 
 export function CustomAvatarUploader({ gender, onUploadComplete }: { gender: 'male' | 'female', onUploadComplete: () => void }) {
   const { user } = useUser();
-  const db = useFirestore();
-  const storage = useStorage();
   const [files, setFiles] = useState<Record<string, File | null>>({});
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
@@ -36,23 +33,30 @@ export function CustomAvatarUploader({ gender, onUploadComplete }: { gender: 'ma
     const avatarUrls: Record<string, string> = {};
 
     try {
-      for (const type of SPRITE_TYPES) {
-        const file = files[type];
-        if (!file) continue;
+        await Promise.all(SPRITE_TYPES.map(async type => {
+            const file = files[type];
+            if (!file) return;
 
-        const storageRef = ref(storage, `avatars/custom/${user.uid}/${type}.png`);
-        const uploadTask = await uploadBytes(storageRef, file);
-        const downloadURL = await getDownloadURL(uploadTask.ref);
-        avatarUrls[type] = downloadURL;
-        setUploadProgress(prev => ({ ...prev, [type]: 100 }));
-      }
+            const blob = await put(file.name, file, {
+                access: 'public',
+            });
 
-      const profileRef = doc(db, 'users', user.uid, 'profile', 'settings');
-      await setDoc(profileRef, {
-        selectedAvatar: avatarId,
-        avatarGender: gender,
-        customAvatar: avatarUrls,
-      }, { merge: true });
+            avatarUrls[type] = blob.url;
+            setUploadProgress(prev => ({ ...prev, [type]: 100 }));
+        }));
+
+      await fetch('/api/upload', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user.uid,
+          avatarId,
+          avatarGender: gender,
+          customAvatar: avatarUrls,
+        }),
+      });
 
       onUploadComplete();
     } catch (error) {
@@ -103,7 +107,7 @@ function Dropzone({ onDrop, file, type, progress }: { onDrop: (files: File[]) =>
   return (
     <div
       {...getRootProps()}
-      className={`p-4 border-2 border-dashed rounded-xl text-center flex flex-col items-center justify-center h-48 transition-colors ${isDragActive ? 'border-green-500 bg-green-900/50' : 'border-white/30 hover:bg-white/10'}`}
+      className={`p-4 border-2 border-dashed rounded-xl text-center flex flex-col items-center justify-center h-48 transition-colors ${isDragActive ? 'border-green-500 bg-green-900/50' : 'border-white/10'}`}
     >
       <input {...getInputProps()} />
       {file ? (
