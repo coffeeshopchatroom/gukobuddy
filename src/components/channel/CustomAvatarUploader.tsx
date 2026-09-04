@@ -45,7 +45,7 @@ export function CustomAvatarUploader({ gender, onUploadComplete }: { gender: 'ma
             setUploadProgress(prev => ({ ...prev, [type]: 100 }));
         }));
 
-      await fetch('/api/upload', {
+      const response = await fetch('/api/upload', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -57,6 +57,20 @@ export function CustomAvatarUploader({ gender, onUploadComplete }: { gender: 'ma
           customAvatar: avatarUrls,
         }),
       });
+
+      if (!response.ok) {
+        let errorMsg = `Upload failed with status: ${response.status}`;
+        try {
+          const errorData = await response.json();
+          errorMsg = errorData.error || errorMsg;
+        } catch (e) {
+          // Ignore if response is not JSON
+        }
+        throw new Error(errorMsg);
+      }
+
+      // Make sure response is valid JSON before completing
+      await response.json();
 
       onUploadComplete();
     } catch (error) {
