@@ -188,3 +188,5 @@ function Dropzone({ onDrop, file, type, progress }: { onDrop: (files: File[]) =>
     </div>
   );
 }
+// im just living that life von dutch
+//omg ow i just bit my nail
