@@ -3,10 +3,9 @@
 
 import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Loader2, UploadCloud } from 'lucide-react';
+import { Loader2, UploadCloud, X } from 'lucide-react';
 import { useUser } from '@/firebase';
 import { Button } from '@/components/ui/button';
-import { put } from '@vercel/blob';
 
 const SPRITE_TYPES = ['headshot', 'default', 'happy', 'sad', 'angry', 'bored'];
 
@@ -26,6 +25,12 @@ export function CustomAvatarUploader({ gender, onUploadComplete }: { gender: 'ma
       return;
     }
 
+    const missingSprites = SPRITE_TYPES.filter(type => !files[type]);
+    if (missingSprites.length > 0) {
+      alert(`Please select all sprite images. Missing: ${missingSprites.join(', ')}`);
+      return;
+    }
+
     setIsUploading(true);
     setUploadProgress({});
 
@@ -33,19 +38,28 @@ export function CustomAvatarUploader({ gender, onUploadComplete }: { gender: 'ma
     const avatarUrls: Record<string, string> = {};
 
     try {
-        await Promise.all(SPRITE_TYPES.map(async type => {
-            const file = files[type];
-            if (!file) return;
+      // 1. Upload all files via our server API
+      for (const type of SPRITE_TYPES) {
+        const file = files[type];
+        if (!file) continue;
 
-            const blob = await put(file.name, file, {
-                access: 'public',
-                token: process.env.BLOB_READ_WRITE_TOKEN
-            });
+        const filename = `custom-avatars/${user.uid}/${type}-${Date.now()}-${file.name}`;
+        
+        const response = await fetch(`/api/upload?filename=${filename}`, {
+          method: 'POST',
+          body: file,
+        });
 
-            avatarUrls[type] = blob.url;
-            setUploadProgress(prev => ({ ...prev, [type]: 100 }));
-        }));
+        if (!response.ok) {
+          throw new Error(`Failed to upload ${type}`);
+        }
 
+        const blob = await response.json();
+        avatarUrls[type] = blob.url;
+        setUploadProgress(prev => ({ ...prev, [type]: 100 }));
+      }
+
+      // 2. Save metadata to profile
       const response = await fetch('/api/upload', {
         method: 'POST',
         headers: {
@@ -69,38 +83,66 @@ export function CustomAvatarUploader({ gender, onUploadComplete }: { gender: 'ma
         }
         throw new Error(errorMsg);
       }
+      
       onUploadComplete();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to upload custom avatar", error);
-      alert('Failed to upload avatar. Please try again.');
+      alert(`Failed to upload avatar: ${error.message || 'Please try again.'}`);
     } finally {
       setIsUploading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[10000]">
-      <div className="bg-[#2e4a1a] p-10 rounded-2xl w-full max-w-4xl text-white font-sans border-4 border-white/20">
-        <h2 className="text-6xl font-headline lowercase mb-8 text-center">Upload Your Own Avatar</h2>
-        <div className="grid grid-cols-3 gap-6">
+    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[10000] p-4">
+      <div className="bg-[#2e4a1a] p-8 md:p-12 rounded-[40px] w-full max-w-5xl text-white font-sans border-4 border-white/20 relative overflow-y-auto max-h-[95vh] custom-scrollbar shadow-3xl">
+        <button 
+          onClick={onUploadComplete}
+          className="absolute top-8 right-8 text-white/40 hover:text-white transition-colors"
+        >
+          <X size={40} />
+        </button>
+        
+        <div className="mb-12 text-center">
+          <h2 className="text-6xl font-headline lowercase mb-2">Character Studio</h2>
+          <p className="text-white/60 lowercase text-xl">upload transparent pngs for each expression.</p>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
           {SPRITE_TYPES.map(type => (
-            <Dropzone
-              key={type}
-              onDrop={acceptedFiles => onDrop(acceptedFiles, type)}
-              file={files[type]}
-              type={type}
-              progress={uploadProgress[type]}
-            />
+            <div key={type} className="space-y-2">
+              <Dropzone
+                onDrop={acceptedFiles => onDrop(acceptedFiles, type)}
+                file={files[type]}
+                type={type}
+                progress={uploadProgress[type]}
+              />
+              <div className="flex justify-between items-center px-2">
+                <span className="text-xs font-bold uppercase tracking-widest opacity-40">{type}</span>
+                {files[type] && <span className="text-[10px] text-green-400 font-bold uppercase">Ready</span>}
+              </div>
+            </div>
           ))}
         </div>
-        <div className="mt-8 flex justify-end gap-4">
-          <Button onClick={onUploadComplete} variant="ghost" className="text-white">Cancel</Button>
+
+        <div className="mt-16 flex justify-center gap-6">
+          <Button 
+            onClick={onUploadComplete} 
+            variant="ghost" 
+            className="text-white h-16 px-12 rounded-2xl text-xl font-bold lowercase hover:bg-white/10"
+          >
+            Cancel
+          </Button>
           <Button
             onClick={handleUpload}
-            disabled={isUploading || Object.keys(files).length !== SPRITE_TYPES.length}
-            className="bg-green-500 hover:bg-green-600 text-white"
+            disabled={isUploading || SPRITE_TYPES.some(t => !files[t])}
+            className="bg-white text-[#2e4a1a] hover:bg-white/90 h-16 px-16 rounded-2xl text-2xl font-bold shadow-xl lowercase"
           >
-            {isUploading ? <Loader2 className="animate-spin" /> : 'Upload and Save'}
+            {isUploading ? (
+              <span className="flex items-center gap-3">
+                <Loader2 className="animate-spin h-6 w-6" /> processing...
+              </span>
+            ) : 'Save Character'}
           </Button>
         </div>
       </div>
@@ -118,22 +160,31 @@ function Dropzone({ onDrop, file, type, progress }: { onDrop: (files: File[]) =>
   return (
     <div
       {...getRootProps()}
-      className={`p-4 border-2 border-dashed rounded-xl text-center flex flex-col items-center justify-center h-48 transition-colors ${isDragActive ? 'border-green-500 bg-green-900/50' : 'border-white/10'}`}
+      className={`relative p-4 border-2 border-dashed rounded-[32px] text-center flex flex-col items-center justify-center h-48 transition-all cursor-pointer ${
+        isDragActive ? 'border-white bg-white/10 scale-105' : 'border-white/20 bg-black/10 hover:bg-black/20 hover:border-white/40'
+      }`}
     >
       <input {...getInputProps()} />
       {file ? (
-        <div className="relative w-full h-full">
-            <img src={URL.createObjectURL(file)} alt={type} className="w-full h-full object-contain rounded-md" />
-            {progress && <div className="absolute bottom-0 left-0 h-1 bg-green-500" style={{ width: `${progress}%` }} />}
+        <div className="relative w-full h-full flex items-center justify-center">
+            <img src={URL.createObjectURL(file)} alt={type} className="w-full h-full object-contain" />
+            {progress !== undefined && progress < 100 && (
+              <div className="absolute inset-0 bg-black/40 flex items-center justify-center rounded-[32px]">
+                <Loader2 className="animate-spin text-white h-8 w-8" />
+              </div>
+            )}
         </div>
       ) : (
-        <>
-          <UploadCloud className="w-12 h-12 text-white/50 mb-2" />
-          <p className="capitalize font-bold text-lg">{type}</p>
-          <p className="text-xs text-white/60">Drop a PNG or JPG</p>
-        </>
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-14 w-14 rounded-2xl bg-white/5 flex items-center justify-center">
+            <UploadCloud className="w-8 h-8 text-white/50" />
+          </div>
+          <div className="space-y-0.5">
+            <p className="lowercase font-bold text-lg">{type}</p>
+            <p className="text-[10px] text-white/30 uppercase tracking-tighter">click or drop png</p>
+          </div>
+        </div>
       )}
     </div>
   );
 }
-//come on come on come on steve lacy auyooouwuuhhahhu
