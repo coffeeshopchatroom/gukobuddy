@@ -73,7 +73,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import Link from "next/link"
+import Link from "link"
 
 const PORTAL_BASE_W = 600;
 const PORTAL_BASE_H = 400;
@@ -369,7 +369,7 @@ export default function FriendsPage() {
                   />
                 ))
               ) : (
-                <div className="px-4 py-10 text-center text-xs text-muted-foreground italic lowercase">no classmates found.</div>
+                <div className="px-4 py-10 text-center text-xs text-muted-foreground italic lowercase.">no classmates found.</div>
               )}
             </div>
           </ScrollArea>

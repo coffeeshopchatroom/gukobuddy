@@ -113,13 +113,23 @@ type ProfileLayout = {
   aboutHeader: ElementLayout;
 };
 
-const DEFAULT_LAYOUT: ProfileLayout = {
-  banner: { x: 0, y: 0, w: 600, h: 220, zIndex: 0 },
+const DEFAULT_PREVIEW_LAYOUT: ProfileLayout = {
+  banner: { x: 0, y: 0, w: 600, h: 80, zIndex: 0 },
+  pfp: { x: 24, y: 40, w: 140, h: 140, zIndex: 2 },
+  name: { x: 180, y: 100, w: 280, h: 48, zIndex: 2, fontSize: 32, fontWeight: 'bold' },
+  username: { x: 180, y: 140, w: 150, h: 24, zIndex: 2, fontSize: 14, fontWeight: 'normal' },
+  bio: { x: 24, y: 240, w: 552, h: 140, zIndex: 2, fontSize: 12, fontWeight: 'normal' },
+  addBtn: { x: 440, y: 100, w: 130, h: 44, zIndex: 2, fontSize: 14, fontWeight: 'bold' },
+  aboutHeader: { x: 24, y: 210, w: 100, h: 20, zIndex: 2, fontSize: 10, fontWeight: 'bold' }
+};
+
+const DEFAULT_PAGE_LAYOUT: ProfileLayout = {
+  banner: { x: 0, y: 0, w: 1120, h: 220, zIndex: 0 },
   pfp: { x: 40, y: 140, w: 176, h: 176, zIndex: 10 },
-  name: { x: 240, y: 230, w: 300, h: 48, zIndex: 10, fontSize: 36, fontWeight: 'bold' },
+  name: { x: 240, y: 230, w: 400, h: 48, zIndex: 10, fontSize: 36, fontWeight: 'bold' },
   username: { x: 240, y: 275, w: 200, h: 24, zIndex: 10, fontSize: 14, fontWeight: 'normal' },
   bio: { x: 40, y: 340, w: 600, h: 100, zIndex: 10, fontSize: 18, fontWeight: 'normal' },
-  addBtn: { x: 440, y: 230, w: 140, h: 44, zIndex: 10, fontSize: 14, fontWeight: 'bold' },
+  addBtn: { x: 920, y: 230, w: 160, h: 44, zIndex: 10, fontSize: 14, fontWeight: 'bold' },
   aboutHeader: { x: 40, y: 320, w: 100, h: 20, zIndex: 10, fontSize: 10, fontWeight: 'bold' }
 };
 
@@ -153,8 +163,10 @@ export function ProfileCustomizer({ children, open, onOpenChange, overrideProfil
     targetColors: {} as Record<BorderTarget, ColorValue>,
     font: 'Plus Jakarta Sans',
     cornerRounding: 16,
-    layout: DEFAULT_LAYOUT,
-    stickers: [] as Sticker[]
+    layout: DEFAULT_PREVIEW_LAYOUT,
+    pageLayout: DEFAULT_PAGE_LAYOUT,
+    stickers: [] as Sticker[],
+    pageStickers: [] as Sticker[]
   });
 
   const [uploading, setUploading] = React.useState<'photo' | 'banner' | 'sticker' | null>(null);
@@ -185,13 +197,15 @@ export function ProfileCustomizer({ children, open, onOpenChange, overrideProfil
         targetColors: profile.targetColors || {},
         font: profile.font || 'Plus Jakarta Sans',
         cornerRounding: profile.cornerRounding ?? 16,
-        layout: { ...DEFAULT_LAYOUT, ...profile.layout },
-        stickers: (profile.stickers || []).map((s: any) => ({ ...s, rotation: s.rotation || 0, zIndex: s.zIndex || 1 }))
+        layout: { ...DEFAULT_PREVIEW_LAYOUT, ...profile.layout },
+        pageLayout: { ...DEFAULT_PAGE_LAYOUT, ...profile.pageLayout },
+        stickers: (profile.stickers || []).map((s: any) => ({ ...s, rotation: s.rotation || 0, zIndex: s.zIndex || 1 })),
+        pageStickers: (profile.pageStickers || []).map((s: any) => ({ ...s, rotation: s.rotation || 0, zIndex: s.zIndex || 1 }))
       });
     }
   }, [profile, user]);
 
-  const handleImageUpload = async (file: File, type: 'photo' | 'banner' | 'sticker') => {
+  const handleImageUpload = async (file: File, type: 'photo' | 'banner' | 'sticker', mode: 'preview' | 'page' = 'preview') => {
     if (!user) return;
     setUploading(type);
     const filename = `profiles/${user.uid}/${type}-${Date.now()}-${file.name}`;
@@ -203,17 +217,18 @@ export function ProfileCustomizer({ children, open, onOpenChange, overrideProfil
       });
       const blob = await response.json();
       if (type === 'sticker') {
+        const listKey = mode === 'preview' ? 'stickers' : 'pageStickers';
         const newSticker: Sticker = {
           id: Math.random().toString(36).substr(2, 9),
           url: blob.url,
-          x: 200,
-          y: 150,
+          x: 50,
+          y: 50,
           w: 80,
           h: 80,
           rotation: 0,
-          zIndex: formData.stickers.length + 15
+          zIndex: formData[listKey].length + 15
         };
-        setFormData(prev => ({ ...prev, stickers: [...prev.stickers, newSticker] }));
+        setFormData(prev => ({ ...prev, [listKey]: [...prev[listKey], newSticker] }));
       } else {
         setFormData(prev => ({ ...prev, [type === 'photo' ? 'photoUrl' : 'bannerUrl']: blob.url }));
       }
@@ -346,7 +361,7 @@ export function ProfileCustomizer({ children, open, onOpenChange, overrideProfil
                 <Textarea value={formData.bio} onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))} className="bg-background border-border text-foreground rounded-xl min-h-[70px] no-focus-ring resize-none p-3 text-sm" placeholder="tell us something..." />
               </div>
             </div>
-            <Button onClick={handleSave} className="w-full h-11 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-bold lowercase transition-all">save changes</Button>
+            <Button onClick={handleSave} className="w-full h-11 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-bold lowercase transition-all">save profile</Button>
           </div>
 
           <div className="flex-[1.4] p-6 pt-16 space-y-6 overflow-y-auto custom-scrollbar text-foreground">
@@ -412,14 +427,26 @@ export function ProfileCustomizer({ children, open, onOpenChange, overrideProfil
                 <div className="absolute transition-all flex flex-col justify-center" style={{ left: formData.layout.name?.x ?? 0, top: formData.layout.name?.y ?? 0, width: formData.layout.name?.w ?? 400, height: formData.layout.name?.h ?? 0, zIndex: formData.layout.name?.zIndex ?? 10, color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor', fontSize: formData.layout.name?.fontSize ? `${formData.layout.name.fontSize}px` : '32px', fontWeight: formData.layout.name?.fontWeight || 'bold' }}><h4 className="leading-tight lowercase truncate select-none pointer-events-none">{formData.displayName || 'name'}</h4></div>
                 <div className="absolute transition-all" style={{ left: formData.layout.username?.x ?? 0, top: formData.layout.username?.y ?? 0, width: formData.layout.username?.w ?? 200, height: formData.layout.username?.h ?? 0, zIndex: formData.layout.username?.zIndex ?? 10, color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor', opacity: 0.6, fontSize: formData.layout.username?.fontSize ? `${formData.layout.username.fontSize}px` : '14px', fontWeight: formData.layout.username?.fontWeight || 'normal' }}><p className="lowercase truncate select-none pointer-events-none">{formData.username ? `@${formData.username}` : '@username'}</p></div>
                 <div className="absolute transition-all" style={{ left: formData.layout.addBtn?.x ?? 0, top: formData.layout.addBtn?.y ?? 0, width: formData.layout.addBtn?.w ?? 0, height: formData.layout.addBtn?.h ?? 0, zIndex: formData.layout.addBtn?.zIndex ?? 2 }}><Button className="w-full h-full p-0 lowercase border-none shadow-none pointer-events-none" style={{ background: getColorStyle(formData.theme.buttons), color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'white', borderRadius: previewRounding, fontSize: formData.layout.addBtn?.fontSize ? `${formData.layout.addBtn.fontSize}px` : '11px', fontWeight: formData.layout.addBtn?.fontWeight || 'bold', ...getTargetBorderStyle('add', getColorStyle(formData.theme.buttons)) }}>add friend</Button></div>
-                <div className="absolute transition-all" style={{ left: formData.layout.aboutHeader?.x ?? 0, top: formData.layout.aboutHeader?.y ?? 0, width: formData.layout.aboutHeader?.w ?? 0, height: formData.layout.aboutHeader?.h ?? 20, zIndex: formData.layout.aboutHeader?.zIndex ?? 2, color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor', opacity: 0.4, fontSize: formData.layout.aboutHeader?.fontSize ? `${formData.layout.aboutHeader.fontSize}px` : '10px', fontWeight: formData.layout.aboutHeader?.fontWeight || 'bold' }}><h5 className="uppercase tracking-widest">about me</h5></div>
-                <div className="absolute transition-all" style={{ left: formData.layout.bio?.x ?? 0, top: formData.layout.bio?.y ?? 0, width: formData.layout.bio?.w ?? 600, height: formData.layout.bio?.h ?? 0, zIndex: formData.layout.bio?.zIndex ?? 2, color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor', fontSize: formData.layout.bio?.fontSize ? `${formData.layout.bio.fontSize}px` : '12px', fontWeight: formData.layout.bio?.fontWeight || 'normal' }}><p className="leading-relaxed lowercase opacity-90 italic line-clamp-3">{formData.bio || 'your bio will appear here...'}</p></div>
+                <div className="absolute transition-all" style={{ left: formData.layout.aboutHeader?.x ?? 0, top: formData.layout.aboutHeader?.y ?? 0, width: formData.layout.aboutHeader?.w ?? 0, height: formData.layout.aboutHeader?.h ?? 20, zIndex: formData.layout.aboutHeader?.zIndex ?? 2, color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor', opacity: 0.4, fontSize: formData.layout.aboutHeader?.fontSize ? `${formData.layout.aboutHeader.fontSize}px` : '10px', fontWeight: formData.layout.aboutHeader?.fontWeight || 'bold' }}><h5 className="uppercase tracking-widest select-none pointer-events-none">about me</h5></div>
+                <div className="absolute transition-all" style={{ left: formData.layout.bio?.x ?? 0, top: formData.layout.bio?.y ?? 0, width: formData.layout.bio?.w ?? 600, height: formData.layout.bio?.h ?? 0, zIndex: formData.layout.bio?.zIndex ?? 2, color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor', fontSize: formData.layout.bio?.fontSize ? `${formData.layout.bio.fontSize}px` : '12px', fontWeight: formData.layout.bio?.fontWeight || 'normal' }}><p className="leading-relaxed lowercase opacity-90 italic line-clamp-3 select-none pointer-events-none">{formData.bio || 'your bio will appear here...'}</p></div>
+
                 {formData.stickers.map((sticker: any) => (<div key={sticker.id} className="absolute transition-all pointer-events-none" style={{ left: sticker.x, top: sticker.y, width: sticker.w, height: sticker.h, zIndex: sticker.zIndex, transform: `rotate(${sticker.rotation || 0}deg)` }}><img src={sticker.url} className="w-full h-full object-fill" alt="sticker" /></div>))}
               </div>
             </div>
           </div>
         </div>
-        <AdvancedProfileEditor open={isAdvancedOpen} onOpenChange={setIsAdvancedOpen} formData={formData} setFormData={setFormData} onStickerUpload={(file: File) => handleImageUpload(file, 'sticker')} uploadingSticker={uploading === 'sticker'} previewRounding={previewRounding} bodyBgStyle={bodyBgStyle} getTargetBorderStyle={getTargetBorderStyle} getColorStyle={getColorStyle} />
+        <AdvancedProfileEditor 
+          open={isAdvancedOpen} 
+          onOpenChange={setIsAdvancedOpen} 
+          formData={formData} 
+          setFormData={setFormData} 
+          onStickerUpload={handleImageUpload} 
+          uploadingSticker={uploading === 'sticker'} 
+          previewRounding={previewRounding} 
+          bodyBgStyle={bodyBgStyle} 
+          getTargetBorderStyle={getTargetBorderStyle} 
+          getColorStyle={getColorStyle} 
+        />
       </DialogContent>
     </Dialog>
   );
@@ -484,6 +511,9 @@ function AdvancedProfileEditor({
   const [historyIndex, setHistoryIndex] = React.useState(-1);
   const [viewMode, setViewMode] = React.useState<'preview' | 'page'>('preview');
 
+  const activeLayoutKey = viewMode === 'preview' ? 'layout' : 'pageLayout';
+  const activeStickersKey = viewMode === 'preview' ? 'stickers' : 'pageStickers';
+
   const [dragState, setDragging] = React.useState<{ 
     id: string, 
     type: 'move' | 'resize' | 'rotate', 
@@ -517,7 +547,7 @@ function AdvancedProfileEditor({
     e.stopPropagation();
     setSelectedId(id);
     if (id === 'banner' && type === 'move') return;
-    const element = id.startsWith('sticker-') ? formData.stickers.find((s: any) => s.id === id.replace('sticker-', '')) : formData.layout[id];
+    const element = id.startsWith('sticker-') ? formData[activeStickersKey].find((s: any) => s.id === id.replace('sticker-', '')) : formData[activeLayoutKey][id];
     if (!element) return;
     setDragging({ id, type, dir, startX: e.clientX, startY: e.clientY, initialX: element.x, initialY: element.y, initialW: element.w, initialH: element.h, initialRotation: 'rotation' in element ? element.rotation : 0 });
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
@@ -527,12 +557,13 @@ function AdvancedProfileEditor({
     if (!dragState) return;
     const dx = e.clientX - dragState.startX;
     const dy = e.clientY - dragState.startY;
+    
     const updateElement = (prev: any, id: string, changes: any) => {
       if (id.startsWith('sticker-')) {
         const stickerId = id.replace('sticker-', '');
-        return { ...prev, stickers: prev.stickers.map((s: any) => s.id === stickerId ? { ...s, ...changes } : s) };
+        return { ...prev, [activeStickersKey]: prev[activeStickersKey].map((s: any) => s.id === stickerId ? { ...s, ...changes } : s) };
       } else {
-        return { ...prev, layout: { ...prev.layout, [id]: { ...prev.layout[id], ...changes } } };
+        return { ...prev, [activeLayoutKey]: { ...prev[activeLayoutKey], [id]: { ...prev[activeLayoutKey][id], ...changes } } };
       }
     };
     if (dragState.type === 'move') { setFormData((prev: any) => updateElement(prev, dragState.id, { x: dragState.initialX + dx, y: dragState.initialY + dy })); }
@@ -566,10 +597,10 @@ function AdvancedProfileEditor({
       const newFormData = JSON.parse(JSON.stringify(prev));
       if (selectedId.startsWith('sticker-')) {
         const sid = selectedId.replace('sticker-', '');
-        const sticker = newFormData.stickers.find((s:any) => s.id === sid);
+        const sticker = newFormData[activeStickersKey].find((s:any) => s.id === sid);
         if(sticker) sticker.zIndex = Math.max(0, (sticker.zIndex || 0) + delta);
       } else {
-        const element = newFormData.layout[selectedId];
+        const element = newFormData[activeLayoutKey][selectedId];
         if(element) element.zIndex = Math.max(0, (element.zIndex || 0) + delta);
       }
       saveToHistory(newFormData);
@@ -581,7 +612,7 @@ function AdvancedProfileEditor({
     if (!selectedId || selectedId === 'pfp' || selectedId === 'banner' || selectedId.startsWith('sticker-')) return;
     setFormData((prev: any) => {
       const newFormData = JSON.parse(JSON.stringify(prev));
-      const el = newFormData.layout[selectedId];
+      const el = newFormData[activeLayoutKey][selectedId];
       if (el) el.fontWeight = el.fontWeight === 'bold' ? 'normal' : 'bold';
       saveToHistory(newFormData);
       return newFormData;
@@ -592,7 +623,7 @@ function AdvancedProfileEditor({
     if (!selectedId || selectedId === 'pfp' || selectedId === 'banner' || selectedId.startsWith('sticker-')) return;
     setFormData((prev: any) => {
       const newFormData = JSON.parse(JSON.stringify(prev));
-      const el = newFormData.layout[selectedId];
+      const el = newFormData[activeLayoutKey][selectedId];
       if (el) el.fontSize = v;
       return newFormData;
     });
@@ -602,7 +633,7 @@ function AdvancedProfileEditor({
     if (!selectedId || !selectedId.startsWith('sticker-')) return;
     const stickerId = selectedId.replace('sticker-', '');
     setFormData((prev: any) => {
-      const newFormData = { ...prev, stickers: prev.stickers.filter((s: any) => s.id !== stickerId) };
+      const newFormData = { ...prev, [activeStickersKey]: prev[activeStickersKey].filter((s: any) => s.id !== stickerId) };
       saveToHistory(newFormData);
       return newFormData;
     });
@@ -635,7 +666,7 @@ function AdvancedProfileEditor({
   };
 
   const isTextElement = selectedId && ['name', 'username', 'bio', 'aboutHeader', 'addBtn'].includes(selectedId);
-  const selectedElement = selectedId ? (selectedId.startsWith('sticker-') ? formData.stickers.find((s:any) => s.id === selectedId.replace('sticker-','')) : formData.layout[selectedId]) : null;
+  const selectedElement = selectedId ? (selectedId.startsWith('sticker-') ? formData[activeStickersKey].find((s:any) => s.id === selectedId.replace('sticker-','')) : formData[activeLayoutKey][selectedId]) : null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -643,8 +674,8 @@ function AdvancedProfileEditor({
         <div className="w-full h-full overflow-hidden relative flex flex-col items-center justify-center" onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onClick={() => setSelectedId(null)}>
           <div className="absolute top-6 left-1/2 -translate-x-1/2 z-[250] flex items-center gap-6">
             <div className="flex items-center gap-2 bg-background/50 backdrop-blur-md rounded-full border border-white/10 p-1.5 shadow-xl">
-               <button onClick={() => setViewMode('preview')} className={cn("px-6 py-2 rounded-full text-xs font-bold transition-all lowercase flex items-center gap-2", viewMode === 'preview' ? "bg-white text-black shadow-md" : "text-white/60 hover:text-white")}><Eye size={14} /> preview</button>
-               <button onClick={() => setViewMode('page')} className={cn("px-6 py-2 rounded-full text-xs font-bold transition-all lowercase flex items-center gap-2", viewMode === 'page' ? "bg-white text-black shadow-md" : "text-white/60 hover:text-white")}><Layout size={14} /> page</button>
+               <button onClick={() => { setViewMode('preview'); setSelectedId(null); }} className={cn("px-6 py-2 rounded-full text-xs font-bold transition-all lowercase flex items-center gap-2", viewMode === 'preview' ? "bg-white text-black shadow-md" : "text-white/60 hover:text-white")}><Eye size={14} /> preview</button>
+               <button onClick={() => { setViewMode('page'); setSelectedId(null); }} className={cn("px-6 py-2 rounded-full text-xs font-bold transition-all lowercase flex items-center gap-2", viewMode === 'page' ? "bg-white text-black shadow-md" : "text-white/60 hover:text-white")}><Layout size={14} /> full page</button>
             </div>
           </div>
           <div className="absolute top-6 right-6 z-[250]"><Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="text-foreground bg-background/50 hover:bg-background/80 rounded-full h-10 w-10"><X className="h-5 w-5" /></Button></div>
@@ -655,7 +686,7 @@ function AdvancedProfileEditor({
           <div className="absolute top-1/2 -translate-y-1/2 left-6 z-[250] flex flex-col items-center gap-2 bg-background/50 backdrop-blur-md rounded-2xl border border-white/10 p-2 shadow-xl">
             <label className="relative h-10 w-10 flex items-center justify-center rounded-xl hover:bg-white/10 cursor-pointer text-foreground">
               {uploadingSticker ? <Loader2 className="h-5 w-5 animate-spin text-foreground" /> : <Star className="h-5 w-5" />}
-              <input type="file" className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && onStickerUpload(e.target.files[0])} />
+              <input type="file" className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && onStickerUpload(e.target.files[0], 'sticker', viewMode)} />
             </label>
           </div>
 
@@ -682,44 +713,38 @@ function AdvancedProfileEditor({
           <div 
             className={cn(
               "relative shadow-2xl transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] border border-white/5",
-              viewMode === 'preview' ? "w-[600px] h-[400px]" : "w-full max-w-[1400px] h-[90vh]"
+              viewMode === 'preview' ? "w-[600px] h-[400px]" : "w-[1120px] h-[889px]"
             )}
             style={{ borderRadius: previewRounding, fontFamily: formData.font, background: bodyBgStyle }}
           >
             <div className="w-full h-full overflow-y-auto overflow-x-hidden relative custom-scrollbar">
-              <div className="relative" style={{ width: '100%', height: viewMode === 'preview' ? '400px' : '1500px' }}>
-                <div className="absolute cursor-pointer" onPointerDown={(e) => handlePointerDown(e, 'banner', 'move')} onClick={e => e.stopPropagation()} style={{ left: 0, top: 0, width: '100%', height: formData.layout.banner?.h ?? 220, zIndex: formData.layout.banner?.zIndex ?? 0 }}>
+              <div className="relative" style={{ width: '100%', height: viewMode === 'preview' ? '400px' : '1200px' }}>
+                <div className="absolute cursor-pointer" onPointerDown={(e) => handlePointerDown(e, 'banner', 'move')} onClick={e => e.stopPropagation()} style={{ left: 0, top: 0, width: '100%', height: formData[activeLayoutKey].banner?.h ?? 220, zIndex: formData[activeLayoutKey].banner?.zIndex ?? 0 }}>
                   {formData.bannerUrl ? (<img src={formData.bannerUrl} className="w-full h-full object-cover select-none pointer-events-none" alt="banner" />) : (<div className="w-full h-full bg-muted/10" />)}
                 </div>
 
-                <div className="absolute cursor-pointer" onPointerDown={(e) => handlePointerDown(e, 'pfp', 'move')} onClick={e => e.stopPropagation()} style={{ left: formData.layout.pfp?.x ?? 0, top: formData.layout.pfp?.y ?? 0, width: formData.layout.pfp?.w ?? 0, height: formData.layout.pfp?.h ?? 0, borderRadius: previewRounding, zIndex: formData.layout.pfp?.zIndex ?? 10, ...getTargetBorderStyle('profile', 'white'), overflow: 'hidden' }}>
+                <div className="absolute cursor-pointer" onPointerDown={(e) => handlePointerDown(e, 'pfp', 'move')} onClick={e => e.stopPropagation()} style={{ left: formData[activeLayoutKey].pfp?.x ?? 0, top: formData[activeLayoutKey].pfp?.y ?? 0, width: formData[activeLayoutKey].pfp?.w ?? 0, height: formData[activeLayoutKey].pfp?.h ?? 0, borderRadius: previewRounding, zIndex: formData[activeLayoutKey].pfp?.zIndex ?? 10, ...getTargetBorderStyle('profile', 'white'), overflow: 'hidden' }}>
                   {formData.photoUrl ? (<img src={formData.photoUrl} className="w-full h-full object-cover select-none pointer-events-none" alt="pfp" />) : (<div className="w-full h-full flex items-center justify-center bg-muted/20"><UserCircle2 className="h-10 w-10 opacity-20" /></div>)}
                 </div>
 
-                <div className="absolute cursor-pointer flex flex-col justify-center" onPointerDown={(e) => handlePointerDown(e, 'name', 'move')} onClick={e => e.stopPropagation()} style={{ left: formData.layout.name?.x ?? 0, top: formData.layout.name?.y ?? 0, width: formData.layout.name?.w ?? 400, height: formData.layout.name?.h ?? 0, zIndex: formData.layout.name?.zIndex ?? 10, color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor', fontSize: formData.layout.name?.fontSize ? `${formData.layout.name.fontSize}px` : '32px', fontWeight: formData.layout.name?.fontWeight || 'bold' }}><h4 className="leading-tight lowercase truncate select-none pointer-events-none">{formData.displayName || 'name'}</h4></div>
-                <div className="absolute cursor-pointer" onPointerDown={(e) => handlePointerDown(e, 'username', 'move')} onClick={e => e.stopPropagation()} style={{ left: formData.layout.username?.x ?? 0, top: formData.layout.username?.y ?? 0, width: formData.layout.username?.w ?? 200, height: formData.layout.username?.h ?? 0, zIndex: formData.layout.username?.zIndex ?? 10, color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor', opacity: 0.6, fontSize: formData.layout.username?.fontSize ? `${formData.layout.username.fontSize}px` : '14px', fontWeight: formData.layout.username?.fontWeight || 'normal' }}><p className="lowercase truncate select-none pointer-events-none">{formData.username ? `@${formData.username}` : '@username'}</p></div>
-                <div className="absolute cursor-pointer" onPointerDown={(e) => handlePointerDown(e, 'addBtn', 'move')} onClick={e => e.stopPropagation()} style={{ left: formData.layout.addBtn?.x ?? 0, top: formData.layout.addBtn?.y ?? 0, width: formData.layout.addBtn?.w ?? 140, height: formData.layout.addBtn?.h ?? 44, zIndex: formData.layout.addBtn?.zIndex ?? 10 }}><Button className="w-full h-full p-0 lowercase border-none transition-all shadow-none pointer-events-none" style={{ background: getColorStyle(formData.theme.buttons), color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'white', borderRadius: previewRounding, fontSize: formData.layout.addBtn?.fontSize ? `${formData.layout.addBtn.fontSize}px` : '11px', fontWeight: formData.layout.addBtn?.fontWeight || 'bold', ...getTargetBorderStyle('add', getColorStyle(formData.theme.buttons)) }}>add friend</Button></div>
-                <div className="absolute cursor-pointer" onPointerDown={(e) => handlePointerDown(e, 'aboutHeader', 'move')} onClick={e => e.stopPropagation()} style={{ left: formData.layout.aboutHeader?.x ?? 0, top: formData.layout.aboutHeader?.y ?? 0, width: formData.layout.aboutHeader?.w ?? 100, height: formData.layout.aboutHeader?.h ?? 20, zIndex: formData.layout.aboutHeader?.zIndex ?? 10, color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor', opacity: 0.4, fontSize: formData.layout.aboutHeader?.fontSize ? `${formData.layout.aboutHeader.fontSize}px` : '10px', fontWeight: formData.layout.aboutHeader?.fontWeight || 'bold' }}><h5 className="uppercase tracking-widest select-none pointer-events-none">about me</h5></div>
-                <div className="absolute cursor-pointer" onPointerDown={(e) => handlePointerDown(e, 'bio', 'move')} onClick={e => e.stopPropagation()} style={{ left: formData.layout.bio?.x ?? 0, top: formData.layout.bio?.y ?? 0, width: formData.layout.bio?.w ?? 600, height: formData.layout.bio?.h ?? 0, zIndex: formData.layout.bio?.zIndex ?? 10, color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor', fontSize: formData.layout.bio?.fontSize ? `${formData.layout.bio.fontSize}px` : '12px', fontWeight: formData.layout.bio?.fontWeight || 'normal' }}><p className="leading-relaxed lowercase opacity-90 italic line-clamp-3 select-none pointer-events-none">{formData.bio || 'your bio will appear here...'}</p></div>
+                <div className="absolute cursor-pointer flex flex-col justify-center" onPointerDown={(e) => handlePointerDown(e, 'name', 'move')} onClick={e => e.stopPropagation()} style={{ left: formData[activeLayoutKey].name?.x ?? 0, top: formData[activeLayoutKey].name?.y ?? 0, width: formData[activeLayoutKey].name?.w ?? 400, height: formData[activeLayoutKey].name?.h ?? 0, zIndex: formData[activeLayoutKey].name?.zIndex ?? 10, color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor', fontSize: formData[activeLayoutKey].name?.fontSize ? `${formData[activeLayoutKey].name.fontSize}px` : '32px', fontWeight: formData[activeLayoutKey].name?.fontWeight || 'bold' }}><h4 className="leading-tight lowercase truncate select-none pointer-events-none">{formData.displayName || 'name'}</h4></div>
+                <div className="absolute cursor-pointer" onPointerDown={(e) => handlePointerDown(e, 'username', 'move')} onClick={e => e.stopPropagation()} style={{ left: formData[activeLayoutKey].username?.x ?? 0, top: formData[activeLayoutKey].username?.y ?? 0, width: formData[activeLayoutKey].username?.w ?? 200, height: formData[activeLayoutKey].username?.h ?? 0, zIndex: formData[activeLayoutKey].username?.zIndex ?? 10, color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor', opacity: 0.6, fontSize: formData[activeLayoutKey].username?.fontSize ? `${formData[activeLayoutKey].username.fontSize}px` : '14px', fontWeight: formData[activeLayoutKey].username?.fontWeight || 'normal' }}><p className="lowercase truncate select-none pointer-events-none">{formData.username ? `@${formData.username}` : '@username'}</p></div>
+                <div className="absolute cursor-pointer" onPointerDown={(e) => handlePointerDown(e, 'addBtn', 'move')} onClick={e => e.stopPropagation()} style={{ left: formData[activeLayoutKey].addBtn?.x ?? 0, top: formData[activeLayoutKey].addBtn?.y ?? 0, width: formData[activeLayoutKey].addBtn?.w ?? 140, height: formData[activeLayoutKey].addBtn?.h ?? 44, zIndex: formData[activeLayoutKey].addBtn?.zIndex ?? 10 }}><Button className="w-full h-full p-0 lowercase border-none transition-all shadow-none pointer-events-none" style={{ background: getColorStyle(formData.theme.buttons), color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'white', borderRadius: previewRounding, fontSize: formData[activeLayoutKey].addBtn?.fontSize ? `${formData[activeLayoutKey].addBtn.fontSize}px` : '11px', fontWeight: formData[activeLayoutKey].addBtn?.fontWeight || 'bold', ...getTargetBorderStyle('add', getColorStyle(formData.theme.buttons)) }}>add friend</Button></div>
+                <div className="absolute cursor-pointer" onPointerDown={(e) => handlePointerDown(e, 'aboutHeader', 'move')} onClick={e => e.stopPropagation()} style={{ left: formData[activeLayoutKey].aboutHeader?.x ?? 0, top: formData[activeLayoutKey].aboutHeader?.y ?? 0, width: formData[activeLayoutKey].aboutHeader?.w ?? 100, height: formData[activeLayoutKey].aboutHeader?.h ?? 20, zIndex: formData[activeLayoutKey].aboutHeader?.zIndex ?? 10, color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor', opacity: 0.4, fontSize: formData[activeLayoutKey].aboutHeader?.fontSize ? `${formData[activeLayoutKey].aboutHeader.fontSize}px` : '10px', fontWeight: formData[activeLayoutKey].aboutHeader?.fontWeight || 'bold' }}><h5 className="uppercase tracking-widest select-none pointer-events-none">about me</h5></div>
+                <div className="absolute cursor-pointer" onPointerDown={(e) => handlePointerDown(e, 'bio', 'move')} onClick={e => e.stopPropagation()} style={{ left: formData[activeLayoutKey].bio?.x ?? 0, top: formData[activeLayoutKey].bio?.y ?? 0, width: formData[activeLayoutKey].bio?.w ?? 600, height: formData[activeLayoutKey].bio?.h ?? 0, zIndex: formData[activeLayoutKey].bio?.zIndex ?? 10, color: formData.theme.text.type === 'solid' ? formData.theme.text.solid : 'currentColor', fontSize: formData[activeLayoutKey].bio?.fontSize ? `${formData[activeLayoutKey].bio.fontSize}px` : '12px', fontWeight: formData[activeLayoutKey].bio?.fontWeight || 'normal' }}><p className="leading-relaxed lowercase opacity-90 italic line-clamp-3 select-none pointer-events-none">{formData.bio || 'your bio will appear here...'}</p></div>
 
-                {formData.stickers.map((sticker: any) => (<div key={sticker.id} className="absolute cursor-pointer" onPointerDown={(e) => handlePointerDown(e, `sticker-${sticker.id}`, 'move')} onClick={e => e.stopPropagation()} style={{ left: sticker.x, top: sticker.y, width: sticker.w, height: sticker.h, zIndex: sticker.zIndex, transform: `rotate(${sticker.rotation || 0}deg)` }}><img src={sticker.url} className="w-full h-full object-fill select-none pointer-events-none" alt="sticker" /></div>))}
+                {formData[activeStickersKey].map((sticker: any) => (<div key={sticker.id} className="absolute cursor-pointer" onPointerDown={(e) => handlePointerDown(e, `sticker-${sticker.id}`, 'move')} onClick={e => e.stopPropagation()} style={{ left: sticker.x, top: sticker.y, width: sticker.w, height: sticker.h, zIndex: sticker.zIndex, transform: `rotate(${sticker.rotation || 0}deg)` }}><img src={sticker.url} className="w-full h-full object-fill select-none pointer-events-none" alt="sticker" /></div>))}
 
-                {Object.keys(formData.layout).map(key => renderSelectionBox(key, formData.layout[key as keyof ProfileLayout]))}
-                {formData.stickers.map((sticker: Sticker) => renderSelectionBox(`sticker-${sticker.id}`, sticker))}
+                {Object.keys(formData[activeLayoutKey]).map(key => renderSelectionBox(key, formData[activeLayoutKey][key as keyof ProfileLayout]))}
+                {formData[activeStickersKey].map((sticker: Sticker) => renderSelectionBox(`sticker-${sticker.id}`, sticker))}
 
                 {viewMode === 'page' && (
-                  <>
-                    <div className="absolute top-[500px] left-0 w-full h-16 flex border-y border-white/5 opacity-50 pointer-events-none" style={{ background: getColorStyle(formData.theme.buttons) }}>
-                      <div className="flex-1 flex items-center justify-center text-[10px] font-black text-white/40 tracking-[0.2em]">ALL POSTS</div>
-                      <div className="flex-1 flex items-center justify-center text-[10px] font-black text-white/40 tracking-[0.2em]">NOTEBOOKS</div>
-                      <div className="flex-1 flex items-center justify-center text-[10px] font-black text-white/40 tracking-[0.2em]">FLASHCARDS</div>
-                      <div className="flex-1 flex items-center justify-center text-[10px] font-black text-white/40 tracking-[0.2em]">THOUGHTS</div>
-                    </div>
-                    <div className="absolute top-[600px] left-10 right-10 flex gap-8">
-                       <div className="flex-1 aspect-[4/3] rounded-3xl bg-white/5 border border-white/5" />
-                       <div className="flex-1 aspect-[4/3] rounded-3xl bg-white/5 border border-white/5" />
-                    </div>
-                  </>
+                  <div className="absolute top-[500px] left-0 w-full h-16 flex border-y border-white/5 opacity-50 pointer-events-none" style={{ background: getColorStyle(formData.theme.buttons) }}>
+                    <div className="flex-1 flex items-center justify-center text-[10px] font-black text-white/40 tracking-[0.2em]">ALL POSTS</div>
+                    <div className="flex-1 flex items-center justify-center text-[10px] font-black text-white/40 tracking-[0.2em]">NOTEBOOKS</div>
+                    <div className="flex-1 flex items-center justify-center text-[10px] font-black text-white/40 tracking-[0.2em]">FLASHCARDS</div>
+                    <div className="flex-1 flex items-center justify-center text-[10px] font-black text-white/40 tracking-[0.2em]">THOUGHTS</div>
+                  </div>
                 )}
               </div>
             </div>

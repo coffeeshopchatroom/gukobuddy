@@ -203,7 +203,7 @@ export default function PublicProfilePage() {
   }
 
   const theme = profile.theme || {}
-  const layout = profile.layout || {}
+  const layout = profile.pageLayout || profile.layout || {}
   const customColors = theme.customColors || { primary: '#A7C4A0', background: '#FFFFFF', foreground: '#1a1c19' }
   const isOfficial = profile.isGukoMode === true || profile.username === 'guko';
   const isProfileAdmin = profile.isAdmin === true;
@@ -250,7 +250,7 @@ export default function PublicProfilePage() {
         fontFamily: profile.font || 'Plus Jakarta Sans',
       }}
     >
-      <div className="relative w-full min-h-[500px]">
+      <div className="relative w-full max-w-[1120px] mx-auto min-h-[500px]">
         {/* Banner */}
         <div 
           className="absolute overflow-hidden" 
@@ -267,7 +267,7 @@ export default function PublicProfilePage() {
           )}
         </div>
 
-        <div className="w-full px-10 relative h-[500px]">
+        <div className="w-full relative h-[500px]">
           {/* Profile Picture */}
           <div 
             className="absolute overflow-hidden flex items-center justify-center bg-muted" 
@@ -431,7 +431,7 @@ export default function PublicProfilePage() {
           </div>
 
           {/* Stickers */}
-          {(profile.stickers || []).map((sticker: any) => (
+          {(profile.pageStickers || profile.stickers || []).map((sticker: any) => (
             <div key={sticker.id} className="absolute pointer-events-none" style={{
                 left: sticker.x, top: sticker.y, width: sticker.w, height: sticker.h,
                 zIndex: sticker.zIndex, transform: `rotate(${sticker.rotation || 0}deg)`
@@ -446,7 +446,7 @@ export default function PublicProfilePage() {
         className="w-full sticky top-0 z-50 border-y border-black/5"
         style={{ background: btnStyle, opacity: 0.9, backdropFilter: 'blur(10px)' }}
       >
-        <div className="w-full flex">
+        <div className="w-full max-w-[1120px] mx-auto flex">
           <TabItem active={activeTab === 'all'} onClick={() => setActiveTab('all')} label="ALL POSTS" />
           <TabItem active={activeTab === 'notebooks'} onClick={() => setActiveTab('notebooks')} label="NOTEBOOKS" />
           <TabItem active={activeTab === 'flashcards'} onClick={() => setActiveTab('flashcards')} label="FLASHCARDS" />
@@ -455,7 +455,7 @@ export default function PublicProfilePage() {
       </div>
 
       <div className="flex-1 w-full pb-40">
-        <div className="max-w-[1200px] mx-auto px-10 py-12">
+        <div className="max-w-[1120px] mx-auto px-10 py-12">
           {postsError ? (
             <div className="py-20 text-center space-y-4 opacity-50">
                <AlertCircle className="mx-auto h-12 w-12" style={{ color: textPrimary }} />
