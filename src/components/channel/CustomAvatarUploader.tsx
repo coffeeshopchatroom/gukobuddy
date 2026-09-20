@@ -176,3 +176,4 @@ function Dropzone({ onDrop, file, type, progress }: { onDrop: (files: File[]) =>
   );
 }
 // what if i confessed my love here would that be crazy
+//im adding another note. boom.
