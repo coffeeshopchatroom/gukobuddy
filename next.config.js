@@ -17,6 +17,9 @@ const nextConfig = {
             }
         ],
     },
+    env: {
+        NEXT_PUBLIC_BLOB_READ_WRITE_TOKEN: process.env.BLOB_READ_WRITE_TOKEN,
+    }
 }
 
 module.exports = nextConfig;

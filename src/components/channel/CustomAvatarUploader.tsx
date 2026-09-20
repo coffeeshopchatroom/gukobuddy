@@ -39,6 +39,7 @@ export function CustomAvatarUploader({ gender, onUploadComplete }: { gender: 'ma
 
             const blob = await put(file.name, file, {
                 access: 'public',
+                token: process.env.BLOB_READ_WRITE_TOKEN
             });
 
             avatarUrls[type] = blob.url;
@@ -68,10 +69,6 @@ export function CustomAvatarUploader({ gender, onUploadComplete }: { gender: 'ma
         }
         throw new Error(errorMsg);
       }
-
-      // Make sure response is valid JSON before completing
-      await response.json();
-
       onUploadComplete();
     } catch (error) {
       console.error("Failed to upload custom avatar", error);
