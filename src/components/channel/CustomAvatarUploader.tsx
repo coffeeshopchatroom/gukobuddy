@@ -1,16 +1,17 @@
-
 'use client';
 
 import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Loader2, UploadCloud, X } from 'lucide-react';
-import { useUser } from '@/firebase';
+import { useUser, useFirestore, setDocumentNonBlocking } from '@/firebase';
 import { Button } from '@/components/ui/button';
+import { doc } from 'firebase/firestore';
 
 const SPRITE_TYPES = ['headshot', 'default', 'happy', 'sad', 'angry', 'bored'];
 
 export function CustomAvatarUploader({ gender, onUploadComplete }: { gender: 'male' | 'female', onUploadComplete: () => void }) {
   const { user } = useUser();
+  const db = useFirestore();
   const [files, setFiles] = useState<Record<string, File | null>>({});
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
@@ -20,8 +21,8 @@ export function CustomAvatarUploader({ gender, onUploadComplete }: { gender: 'ma
   }, []);
 
   const handleUpload = async () => {
-    if (!user || Object.keys(files).length !== SPRITE_TYPES.length) {
-      alert('Please select all sprite images.');
+    if (!user || !db) {
+      alert('You must be signed in to upload an avatar.');
       return;
     }
 
@@ -38,7 +39,7 @@ export function CustomAvatarUploader({ gender, onUploadComplete }: { gender: 'ma
     const avatarUrls: Record<string, string> = {};
 
     try {
-      // 1. Upload all files via our server API
+      // 1. Upload all binary files via our server API to Vercel Blob
       for (const type of SPRITE_TYPES) {
         const file = files[type];
         if (!file) continue;
@@ -51,7 +52,8 @@ export function CustomAvatarUploader({ gender, onUploadComplete }: { gender: 'ma
         });
 
         if (!response.ok) {
-          throw new Error(`Failed to upload ${type}`);
+          const errorData = await response.json();
+          throw new Error(errorData.error || `Failed to upload ${type}`);
         }
 
         const blob = await response.json();
@@ -59,30 +61,15 @@ export function CustomAvatarUploader({ gender, onUploadComplete }: { gender: 'ma
         setUploadProgress(prev => ({ ...prev, [type]: 100 }));
       }
 
-      // 2. Save metadata to profile
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId: user.uid,
-          avatarId,
-          avatarGender: gender,
-          customAvatar: avatarUrls,
-        }),
-      });
-
-      if (!response.ok) {
-        let errorMsg = `Upload failed with status: ${response.status}`;
-        try {
-          const errorData = await response.json();
-          errorMsg = errorData.error || errorMsg;
-        } catch (e) {
-          // Ignore if response is not JSON
-        }
-        throw new Error(errorMsg);
-      }
+      // 2. Save metadata to Firestore (CLIENT SIDE WRITE)
+      // Performing the write on the client ensures we use the user's authenticated context,
+      // which is required by the Firestore Security Rules.
+      const profileRef = doc(db, 'users', user.uid, 'profile', 'settings');
+      setDocumentNonBlocking(profileRef, {
+        selectedAvatar: avatarId,
+        avatarGender: gender,
+        customAvatar: avatarUrls,
+      }, { merge: true });
       
       onUploadComplete();
     } catch (error: any) {
@@ -188,5 +175,3 @@ function Dropzone({ onDrop, file, type, progress }: { onDrop: (files: File[]) =>
     </div>
   );
 }
-// im just living that life von dutch
-//omg ow i just bit my nail
