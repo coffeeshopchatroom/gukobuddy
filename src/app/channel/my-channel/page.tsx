@@ -3,10 +3,11 @@
 
 import * as React from "react"
 import { cn } from "@/lib/utils"
-import { useUser, useDoc, useMemoFirebase, useFirestore } from "@/firebase"
-import { doc, setDoc } from "firebase/firestore"
-import { X, Check, MessageSquare, Smile, Home, BadgeCheck } from "lucide-react"
+import { useUser, useDoc, useMemoFirebase, useFirestore, useCollection } from "@/firebase"
+import { doc, setDoc, collection, query, where, getDoc } from "firebase/firestore"
+import { X, Check, MessageSquare, Smile, Home, BadgeCheck, Loader2 } from "lucide-react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 
 type CardProps = {
   className?: string;
@@ -132,12 +133,127 @@ const GradientCard = ({
   );
 };
 
+const RealFriendTile = ({ friend, index, active }: { friend: any, index: number, active: boolean }) => {
+  const db = useFirestore();
+  const router = useRouter();
+  const [profile, setProfile] = React.useState<any>(null);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    async function fetchFriendProfile() {
+      if (!friend.uid) return;
+      try {
+        const docRef = doc(db, 'users', friend.uid, 'profile', 'settings');
+        const snap = await getDoc(docRef);
+        if (snap.exists()) {
+          setProfile(snap.data());
+        }
+      } catch (e) {
+        console.error("Failed to fetch friend profile", e);
+      } finally {
+        setLoading(false);
+      }
+    }
+    if (active) fetchFriendProfile();
+  }, [friend.uid, db, active]);
+
+  if (loading) return null;
+
+  const isVerified = friend.username === 'guko' || profile?.isGukoMode === true;
+  const isAdmin = profile?.isAdmin === true;
+  const statusMsg = profile?.statusMsg || "";
+  const avatarId = profile?.selectedAvatar || 'mii-m2';
+  const avatarGender = profile?.avatarGender || 'male';
+  const emotion = profile?.currentEmotion || 'default';
+  const customAvatar = profile?.customAvatar;
+
+  const getAvatarUrl = () => {
+    if (avatarId.startsWith('custom-') && customAvatar) {
+      return customAvatar[emotion] || customAvatar['default'];
+    }
+    return `/avatars/${avatarGender}/${avatarId}/${avatarId}_${emotion}.png`;
+  };
+
+  return (
+    <div 
+      className={cn(
+        "relative w-[600px] h-[350px] group transition-all duration-1000",
+        active ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-90 translate-y-10"
+      )}
+      style={{
+        transitionDelay: active ? `${index * 100}ms` : '0ms',
+        animation: active ? `flip-in 1s cubic-bezier(0.34, 1.56, 0.64, 1) ${index * 100}ms forwards` : 'none',
+        perspective: '1000px'
+      }}
+    >
+      {/* Speech Bubble */}
+      {statusMsg && active && (
+        <div 
+          className="absolute top-[-50px] right-[50px] z-50 bg-white rounded-full px-6 py-3 shadow-xl animate-in fade-in slide-in-from-bottom-2 duration-500"
+          style={{ animationDelay: `${(index * 100) + 800}ms` }}
+        >
+          <p className="text-black text-2xl font-medium lowercase whitespace-nowrap">{statusMsg}</p>
+          <div className="absolute bottom-[-10px] right-8 w-6 h-6 bg-white rotate-45" />
+        </div>
+      )}
+
+      {/* Card Body */}
+      <div className="absolute inset-0 rounded-[20px] overflow-hidden shadow-2xl">
+         <div className="absolute inset-0 [background:radial-gradient(50%_50%_at_74%_49%,rgba(247,255,153,1)_0%,rgba(230,254,100,1)_18%,rgba(222,252,67,1)_33%,rgba(200,239,53,1)_45%,rgba(159,221,33,1)_70%,rgba(141,209,25,1)_100%)] opacity-90" />
+         <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_0%,rgba(0,0,0,0.4)_100%)]" />
+         
+         <div className="absolute top-8 left-8 space-y-2">
+            <div className="flex items-center gap-2">
+               <h3 className={cn("text-black text-3xl font-bold lowercase opacity-80", isVerified && "italic font-black")}>{friend.username}</h3>
+               {(isVerified || isAdmin) && <BadgeCheck className="w-6 h-6 text-black/40" />}
+            </div>
+            <p className={cn("text-4xl font-headline font-medium lowercase text-white")}>
+              online!
+            </p>
+         </div>
+
+         <div className="absolute bottom-8 left-8 right-[240px] space-y-4">
+            <div className="space-y-1">
+                <p className="text-black/60 text-xl font-bold lowercase">currently on:</p>
+                <p className="text-white text-2xl font-bold lowercase">Guko Plaza</p>
+            </div>
+            <button 
+              onClick={() => router.push(`/u/${friend.username}`)}
+              className="h-14 px-10 rounded-full bg-gradient-to-b from-[#6CBF4B] to-[#8EC158] border-2 border-white/40 text-white font-bold text-2xl shadow-lg hover:scale-105 transition-transform flex items-center gap-2"
+            >
+              JOIN
+            </button>
+         </div>
+      </div>
+
+      {/* Avatar Render */}
+      <div className="absolute bottom-0 right-0 w-[300px] h-[380px] pointer-events-none overflow-hidden">
+        <img 
+          src={getAvatarUrl()}
+          className="w-full h-full object-cover translate-y-10 scale-110 drop-shadow-2xl"
+          alt="friend avatar"
+          onError={(e) => {
+            const fallback = avatarGender === 'female' ? 'mii-f1' : 'mii-m2';
+             (e.target as HTMLImageElement).src = `/avatars/${avatarGender}/${fallback}/${fallback}_default.png`;
+          }}
+        />
+      </div>
+    </div>
+  );
+};
+
 export default function MyChannelPage() {
   const { user } = useUser();
   const db = useFirestore();
   const profileRef = useMemoFirebase(() => user ? doc(db, 'users', user.uid, 'profile', 'settings') : null, [db, user]);
   const { data: profile } = useDoc(profileRef);
 
+  const friendsQuery = useMemoFirebase(() => 
+    user ? query(collection(db, 'users', user.uid, 'friends'), where('status', '==', 'accepted')) : null
+  , [db, user]);
+  const { data: friends } = useCollection(friendsQuery);
+
+  const [activeTab, setActiveTab] = React.useState<number>(2); // 0: Friends, 1: Study Sessions, 2: My Channel
   const [currentEmotion, setCurrentEmotion] = React.useState<string>('default');
   const [hoverEmotion, setHoverEmotion] = React.useState<string | null>(null);
   const [showPicker, setShowPicker] = React.useState(false);
@@ -148,6 +264,7 @@ export default function MyChannelPage() {
   React.useEffect(() => {
     setMounted(true);
     if (profile?.statusMsg) setStatusMsg(profile.statusMsg);
+    if (profile?.currentEmotion) setCurrentEmotion(profile.currentEmotion);
   }, [profile]);
 
   if (!mounted) return null;
@@ -162,6 +279,18 @@ export default function MyChannelPage() {
     }
   }
 
+  const handleUpdateEmotion = async (emoId: string) => {
+    if (!profileRef) return;
+    try {
+      await setDoc(profileRef, { currentEmotion: emoId }, { merge: true });
+      setCurrentEmotion(emoId);
+      setShowPicker(false);
+    } catch (error) {
+      console.error("Failed to update emotion", error);
+    }
+  }
+
+  const tabs = ["Friends", "Study Sessions", "My Channel"];
   const displayName = user?.isAnonymous ? "guest" : (profile?.displayName || user?.displayName || "whatNot");
   const avatarUrl = profile?.photoUrl || user?.photoURL || "https://picsum.photos/seed/xboxava/200/200";
   const selectedAvatarId = profile?.selectedAvatar || 'mii-m2';
@@ -211,8 +340,8 @@ export default function MyChannelPage() {
                   </div>
                 </div>
              </div>
-             <div className="relative group">
-                <img className="w-[147px] h-[147px] rounded-[9px] border-[5px] border-[#ACBB68] object-cover shadow-xl transition-transform" alt="avatar" src={avatarUrl} />
+             <div className="relative group cursor-pointer" onClick={() => setActiveTab(2)}>
+                <img className="w-[147px] h-[147px] rounded-[9px] border-[5px] border-[#ACBB68] object-cover shadow-xl transition-transform group-hover:scale-105" alt="avatar" src={avatarUrl} />
                 {/* Online Indicator */}
                 <div className="absolute bottom-[-10px] right-[-10px] w-[42px] h-[43px] rounded-full border-2 border-[#8DD590] bg-gradient-to-b from-[#6CBF4B] to-[#8EC158] flex items-center justify-center shadow-lg">
                    <div className="w-[33px] h-[12px] rounded-full bg-white/30 blur-[2px] animate-pulse" />
@@ -241,11 +370,19 @@ export default function MyChannelPage() {
 
         {/* Navigation Sidebar */}
         <nav className="absolute top-[134px] left-[134px] z-50 flex flex-col gap-2 items-start">
-          <div className="transition-all duration-500 font-headline font-medium text-white text-[64px] ml-0">
-            <span className="mr-4 inline-block animate-bounce-sideways">•</span>
-            My Channel
-          </div>
-          <p className="text-white/20 text-4xl font-headline ml-14">(beta: private view)</p>
+          {tabs.map((tab, idx) => (
+            <div
+              key={tab}
+              onClick={() => setActiveTab(idx)}
+              className={cn(
+                "transition-all duration-500 cursor-pointer font-headline font-medium",
+                activeTab === idx ? "text-white text-[64px] ml-0" : "text-white/30 text-[35px] ml-24"
+              )}
+            >
+              {activeTab === idx && <span className="mr-4 inline-block animate-bounce-sideways">•</span>}
+              {tab}
+            </div>
+          ))}
           
           <Link href="/channel" className="mt-20 group">
             <div className="flex items-center gap-6 text-white/40 group-hover:text-white transition-all">
@@ -259,10 +396,33 @@ export default function MyChannelPage() {
 
         {/* Interactive Content Area */}
         <div className="absolute inset-0 pointer-events-none z-30">
-          <div className="absolute inset-0 pointer-events-none">
+          
+          {/* FRIENDS TAB CONTENT */}
+          <div className={cn(
+            "absolute top-[350px] left-[375px] w-[1900px] h-[900px] transition-all duration-1000",
+            activeTab === 0 ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+          )}>
+              <div className="grid grid-cols-3 gap-16">
+                {friends?.map((friend, i) => (
+                  <RealFriendTile key={friend.uid} friend={friend} index={i} active={activeTab === 0} />
+                ))}
+                {(!friends || friends.length === 0) && (
+                  <div className="col-span-3 flex flex-col items-center justify-center py-40 gap-8">
+                     <Users size={120} className="text-white/10" />
+                     <p className="text-white/30 text-5xl font-headline lowercase">no online classmates found.</p>
+                  </div>
+                )}
+              </div>
+          </div>
+
+          {/* MY CHANNEL TAB CONTENT */}
+          <div className={cn("absolute inset-0 pointer-events-none", activeTab === 2 ? "z-50" : "z-10")}>
               {/* Main Card (Open Tray) - Parts Left */}
               <section
-                className="absolute top-[419px] left-[375px] w-[852px] h-[959px] transition-all duration-1000 pointer-events-auto opacity-100"
+                className={cn(
+                  "absolute top-[419px] left-[375px] w-[852px] h-[959px] transition-all duration-1000 pointer-events-auto", 
+                  activeTab === 2 ? "translate-x-0 opacity-100" : "-translate-x-[1500px] opacity-0"
+                )}
                 style={{ zIndex: 100 }}
               >
                 <div className="absolute inset-0 group">
@@ -288,9 +448,10 @@ export default function MyChannelPage() {
 
               {/* Secondary Blade (Status/Activity) - Parts Right */}
               <GradientCard
-                isActive={true}
+                isActive={activeTab === 2}
                 zIndex={90}
-                className="top-[486px] left-[1212px] w-[636px] h-[762px] pointer-events-auto"
+                className={cn("top-[486px] left-[1212px] w-[636px] h-[762px] pointer-events-auto")}
+                exitTransform="translateX(800px) scale(0.8)"
                 title={displayName}
                 subtitle="focus active"
                 activityTitle="Personal Plaza"
@@ -304,7 +465,10 @@ export default function MyChannelPage() {
 
               {/* Tertiary Blade (Controllers) - Parts Further Right */}
               <section
-                className="absolute top-[522px] left-[1721px] w-[538px] h-[659px] transition-all duration-1000 pointer-events-auto opacity-100"
+                className={cn(
+                  "absolute top-[522px] left-[1721px] w-[538px] h-[659px] transition-all duration-1000 pointer-events-auto", 
+                  activeTab === 2 ? "translate-x-0 opacity-100" : "translate-x-[1500px] opacity-0"
+                )}
                 style={{ zIndex: 80 }}
               >
                 <div className="absolute inset-0">
@@ -380,10 +544,7 @@ export default function MyChannelPage() {
                               key={emo.id}
                               onMouseEnter={() => setHoverEmotion(emo.id)}
                               onMouseLeave={() => setHoverEmotion(null)}
-                              onClick={() => {
-                                setCurrentEmotion(emo.id);
-                                setShowPicker(false);
-                              }}
+                              onClick={() => handleUpdateEmotion(emo.id)}
                               className={cn(
                                 "w-full py-8 px-12 rounded-[20px] text-5xl font-medium transition-all duration-300 flex items-center justify-between  font-headline",
                                 (hoverEmotion === emo.id || (!hoverEmotion && currentEmotion === emo.id)) 
@@ -497,6 +658,17 @@ export default function MyChannelPage() {
         @keyframes bounce-sideways {
           0%, 100% { transform: translateX(0); }
           50% { transform: translateX(5px); }
+        }
+
+        @keyframes flip-in {
+          from {
+            opacity: 0;
+            transform: perspective(1000px) rotateY(-90deg) scale(0.8) translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: perspective(1000px) rotateY(0deg) scale(1) translateY(0);
+          }
         }
 
         .animate-background-shift {
