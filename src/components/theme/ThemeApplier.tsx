@@ -54,7 +54,12 @@ export function ThemeApplier() {
         }
         h /= 6;
       }
-      return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+      return {
+        h: Math.round(h * 360),
+        s: Math.round(s * 100),
+        l: Math.round(l * 100),
+        toString: () => `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`
+      };
     };
 
     // Helper for contrast (black or white foreground)
@@ -82,22 +87,24 @@ export function ThemeApplier() {
         };
       }
 
-      const hslBg = hexToHsl(colors.background);
-      const hslFg = hexToHsl(colors.foreground);
-      const hslPrimary = hexToHsl(colors.primary);
-      const hslAccent = hexToHsl(colors.accent);
-      const hslMutedText = hexToHsl(colors.muted);
+      const hslBgObj = hexToHsl(colors.background);
+      const hslFg = hexToHsl(colors.foreground).toString();
+      const hslPrimary = hexToHsl(colors.primary).toString();
+      const hslAccent = hexToHsl(colors.accent).toString();
+      const hslMutedText = hexToHsl(colors.muted).toString();
       
-      // Calculate a readable muted background: slightly different from main background
-      const mutedBgHex = colors.background.toLowerCase() === '#ffffff' ? '#f4f4f5' : '#1e293b'; 
-      const hslMutedBg = hexToHsl(mutedBgHex);
+      // Calculate a readable muted background color dynamically based on background lightness
+      // This prevents the "dark blue" bug by shifting the background's lightness slightly
+      const isDark = hslBgObj.l < 50;
+      const mutedLightness = isDark ? Math.min(100, hslBgObj.l + 8) : Math.max(0, hslBgObj.l - 4);
+      const hslMutedBg = `${hslBgObj.h} ${hslBgObj.s}% ${mutedLightness}%`;
 
       // 2. Apply Core Variables
-      root.style.setProperty('--background', hslBg);
+      root.style.setProperty('--background', hslBgObj.toString());
       root.style.setProperty('--foreground', hslFg);
-      root.style.setProperty('--card', hslBg);
+      root.style.setProperty('--card', hslBgObj.toString());
       root.style.setProperty('--card-foreground', hslFg);
-      root.style.setProperty('--popover', hslBg);
+      root.style.setProperty('--popover', hslBgObj.toString());
       root.style.setProperty('--popover-foreground', hslFg);
       
       root.style.setProperty('--primary', hslPrimary);
@@ -112,12 +119,12 @@ export function ThemeApplier() {
       root.style.setProperty('--accent', hslAccent);
       root.style.setProperty('--accent-foreground', hslFg);
       
-      root.style.setProperty('--border', `0 0% 50% / 0.15`); // slightly stronger transparent border
+      root.style.setProperty('--border', `0 0% 50% / 0.15`); 
       root.style.setProperty('--input', `0 0% 50% / 0.1`);
       root.style.setProperty('--ring', hslPrimary);
 
       // 3. Apply Sidebar Variables
-      root.style.setProperty('--sidebar-background', hslBg);
+      root.style.setProperty('--sidebar-background', hslBgObj.toString());
       root.style.setProperty('--sidebar-foreground', hslFg);
       root.style.setProperty('--sidebar-primary', hslPrimary);
       root.style.setProperty('--sidebar-primary-foreground', getContrastColor(colors.primary));
