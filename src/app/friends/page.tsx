@@ -73,7 +73,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import Link from "link"
+import Link from "next/link"
 
 const PORTAL_BASE_W = 600;
 const PORTAL_BASE_H = 400;
